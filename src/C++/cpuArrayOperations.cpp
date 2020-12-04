@@ -46,224 +46,224 @@ template <typename T> T cpuArrayMean(T *a, int n)
 
 template <typename T> void cpuGetArrayAtIndex(T *y, T *x, int *ind, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i<n; i++)    
         y[i] = x[ind[i]];
 }
 
 template <typename T> void cpuPutArrayAtIndex(T *y, T *x, int *ind, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i<n; i++)    
         y[ind[i]] = x[i];
 }
 
 template <typename T> void cpuArrayPlusXAtIndex(T *y, T *x, int *ind, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i<n; i++)    
         y[ind[i]] += x[i];
 }
 
 template <typename T> void cpuArrayMinusXAtIndex(T *y, T *x, int *ind, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i<n; i++)    
         y[ind[i]] -= x[i];
 }
 
 template <typename T> void cpuArrayAXPYAtIndex(T *y, T *x, T a, int *ind, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i<n; i++)    
         y[ind[i]] = y[ind[i]] + a*x[i];
 }
 
 template <typename T> void cpuArraySetValue(T *y, T a, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = a;        
 }
 
 template <typename T> void cpuArrayMultiplyScalar(T *y, T a, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = a*y[i];        
 }
 
 template <typename T> void cpuArrayAddScalar(T *y, T a, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = y[i] + a;        
 }
 
 template <typename T> void cpuArrayCopy(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = x[i];        
 }
 
 template <typename T> void cpuArrayMinus(T *y, T *x, int n)
 {    
-    #pragma omp parallel for    
+    //#pragma omp parallel for    
     for (int i=0; i<n; i++) 
         y[i] = -x[i];        
 }
 
 template <typename T> void cpuArrayAbs(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = fabs(x[i]);        
 }
 
 template <typename T> void cpuArraySqrt(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = sqrt(x[i]);        
 }
 
 template <typename T> void cpuArraySin(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = sin(x[i]);        
 }
 
 template <typename T> void cpuArrayCos(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = cos(x[i]);        
 }
 
 template <typename T> void cpuArrayTan(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = tan(x[i]);        
 }
 
 template <typename T> void cpuArrayAsin(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = asin(x[i]);        
 }
 
 template <typename T> void cpuArrayAcos(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = acos(x[i]);        
 }
 
 template <typename T> void cpuArrayAtan(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = atan(x[i]);        
 }
 
 template <typename T> void cpuArraySinh(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = sinh(x[i]);        
 }
 
 template <typename T> void cpuArrayCosh(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = cosh(x[i]);        
 }
 
 template <typename T> void cpuArrayTanh(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = tanh(x[i]);        
 }
 
 template <typename T> void cpuArrayAsinh(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = asinh(x[i]);        
 }
 
 template <typename T> void cpuArrayAcosh(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = acosh(x[i]);        
 }
 
 template <typename T> void cpuArrayAtanh(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = atanh(x[i]);        
 }
 
 template <typename T> void cpuArrayExp(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = exp(x[i]);        
 }
 
 template <typename T> void cpuArrayLog(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = log(x[i]);        
 }
 
 template <typename T> void cpuArrayCeil(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = ceil(x[i]);        
 }
 
 template <typename T> void cpuArrayFloor(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = floor(x[i]);        
 }
 
 template <typename T> void cpuArrayErf(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = erf(x[i]);        
 }
 
 template <typename T> void cpuArrayErfc(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = erfc(x[i]);        
 }
 
 template <typename T> void cpuArraySquare(T *y, T *x, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = x[i]*x[i];        
 }
 
 template <typename T> void cpuArrayPower(T *y, T *x, int p, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) {
         y[i] = x[i];    
         for (int j=1; j<p; j++)
@@ -273,21 +273,21 @@ template <typename T> void cpuArrayPower(T *y, T *x, int p, int n)
 
 template <typename T> void cpuArrayMultiplyScalarDiagonal(T *C, T a, int n)
 {        
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++)    
         C[i+n*i] = a*C[i+n*i];                
 }
 
 template <typename T> void cpuArrayAddVectorToDiagonal(T *C, T *x, T a, int n)
 {            
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++)    
         C[i+n*i] += a*x[i];                
 }
 
 template <typename T> void cpuArrayRowAverage(T *y, T *x, int m, int n)
 {    
-    #pragma omp parallel 
+    //#pragma omp parallel 
     for (int j=0; j<n; j++)
     {        
         T avg = 0;
@@ -302,42 +302,42 @@ template <typename T> void cpuArrayRowAverage(T *y, T *x, int m, int n)
 
 template <typename T> void cpuArrayAXPB(T *y, T *x, T a, T b, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         y[i] = a*x[i]+b;        
 }
 
 template <typename T> void cpuArrayAXPBY(T *z, T *x, T *y, T a, T b, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         z[i] = a*x[i] + b*y[i];        
 }
 
 template <typename T> void cpuArrayAXY(T *s, T *x, T *y, T a, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         s[i] = a*x[i]*y[i];        
 }
 
 template <typename T> void cpuArrayAXYZ(T *s, T *x, T *y, T *z, T a, int n)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<n; i++) 
         s[i] = a*x[i]*y[i]*z[i];        
 }
 
 template <typename T> void cpuArrayAXYPBZ(T *s, T *x, T *y, T *z, T a, T b, int n)
 {    
-    #pragma omp parallel for    
+    //#pragma omp parallel for    
     for (int i=0; i<n; i++) 
         s[i] = a*x[i]*y[i] + b*z[i];        
 }
 
 template <typename T> void cpuArrayAdd3Vectors(T *s, T *x, T *y, T *z, T a, T b, T c, int n)
 {    
-    #pragma omp parallel for        
+    //#pragma omp parallel for        
     for (int i=0; i<n; i++) 
         s[i] = a*x[i] + b*y[i] + c*z[i];        
 }
@@ -350,7 +350,7 @@ template <typename T> void cpuArrayExtract(T *un, T *u, int I, int J, int K,
     int nk = k2-k1;    
     int M = ni*nj;
     int N = M*nk;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)
     {
         int l = idx%M;        
@@ -369,7 +369,7 @@ template <typename T> void cpuArrayInsert(T *u, T *un, int I, int J, int K,
     int nk = k2-k1;    
     int M = ni*nj;
     int N = M*nk;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)
     {
         int l = idx%M;        
@@ -385,7 +385,7 @@ template <typename T> void cpuArrayGemmBatch(T *C, T *A, T *B, int I, int J, int
     // C[I*J*S] = A[I*K*S] x B[K*J*S]
     int M = I*J;
     int N = M*S;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)
     {
         int l = idx%M;        
@@ -403,7 +403,7 @@ template <typename T> void cpuArrayGemmBatch1(T *C, T *A, T *B, int I, int J, in
     // C[I*J*S] = A[I*K*S] x B[K*J*S] + C[I*J*S]
     int M = I*J;
     int N = M*S;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)
     {
         int l = idx%M;        
@@ -417,7 +417,7 @@ template <typename T> void cpuArrayGemmBatch1(T *C, T *A, T *B, int I, int J, in
 
 template <typename T> void cpuArrayDG2CG(T *ucg, T *udg, int *cgent2dgent, int *rowent2elem, int nent)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<nent; i++)         
     {
         ucg[i] = 0.0;
@@ -430,7 +430,7 @@ template <typename T> void cpuArrayDG2CG(T *ucg, T *udg, int *cgent2dgent, int *
 
 template <typename T> void cpuArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int *rowent2elem, int nent, int npe)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i=0; i<nent; i++)         
     {
         ucg[i] = 0.0;

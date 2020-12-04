@@ -6,7 +6,7 @@ template <typename T> void cpuKron(T *C, T *A, T *B, int M1, int N1, int M2, int
     int M = M1*M2;
     int N = N1*N2;
     int P = M*N;    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<P; idx++)     
     {
         int i = idx%M;
@@ -23,7 +23,7 @@ void cpuIndexPermute12(int *index, int I1, int I2, int I3)
 {                     
     int M = I1*I2;
     int N = M*I3;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)     
     {
         int l = idx%M;
@@ -39,7 +39,7 @@ void cpuIndexPermute13(int *index, int I1, int I2, int I3, int I4)
     int M = I1*I2;
     int N = M*I3;
     int P = N*I4;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<P; idx++)     
     {
         int n = idx%N;
@@ -57,7 +57,7 @@ void cpuIndexPermute23(int *index, int I1, int I2, int I3, int I4)
     int M = I1*I2;
     int N = M*I3;
     int P = N*I4;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<P; idx++)     
     {
         int n = idx%N;
@@ -73,7 +73,7 @@ void cpuIndexPermute23(int *index, int I1, int I2, int I3, int I4)
 
 template <typename T> void cpuPermute(T *B, T *A, int *index, int N)
 {    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)          
         B[index[idx]] = A[idx];            
 }
@@ -81,7 +81,7 @@ template <typename T> void cpuPermute(T *B, T *A, int *index, int N)
 template <typename T> void cpuPermuteSharedMem(T *B, T *A, int *index, int N, int BLOCKDIM)
 {
     T Ashared[BLOCKDIM];     
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)          
     {
         int tx = idx%BLOCKDIM;
@@ -94,7 +94,7 @@ template <typename T> void cpuPermute12(T *B, T *A, int I1, int I2, int I3)
 {            
     int M = I1*I2;
     int N = M*I3;    
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<N; idx++)          
     {
         int l = idx%M;
@@ -110,7 +110,7 @@ template <typename T> void cpuPermute13(T *B, T *A, int I1, int I2, int I3, int 
     int M = I1*I2;
     int N = M*I3;
     int P = N*I4;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<P; idx++) 
     {
         int n = idx%N;
@@ -128,7 +128,7 @@ template <typename T> void cpuPermute23(T *B, T *A, int I1, int I2, int I3, int 
     int M = I1*I2;
     int N = M*I3;
     int P = N*I4;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int idx=0; idx<P; idx++)  
     {
         int n = idx%N;

@@ -78,18 +78,17 @@ template <typename T> void cpuEuler2Rotm(T *R11, T *R12, T *R13, T *R21,
 template void cpuEuler2Rotm(double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, int);
 template void cpuEuler2Rotm(float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, int);
 
-template <typename T> void cpuRotc(T *X, T *Y, T *Z, T *R11, T *R12, T *R13, T *R21, 
-                T *R22, T *R23, T *R31, T *R32, T *R33, T *x, T *y, T *z, int N)
+template <typename T> void cpuRotc(T *X, T *Y, T *Z, T *R, T *x, T *y, T *z, int N)
 {            
     //#pragma omp parallel for
     for (int i=0; i<N; i++) {        
-        X[i] = R11[i]*x[i] + R12[i]*y[i] + R13[i]*z[i];
-        Y[i] = R21[i]*x[i] + R22[i]*y[i] + R23[i]*z[i];
-        Z[i] = R31[i]*x[i] + R32[i]*y[i] + R33[i]*z[i];
+        X[i] = R[0]*x[i] + R[3]*y[i] + R[6]*z[i];
+        Y[i] = R[1]*x[i] + R[4]*y[i] + R[7]*z[i];
+        Z[i] = R[2]*x[i] + R[5]*y[i] + R[8]*z[i];
     }        
 }
-template void cpuRotc(double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, int);
-template void cpuRotc(float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, int);
+template void cpuRotc(double*, double*, double*, double*, double*, double*, double*, int);
+template void cpuRotc(float*, float*, float*, float*, float*, float*, float*, int);
 
 #endif
 

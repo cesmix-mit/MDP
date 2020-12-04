@@ -378,6 +378,265 @@ template void cpuWeightedRadialSphericalHarmonicsDeriv(float*, float*, float*, f
         float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, 
         float*, float*, float*, int, int, int);
 
+template <typename T> void cpuRadialSphericalHarmonicsPower(T *p, T *Sr, T *Si, int *indk, int L, int K)
+{   
+    int K2 = K*(K+1)/2;
+    
+    //#pragma omp parallel for                
+    for (int k=0; k<K2; k++) {
+        int j = indk[k];
+        int i = indk[K2+k];
+        for (int l=0; l<(L+1); l++) {        
+            int m = 0;
+            int i1 = (l*(l+1)/2+m)*K + i;
+            int j1 = (l*(l+1)/2+m)*K + j;
+            int l1 = k*(L+1) + l;
+            p[l1] = Sr[i1]*Sr[j1] + Si[i1]*Si[j1];
+            for (m=1; m<(l+1); m++) {
+                i1 = (l*(l+1)/2+m)*K + i;
+                j1 = (l*(l+1)/2+m)*K + j;
+                p[l1] += 2.0*(Sr[i1]*Sr[j1] + Si[i1]*Si[j1]);            
+            }
+        }
+    }        
+}
+template void cpuRadialSphericalHarmonicsPower(double*, double*, double*, int*, int, int);
+template void cpuRadialSphericalHarmonicsPower(float*, float*, float*, int*, int, int);
+
+template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *Sr, T *Si, 
+        T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, int *indk, int L, int K, int N)
+{   
+    int K2 = K*(K+1)/2;
+    
+    //#pragma omp parallel for                
+    for (int n=0; n<N; n++)       
+        for (int k=0; k<K2; k++) {
+            int j = indk[k];
+            int i = indk[K2+k];
+            for (int l=0; l<(L+1); l++) {        
+                int m = 0;
+                int i1 = (l*(l+1)/2+m)*K + i;
+                int j1 = (l*(l+1)/2+m)*K + j;
+                int l1 = k*(L+1) + l;
+                int i2 = (l*(l+1)/2+m)*N*K + i*N + n;      
+                int j2 = (l*(l+1)/2+m)*N*K + j*N + n;      
+                //p[l1] = Sr[i1]*Sr[j1] + Si[i1]*Si[j1];
+                px[l1*N + n] = Sr[i1]*Srx[j2] + Srx[i2]*Sr[j1] + Si[i1]*Six[j2] + Six[i2]*Si[j1];
+                py[l1*N + n] = Sr[i1]*Sry[j2] + Sry[i2]*Sr[j1] + Si[i1]*Siy[j2] + Siy[i2]*Si[j1];
+                pz[l1*N + n] = Sr[i1]*Srz[j2] + Srz[i2]*Sr[j1] + Si[i1]*Siz[j2] + Siz[i2]*Si[j1];
+                for (m=1; m<(l+1); m++) {
+                    i1 = (l*(l+1)/2+m)*K + i;
+                    j1 = (l*(l+1)/2+m)*K + j;
+                    i2 = (l*(l+1)/2+m)*N*K + i*N + n;      
+                    j2 = (l*(l+1)/2+m)*N*K + j*N + n;                         
+                    //p[l1] += 2.0*(Sr[i1]*Sr[j1] + Si[i1]*Si[j1]);         
+                    px[l1*N + n] += 2*(Sr[i1]*Srx[j2] + Srx[i2]*Sr[j1] + Si[i1]*Six[j2] + Six[i2]*Si[j1]);
+                    py[l1*N + n] += 2*(Sr[i1]*Sry[j2] + Sry[i2]*Sr[j1] + Si[i1]*Siy[j2] + Siy[i2]*Si[j1]);
+                    pz[l1*N + n] += 2*(Sr[i1]*Srz[j2] + Srz[i2]*Sr[j1] + Si[i1]*Siz[j2] + Siz[i2]*Si[j1]);
+                }
+            }
+        }        
+}
+template void cpuRadialSphericalHarmonicsPowerDeriv(double*, double*, double*, double*, double*, double*, 
+        double*, double*, double*, double*, double*, int*, int, int, int);
+template void cpuRadialSphericalHarmonicsPowerDeriv(float*, float*, float*, float*, float*, float*,  
+        float*, float*, float*, float*, float*, int*, int, int, int);
+
+template <typename T> void cpuRadialSphericalHarmonicsBispectrum(T *b, T *Sr, T *Si, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int K, int L, int M)
+{   
+    int K2 = K*(K+1)/2;
+    
+    //#pragma omp parallel for                
+    for (int k=0; k<K2; k++) {
+        int k2 = indk[k];
+        int k1 = indk[K2+k];
+        for (int i=0; i<L; i++) {        
+            int l2 = indl[i];
+            int l1 = indl[L+i];
+            int l = indl[2*L+i];     
+            T tmp = 0;
+            int nm = rowm[i+1]-rowm[i];
+            for (int j = 0; j<nm; j++) {
+                int m2 = indm[rowm[i]+j];
+                int m1 = indm[M+rowm[i]+j];
+                int m = indm[2*M + rowm[i]+j];                                
+                
+                int mm = (m>=0) ? m : -m;
+                int mm1 = (m1>=0) ? m1 : -m1;
+                int mm2 = (m2>=0) ? m2 : -m2;                
+                int i1 = (l*(l+1)/2+mm)*K + k1;
+                int i2 = (l1*(l1+1)/2+mm1)*K + k2;
+                int i3 = (l2*(l2+1)/2+mm2)*K + k2;
+                
+                T a1, b1, c1, a2, b2, c2, a3, b3, c3;
+                c1 = ( mm % 2 == 0) ?  1.0 : -1.0;
+                c2 = ( mm1 % 2 == 0) ?  1.0 : -1.0;
+                c3 = ( mm2 % 2 == 0) ?  1.0 : -1.0;
+                    
+                if (m>=0) {                                        
+                    a1 = Sr[i1];
+                    b1 = Si[i1];
+                }
+                else {                                       
+                    a1 =-c1*Sr[i1];
+                    b1 = c1*Si[i1];
+                }                
+                if (m1>=0) {
+                    a2 = Sr[i2];
+                    b2 = Si[i2];
+                }
+                else {                    
+                    a2 = -c2*Sr[i2];
+                    b2 =  c2*Si[i2];
+                }                
+                if (m2>=0) {
+                    a3 = Sr[i3];
+                    b3 = Si[i3];
+                }
+                else {                    
+                    a3 = -c3*Sr[i3];
+                    b3 =  c3*Si[i3];
+                }                                                                
+                tmp = tmp + cg[rowm[i]+j]*(a1*a2*a3 + a2*b1*b3 + a3*b1*b2 - a1*b2*b3);                              
+            }               
+            b[i+k*L] = tmp;                           
+        }
+    }        
+}
+template void cpuRadialSphericalHarmonicsBispectrum(double*, double*, double*, double*, int*, int*, int*, int*, int, int, int);
+template void cpuRadialSphericalHarmonicsBispectrum(float*, float*, float*, float*, int*, int*, int*, int*, int, int, int);
+
+template <typename T> void cpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, T *Sr, T *Si, 
+        T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int L, int K, int M, int N)
+{   
+    int K2 = K*(K+1)/2;
+    
+    //#pragma omp parallel for                
+    for (int n=0; n<N; n++)       
+        for (int k=0; k<K2; k++) {
+            int k2 = indk[k];
+            int k1 = indk[K2+k];
+            for (int i=0; i<L; i++) {        
+                int l2 = indl[i];
+                int l1 = indl[L+i];
+                int l = indl[2*L+i];     
+                int ii = (i+k*L)*N + n;
+                bx[ii] = 0.0;
+                by[ii] = 0.0;
+                bz[ii] = 0.0;
+                int nm = rowm[i+1]-rowm[i];
+                for (int j = 0; j<nm; j++) {
+                    int m2 = indm[rowm[i]+j];
+                    int m1 = indm[M+rowm[i]+j];
+                    int m = indm[2*M + rowm[i]+j];      
+                    int mm = (m>=0) ? m : -m;
+                    int mm1 = (m1>=0) ? m1 : -m1;
+                    int mm2 = (m2>=0) ? m2 : -m2;         
+                    int i1 = (l*(l+1)/2+mm)*K + k1;
+                    int i2 = (l1*(l1+1)/2+mm1)*K + k2;
+                    int i3 = (l2*(l2+1)/2+mm2)*K + k2;                    
+                    int mlk1 = (l*(l+1)/2+mm)*N*K + k1*N + n;      
+                    int mlk2 = (l1*(l1+1)/2+mm1)*N*K + k2*N + n;       
+                    int mlk3 = (l2*(l2+1)/2+mm2)*N*K + k2*N + n;                                             
+                    
+                    T a1, b1, c1, a2, b2, c2, a3, b3, c3;
+                    T a1x, b1x, a2x, b2x, a3x, b3x;
+                    T a1y, b1y, a2y, b2y, a3y, b3y;
+                    T a1z, b1z, a2z, b2z, a3z, b3z;
+                    c1 = ( mm % 2 == 0) ?  1.0 : -1.0;
+                    c2 = ( mm1 % 2 == 0) ?  1.0 : -1.0;
+                    c3 = ( mm2 % 2 == 0) ?  1.0 : -1.0;
+        
+                    if (m>=0) {                    
+                        a1 = Sr[i1];
+                        b1 = Si[i1];
+                        a1x = Srx[mlk1];
+                        a1y = Sry[mlk1];
+                        a1z = Srz[mlk1];
+                        b1x = Six[mlk1];
+                        b1y = Siy[mlk1];
+                        b1z = Siz[mlk1];
+                    }
+                    else {                   
+                        a1 = -c1*Sr[i1];
+                        b1 =  c1*Si[i1];
+                        a1x = -c1*Srx[mlk1];
+                        a1y = -c1*Sry[mlk1];
+                        a1z = -c1*Srz[mlk1];
+                        b1x = c1*Six[mlk1];
+                        b1y = c1*Siy[mlk1];
+                        b1z = c1*Siz[mlk1];
+                    }                
+                    if (m1>=0) {
+                        a2 = Sr[i2];
+                        b2 = Si[i2];
+                        a2x = Srx[mlk2];
+                        a2y = Sry[mlk2];
+                        a2z = Srz[mlk2];
+                        b2x = Six[mlk2];
+                        b2y = Siy[mlk2];
+                        b2z = Siz[mlk2];
+                    }
+                    else {
+                        a2 = -c2*Sr[i2];
+                        b2 =  c2*Si[i2];
+                        a2x = -c2*Srx[mlk2];
+                        a2y = -c2*Sry[mlk2];
+                        a2z = -c2*Srz[mlk2];
+                        b2x = c2*Six[mlk2];
+                        b2y = c2*Siy[mlk2];
+                        b2z = c2*Siz[mlk2];
+                    }                
+                    if (m2>=0) {
+                        a3 = Sr[i3];
+                        b3 = Si[i3];
+                        a3x = Srx[mlk3];
+                        a3y = Sry[mlk3];
+                        a3z = Srz[mlk3];
+                        b3x = Six[mlk3];
+                        b3y = Siy[mlk3];
+                        b3z = Siz[mlk3];
+                    }
+                    else {
+                        a3 = -c3*Sr[i3];
+                        b3 =  c3*Si[i3];
+                        a3x = -c3*Srx[mlk3];
+                        a3y = -c3*Sry[mlk3];
+                        a3z = -c3*Srz[mlk3];
+                        b3x = c3*Six[mlk3];
+                        b3y = c3*Siy[mlk3];
+                        b3z = c3*Siz[mlk3];
+                    }                                                                
+                    T c = cg[rowm[i]+j];
+                    
+                    //tmp = tmp + cg[rowm[i]+j]*(a1*a2*a3 + a2*b1*b3 + a3*b1*b2 - a1*b2*b3);                    
+                    T t1 = a1x*a2*a3 + a1*a2x*a3 + a1*a2*a3x;                
+                    T t2 = a2x*b1*b3 + a2*b1x*b3 + a2*b1*b3x;
+                    T t3 = a3x*b1*b2 + a3*b1x*b2 + a3*b1*b2x;
+                    T t4 = a1x*b2*b3 + a1*b2x*b3 + a1*b2*b3x;
+                    bx[ii] = bx[ii] + c*(t1 + t2 + t3 - t4);
+                    
+                    t1 = a1y*a2*a3 + a1*a2y*a3 + a1*a2*a3y;                
+                    t2 = a2y*b1*b3 + a2*b1y*b3 + a2*b1*b3y;
+                    t3 = a3y*b1*b2 + a3*b1y*b2 + a3*b1*b2y;
+                    t4 = a1y*b2*b3 + a1*b2y*b3 + a1*b2*b3y;
+                    by[ii] = by[ii] + c*(t1 + t2 + t3 - t4);
+                    
+                    t1 = a1z*a2*a3 + a1*a2z*a3 + a1*a2*a3z;                
+                    t2 = a2z*b1*b3 + a2*b1z*b3 + a2*b1*b3z;
+                    t3 = a3z*b1*b2 + a3*b1z*b2 + a3*b1*b2z;
+                    t4 = a1z*b2*b3 + a1*b2z*b3 + a1*b2*b3z;
+                    bz[ii] = bz[ii] + c*(t1 + t2 + t3 - t4);
+                }
+            }            
+        }        
+}
+template void cpuRadialSphericalHarmonicsBispectrumDeriv(double*, double*, double*, double*, double*, double*, 
+        double*, double*, double*, double*, double*, double*, int*, int*, int*, int*, int, int, int, int);
+template void cpuRadialSphericalHarmonicsBispectrumDeriv(float*, float*, float*, float*, float*, float*,  
+        float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, int, int, int, int);
 
 #endif
 
