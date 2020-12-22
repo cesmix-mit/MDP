@@ -56,6 +56,7 @@ using namespace std;
 #include "../Core/commonCore.cpp" 
 #include "../Core/opuArrayPermute.cpp" 
 #include "../Core/opuArrayOperations.cpp" 
+#include "../Core/opuElemFaceNode.cpp" 
 
 #include "../Core/cpuCoordinateTransformations.cpp" 
 #include "../Core/cpuPrecompute.cpp" 
@@ -64,6 +65,14 @@ using namespace std;
 //#include "../preprocessing/readbinaryfiles.cpp"
 
 #include "../Descriptors/SphericalHarmonics.cpp"
+
+// #include "../Core/cpuArrayPermute.cpp" 
+// #include "../Core/cpuArrayOperations.cpp" 
+
+// #include "../Discretization/discretization.cpp" // discretization class
+// #include "../Preconditioning/preconditioner.cpp" // preconditioner class
+// #include "../Solver/solver.cpp"                 // solver class
+// #include "../Solution/solution.cpp"             // solution class
 
 int main(int argc, char** argv) 
 {   
@@ -172,40 +181,51 @@ int main(int argc, char** argv)
         
     cpuArraySphere2Cart(x, y, z, the, phi, r, n);
     
-    int K = 5, L = 3;
-    int L2 = (L+1)*(L+1); 
-    int numneigh[2];
-    numneigh[1] = n;
-    numneigh[0] = 0;
-    
-    CSphericalHarmonics shobj(K, L, backend);
-    
-    dstype sr[n*K*L2], si[n*K*L2];
-    dstype ar[K*L2], ai[K*L2];    
-    dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
-    dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
-    shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
-    shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
-    shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
-    
-    dstype p[(L+1)*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
-    
-    dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
-        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-    
-    int Nub = shobj.Nub;
-    dstype b[Nub*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
-            
-    dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
-        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-    
-    
-    
-    
+//     CSphericalHarmonics shobj(K, L, 0);
+// //     cout<<Nub<<" "<<Ncg<<endl;
+// //     cout<<shobj.Nub<<" "<<shobj.Ncg<<endl;
+// 
+//     //printArray2D(shobj.sh.indk, 1, K*(K+1)/2, 0);    
+//     //printArray2D(shobj.sh.indm, Ncg, 3, 0);    
+//     
+//     dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
+//     dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];;    
+//     shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);        
+//     opuArrayAXPBY(Srx, Srx, arx, 1.0, -1.0, n*K*L2);
+//     opuArrayAbs(Srx, Srx, n*K*L2);    
+//     cout<<opuArrayMax(Srx, n*K*L2)<<endl;
+//     
+//     int numneigh[2];
+//     numneigh[1] = n;
+//     numneigh[0] = 0;
+//     dstype sr[n*K*L2], si[n*K*L2];
+//     shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
+//     shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
+//     dstype ptm[(L+1)*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsPower(ptm, ar, ai, 1);    
+//     opuArrayAXPBY(ptm, ptm, p, 1.0, -1.0, (L+1)*K*(K+1)/2);
+//     opuArrayAbs(ptm, ptm, (L+1)*K*(K+1)/2);    
+//     cout<<opuArrayMax(ptm, (L+1)*K*(K+1)/2)<<endl;
+//     
+//     dstype ptx[n*(L+1)*K*(K+1)/2], pty[n*(L+1)*K*(K+1)/2], ptz[n*(L+1)*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsPowerDeriv(ptx, pty, ptz, ar, ai, 
+//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+//     opuArrayAXPBY(pty, pty, py, 1.0, -1.0, n*(L+1)*K*(K+1)/2);
+//     opuArrayAbs(pty, pty, n*(L+1)*K*(K+1)/2);    
+//     cout<<opuArrayMax(pty, n*(L+1)*K*(K+1)/2)<<endl;
+//     
+//     dstype bt[Nub*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsBispectrum(bt, ar, ai, 1);        
+//     opuArrayAXPBY(bt, bt, bi, 1.0, -1.0, Nub*K*(K+1)/2);
+//     opuArrayAbs(bt, bt, Nub*K*(K+1)/2);    
+//     cout<<opuArrayMax(bt, Nub*K*(K+1)/2)<<endl;    
+//         
+//     dstype btx[n*Nub*K*(K+1)/2], bty[n*Nub*K*(K+1)/2], btz[n*Nub*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsBispectrumDeriv(btx, bty, btz, ar, ai, 
+//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+//     opuArrayAXPBY(btz, btz, bz, 1.0, -1.0, n*Nub*K*(K+1)/2);
+//     opuArrayAbs(btz, btz, n*Nub*K*(K+1)/2);    
+//     cout<<opuArrayMax(btz, n*Nub*K*(K+1)/2)<<endl;
     
 //     string filename = "besselzeros.bin";
 //     ifstream fin(filename.c_str(), ios::in | ios::binary);    

@@ -414,7 +414,10 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y,
     // The total number of spherical Bessel functions is K*(L+1).
         
     // Hence, the total number of spherical harmonics Bessel functions is K*(L+1)*(L+1).            
-            
+        
+    //cout<<L<<" "<<K<<" "<<N<<endl;    
+    printarr(x0, L+1, K);    
+    
     //#pragma omp parallel for    
     for (int i=0; i<N; i++) { // loop over each neighbor atom               
         int k, j, jm;
@@ -727,7 +730,7 @@ template <typename T> void cpuSphericalHarmonicsBesselSum(T *Sr, T *Si, T *x, T 
         Si[i] = 0.0;
     }
         
-    //printarr(x0, L+1, K);    
+    printarr(x0, L+1, K);    
     
     //#pragma omp parallel for    
     for (int i=0; i<N; i++) { // loop over each neighbor atom               
@@ -1555,12 +1558,12 @@ template <typename T> void cpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T 
             int l = indl[2*Nub+i];                 
             int nm = rowm[i+1]-rowm[i];
             for (int n=0; n<Na; n++) {  // loop over each atom          
-                int indn = (k*Nub + i)*Na + n; // global index of atom n
-                b[indn] = (T) 0.0;
+                int l1 = (k*Nub + i)*Na + n; // global index of atom n
+                b[l1] = (T) 0.0;
                 for (int j = 0; j<nm; j++) {
                     int m2 = indm[rowm[i]+j];
                     int m1 = indm[Ncg+rowm[i]+j];
-                    int m = indm[2*Ncg + rowm[i]+j];                  
+                    int m = indm[2*Ncg + rowm[i]+j];                                
                     T a1, b1, a2, b2, a3, b3;                                
                     a1 = ar[((l*l + l + m)*K + k1)*Na + n];
                     b1 = ai[((l*l + l + m)*K + k1)*Na + n];
@@ -1568,7 +1571,7 @@ template <typename T> void cpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T 
                     b2 = ai[((l1*l1 + l1 + m1)*K + k2)*Na + n];
                     a3 = ar[((l2*l2 + l2 + m2)*K + k2)*Na + n];
                     b3 = ai[((l2*l2 + l2 + m2)*K + k2)*Na + n];
-                    b[indn] += cg[rowm[i]+j]*(a1*a2*a3 + a2*b1*b3 + a3*b1*b2 - a1*b2*b3);                                              
+                    b[l1] += cg[rowm[i]+j]*(a1*a2*a3 + a2*b1*b3 + a3*b1*b2 - a1*b2*b3);                                              
                 }                                
             }
         }
@@ -1635,9 +1638,9 @@ template <typename T> void cpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *
                         int lm1 = n1*Na + n; // index of ar and ai 
                         int lm2 = n2*Na + n; // index of ar and ai                                         
                         int lm3 = n3*Na + n; // index of ar and ai                                                                 
-                        int mlk1 = n1*N + Nnb[n] + q; // index of arx and aix      
-                        int mlk2 = n2*N + Nnb[n] + q; // index of arx and aix            
-                        int mlk3 = n3*N + Nnb[n] + q; // index of arx and aix                                                  
+                        int mlk1 = n1*N + Nnb[n] + i; // index of arx and aix      
+                        int mlk2 = n2*N + Nnb[n] + i; // index of arx and aix            
+                        int mlk3 = n3*N + Nnb[n] + i; // index of arx and aix                                                  
                         
                         T c = cg[rowm[i]+j];                    
                         T a1, b1, a2, b2, a3, b3;                                

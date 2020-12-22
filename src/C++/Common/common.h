@@ -373,6 +373,7 @@ struct commonstruct {
     
     dstype rmincut;  // min cutoff for all atom types
     dstype rmaxcut;  // max cutoff for all atom types
+    dstype pi = M_PI; // Pi  number
     
     cudaEvent_t eventHandle;
     cublasHandle_t cublasHandle;
@@ -388,13 +389,14 @@ struct commonstruct {
 };
 
 struct appstruct {              
-    Int *flags=NULL;   // flag parameters    
-    dstype *fac;       // factorial    
+    Int *flags=NULL;        // flag parameters    
+    dstype *fac=NULL;       // factorial    
+    dstype *bzeros=NULL;    // zeros of spherical Bessel functions
     dstype *physicsparam=NULL; // physical parameters
     dstype *solversparam=NULL; // solvers parameters
     
-    dstype *rminsq;  // square of the minimum cutoff radii between two different types of atom
-    dstype *rmaxsq;  // square of the maximum cutoff radii between two different types of atom
+    dstype *rminsq=NULL;  // square of the minimum cutoff radii between two different types of atom
+    dstype *rmaxsq=NULL;  // square of the maximum cutoff radii between two different types of atom
     dstype *atomweights=NULL; // weight per atom type
     dstype *interatomweights=NULL; // weight for the interaction between two different types of atom
     dstype *moleculeweights=NULL; // weight per molecule type
@@ -406,6 +408,7 @@ struct appstruct {
        if (hostmemory==1) {
             CPUFREE(flags);    
             CPUFREE(fac);            
+            CPUFREE(bzeros);            
             CPUFREE(physicsparam);
             CPUFREE(solversparam);
             CPUFREE(rminsq);
@@ -418,7 +421,8 @@ struct appstruct {
 #ifdef HAVE_CUDA      
        else {
             GPUFREE(flags);    
-            GPUFREE(fac);            
+            GPUFREE(fac);         
+            CPUFREE(bzeros);            
             GPUFREE(physicsparam);
             GPUFREE(solversparam);
             GPUFREE(rminsq);
@@ -432,10 +436,63 @@ struct appstruct {
     }
 };
 
-struct neighborstruct {  
-  Int *ilist;          // local indices of I atoms
-  Int *numneigh;       // number of J neighbors for each I atom  
-  Int *ptrneigh;       // local indices of J neighbors    
+// struct neighborstruct {  
+//   Int *ilist;          // local indices of I atoms
+//   Int *numneigh;       // number of J neighbors for each I atom  
+//   Int *ptrneigh;       // local indices of J neighbors    
+// };
+
+struct shstruct {  
+    Int *indk=NULL;
+    Int *indl=NULL;        
+    Int *indm=NULL;       
+    Int *rowm=NULL;    
+  
+    dstype *fac=NULL;
+    dstype *cg=NULL;
+    dstype *x0=NULL;
+    dstype *f=NULL;
+    dstype *P=NULL;
+    dstype *tmp=NULL;
+    dstype *df=NULL;
+    dstype *dP=NULL;
+    dstype *dtmp=NULL;   
+    
+    void freememory(Int backend)
+    {
+       if (backend<=1) {
+            CPUFREE(indk); 
+            CPUFREE(indl); 
+            CPUFREE(indm); 
+            CPUFREE(rowm); 
+            CPUFREE(fac); 
+            CPUFREE(cg); 
+            CPUFREE(x0);             
+            CPUFREE(f);             
+            CPUFREE(P);             
+            CPUFREE(tmp);             
+            CPUFREE(df);             
+            CPUFREE(dP);             
+            CPUFREE(dtmp);             
+        }            
+#ifdef HAVE_CUDA      
+       else {
+            GPUFREE(indk); 
+            GPUFREE(indl); 
+            GPUFREE(indm); 
+            GPUFREE(rowm); 
+            GPUFREE(fac); 
+            GPUFREE(cg); 
+            GPUFREE(x0);             
+            GPUFREE(f);             
+            GPUFREE(P);             
+            GPUFREE(tmp);             
+            GPUFREE(df);             
+            GPUFREE(dP);             
+            GPUFREE(dtmp);             
+       }
+#endif       
+    }                         
 };
 
 struct sysstruct {        

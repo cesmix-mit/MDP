@@ -1,0 +1,91 @@
+#ifndef __SPHERICALHARMONICS_H__
+#define __SPHERICALHARMONICS_H__
+
+class CSphericalHarmonics {
+private:
+public:
+    shstruct sh;        
+    Int L; 
+    Int K;
+    Int Nub;
+    Int Ncg;
+        
+    // constructor for both CPU and GPU
+    CSphericalHarmonics(Int Kin, Int Lin, Int backend); 
+    
+    // destructor        
+    ~CSphericalHarmonics(); 
+    
+    // constructor for both CPU and GPU
+    void Init(Int Kin, Int Lin, Int backend); 
+    
+    SphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *x, dstype *y, dstype *z, N);
+    
+//     template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y, T *z, 
+//                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N)
+
+//     int M = (L+1)*(L+2)/2;
+//     int L2 = (L+1)*(L+1); 
+//     int indk[K*(K+1)];
+//     int indl[Nub*3];
+//     int indm[Ncg*3];
+//     int rowm[Nub+1];    
+//     dstype P[M];
+//     dstype tmp[M];
+//     dstype Sr[L2];
+//     dstype Si[L2];        
+//     dstype f[L+1];
+//     dstype x0[(L+1)*K];
+//     dstype df[L+1];
+//     dstype dP[M];
+//     dstype dtmp[M];
+//     dstype b[L2*(L+1)];
+//     dstype cg[Ncg];
+//     
+//     GetIndk(Int *indk, Int K);    
+//     cpuSphericalHarmonicsSum(Sr, Si, x, y, z, P, tmp, fac, M_PI, L, n);
+//     cpuSphericalHarmonicsBispectrum(b, Sr, Si, fac, L);    
+//     int Nub = cpuSphericalHarmonicsBispectrumIndex(b, L);
+//     int indl[Nub*3];
+//     cpuSphericalHarmonicsBispectrumIndex(indl, b, Nub, L);    
+//     int Ncg = cgcoefficients(indl, Nub);
+//     int indm[Ncg*3];
+//     int rowm[Nub+1];
+//     dstype cg[Ncg];
+//     cgcoefficients(cg, indm, rowm, indl, fac, Ncg, Nub);    
+//     
+//     // cg, indk, indm, rowm, indl, P, tmp
+//             
+//     dstype Sr[K*L2];
+//     dstype Si[K*L2];
+//     cpuSphericalHarmonicsBesselSum(Sr, Si, x, y, z, x0, P, tmp, f, fac, M_PI, L, K, n);
+//     
+//     dstype Sr[n*K*L2];
+//     dstype Si[n*K*L2];
+//     cpuSphericalHarmonicsBessel(Sr, Si, x, y, z, x0, P, tmp, f, fac, M_PI, L, K, n);
+//     
+//     dstype p[(L+1)*K*(K+1)/2];
+//     cpuRadialSphericalHarmonicsPower(p, Sr, Si, indk, L, K);
+//     
+//     dstype bi[Nub*K*(K+1)/2];
+//     cpuRadialSphericalHarmonicsBispectrum(bi, Sr, Si, cg, indk, indl,
+//         indm, rowm, Nub, Ncg, K);
+// 
+//     
+//     dstype Srx[n*K*L2], Sry[n*K*L2], Srz[n*K*L2];
+//     dstype Six[n*K*L2], Siy[n*K*L2], Siz[n*K*L2];;    
+//     cpuSphericalHarmonicsBesseDeriv(Srx, Six, Sry, Siy, Srz, Siz, x, y, z, 
+//                 x0, P, tmp, f, dP, dtmp, df, fac, M_PI, L, K, n);    
+//     
+//     dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
+//     cpuRadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
+//         Srx, Six, Sry, Siy, Srz, Siz, indk, L, K, n);        
+//     
+//     dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
+//     cpuRadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
+//         Srx, Six, Sry, Siy, Srz, Siz, cg, indk, indl, indm, rowm, Nub, Ncg, K, n);    
+};
+
+
+#endif        
+
