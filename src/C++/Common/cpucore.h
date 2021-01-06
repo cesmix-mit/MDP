@@ -69,14 +69,56 @@ template <typename T> void cpuArrayGemmBatch1(T *C, T *A, T *B, int I, int J, in
 template <typename T> void cpuArrayDG2CG(T *ucg, T *udg, int *cgent2dgent, int *rowent2elem, int nent);
 template <typename T> void cpuArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int *rowent2elem, int nent, int npe);
 
-template <typename T> void cpuGetElemNodes(T *un, T *u, int np, int nc, int nc1, int nc2, int e1, int e2);
-template <typename T> void cpuPutElemNodes(T *u, T *un, int np, int nc, int nc1, int nc2, int e1, int e2);
-template <typename T> void cpuGetElemNodes2(T *un, T *u, int np, int nc, int nc1, int nc2, int e1, int e2);
-template <typename T> void cpuPutElemNodes2(T *u, T *un, int np, int nc, int nc1, int nc2, int e1, int e2);
-template <typename T> void cpuGetFaceNodes(T *uh, T *udg, int *facecon, int npf, int ncu, int npe, int nc, int f1, int f2, int opts);
-template <typename T> void cpuPutFaceNodes(T *udg, T *uh, int *facecon, int npf, int ncu, int npe, int nc, int f1, int f2, int opts);
-template <typename T> void cpuPutFaceNodes(T *udg, T *uh, int *rowe2f1, int *cole2f1, int *ent2ind1,
-        int *rowe2f2, int *cole2f2, int *ent2ind2, int npf, int npe, int nc, int e1, int e2, int opts);
+template <typename T> void cpuCart2Sphere(T *the, T *phi, T *r, T *x, T *y, T *z, int N);
+template <typename T> void cpuCart2SphereDeriv(T *the, T *phi, T *r, T *thex, T *they, T *thez, T *phix, T *phiy, T *phiz, T *rx, T *ry, T *rz, T *x, T *y, T *z, int N);
+template <typename T> void cpuSphere2Cart(T *x, T *y, T *z, T *the, T *phi, T *r, int N);
+template <typename T> void cpuEuler2Rotm(T *R11, T *R12, T *R13, T *R21, 
+                T *R22, T *R23, T *R31, T *R32, T *R33, T *alpha, T *beta, T *gamma, int N);
+template <typename T> void cpuRotc(T *X, T *Y, T *Z, T *R, T *x, T *y, T *z, int N);
+
+void cpuGetIndk(int *indk, int K);
+template <typename T> T clebschgordan(int j1, int m1, int j2, int m2, int j, int m, T *fac);
+int cgcoefficients(int *indl, int N);
+template <typename T> void cgcoefficients(T *cg, int *indm, int *rowm, int *indl, T *fac, int M, int N);
+template <typename T> void cpuSphericalHarmonicsBispectrum(T *b, T *Sr, T *Si, T *fac, int L);
+template <typename T> int cpuSphericalHarmonicsBispectrumIndex(T *b, int L);
+template <typename T> void cpuSphericalHarmonicsBispectrumIndex(int *indl, T *b, int M, int L);
+template <typename T> void cpuSphericalBessel(T *g, T *x, T *y, T *z, T *x0, T *f, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonics(T *Ylmr, T *Ylmi, T *x, T *y, T *z, 
+                T *P, T *tmp, T *fac, T pi, int L, int N);
+template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsSum(T *Ylmr, T *Ylmi, T *x, T *y, T *z, 
+                T *P, T *tmp, T *fac, T pi, int L, int N);
+template <typename T> void cpuSphericalHarmonicsSum(T *Sr, T *Si, T *Ylmr, T *Ylmi, int L, int N);
+template <typename T> void cpuRadialSphericalHarmonicsSum(T *Sr, T *Si, T *Ylmr, T *Ylmi, T *g, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsBesselSum(T *Sr, T *Si, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int L, int K);
+template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int L, int K, int N);
+template <typename T> void cpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, int *indl,
+        int *indm, int *rowm, int Nub, int Ncg, int K);
+template <typename T> void cpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int Nub, int Ncg, int K, int N);
+template <typename T> void cpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T *Si, 
+        int *Nnb, int Na, int L, int K);
+template <typename T> void cpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int Na, int L, int K);
+template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K);
+template <typename T> void cpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
+        int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K);
+template <typename T> void cpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K);
+template <typename T> void cpuRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
+        int Ntype, int Na, int Nbf);
+template <typename T> void cpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, T *cx, T *cy, T *cz,
+        int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
+
 
 #endif  
 

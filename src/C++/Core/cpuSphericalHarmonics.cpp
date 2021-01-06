@@ -1,17 +1,17 @@
 #ifndef __CPUSPHERICALHARMONICS
 #define __CPUSPHERICALHARMONICS
 
-template <typename T>void printarr(T* a, Int m, Int n)
-{    
-    for (Int i=0; i<m; i++) {
-        for (Int j=0; j<n; j++)
-            cout << scientific << a[j*m+i] << "   ";
-        cout << endl;
-    }
-    cout << endl;
-}
-template void printarr(double*, int, int);
-template void printarr(float*, int, int);
+// template <typename T>void printarr(T* a, Int m, Int n)
+// {    
+//     for (Int i=0; i<m; i++) {
+//         for (Int j=0; j<n; j++)
+//             cout << scientific << a[j*m+i] << "   ";
+//         cout << endl;
+//     }
+//     cout << endl;
+// }
+// template void printarr(double*, int, int);
+// template void printarr(float*, int, int);
 
 // core function
 void cpuGetIndk(int *indk, int K)
@@ -1704,10 +1704,10 @@ template <typename T> void cpuRadialSphericalHarmonicsBasis(T *d, T *c, int *ato
     // Ntype                : number of atom types 
     // Na                   : number of atoms in the simulation domain 
     // Nbf                  : number of basis functions per atom type    
-    // atomtype [Ng]        : a list containing the types of atoms
-    // c        [Ng*Nbf]    : spectrum components for all atoms
+    // atomtype [Ntype]     : a list containing the types of atoms
+    // c        [Na*Nbf]    : spectrum components for all atoms
     // d        [Nbf*Ntype] : basis functions based on atom types
-    
+        
     for (int t=0; t< Ntype; t++) // for each atom type
         for (int m=0; m<Nbf; m++) // for each basis function
         {
@@ -1735,6 +1735,7 @@ template <typename T> void cpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T
     // N = Nnb[Na]-Nnb[0] : total number of neighbors     
     // atomtype [Na]        : a list containing the types of atoms
     // neighborlist [N]     : a list containing the indices of neighbors
+    // Nnb [Na+1]           : a list containing the number of neighbors for each global atom    
     // c [Na*Nbf]           : spectrum components for all atoms
     // d [Nbf*Ntype]        : basis functions based on atom types
     // cx, cy, cz [N*Nbf]   : derivatives of spectrum components  

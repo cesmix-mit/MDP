@@ -165,7 +165,7 @@ template void gpuSphericalHarmonicsBessel(float*, float*, float*, float*, float*
         float*, float*, float*, float*, float, int, int, int);
 
 // core function
-template <typename T> __global__ void gpuSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
+template <typename T> __global__ void gpuKernelSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
                 T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N)
 {                        
     // L                      : the maximum degree of spherical harmonics
@@ -461,8 +461,8 @@ template void gpuSphericalHarmonicsBesselDeriv(float*, float*, float*, float*, f
         float*, float*, float*, float*, float*, float*, float*, float*, float, int, int, int);
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T *Si, 
-        int *Nnb, int N, int N1, int N2, int N3)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T *Si, 
+        int *Nnb, int K, int N, int Na, int N2, int N3)
 {                            
     // L                         : the maximum degree of spherical harmonics
     // K                         : the maximum degree of spherical Bessel functions
@@ -480,9 +480,9 @@ template <typename T> void gpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T
     while (tid < N3) { 
         int q = tid%N2;     // [1, Na*K]           
         int l = (tid-q)/N2; // spherical basis index [1, L2] 
-        int n = q%N1;       // atom index n [1, Na] 
-        int k = (q-n)/N1;   // radial basis index [1, K]                
-        int j = (l*K + k)*N1 + n; // index of atom n
+        int n = q%Na;       // atom index n [1, Na] 
+        int k = (q-n)/Na;   // radial basis index [1, K]                
+        int j = (l*K + k)*Na + n; // index of atom n
         int m = (l*K + k)*N + (Nnb[n]-Nnb[0]); //  starting index of neighbors
         ar[j] = 0.0; 
         ai[j] = 0.0;
@@ -501,19 +501,19 @@ template <typename T> void gpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T
     int N = Nnb[Na]-Nnb[0]; // total number of neighbors 
     int N1 = Na;            // number of atoms in the simulation domain
     int N2 = K*Na;
-    int N3 = L2*K*Na;            
-            
+    int N3 = L2*K*Na;                        
     int blockDim = 256;
-    int gridDim = (N + blockDim - 1) / blockDim;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
-    gpuKernelRadialSphericalHarmonicsSum<<<gridDim, blockDim>>>(ar, ai, Sr, Si, Nnb, N, N1, N2, N3);
+    gpuKernelRadialSphericalHarmonicsSum<<<gridDim, blockDim>>>(ar, ai, Sr, Si, Nnb, K, N, N1, N2, N3);
 }
 template void gpuRadialSphericalHarmonicsSum(double*, double*, double*, double*, int*, int, int, int);
 template void gpuRadialSphericalHarmonicsSum(float*, float*, float*, float*, int *, int, int, int);
 
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int Na, int L, int K)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, 
+        int L, int K, int K2, int Na, int N2, int N3)
 {   
     // L                      : the maximum degree of spherical harmonics
     // K                      : the maximum degree of spherical Bessel functions
@@ -525,30 +525,42 @@ template <typename T> void gpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, 
     
     // Compute the power spectrum components for radial spherical harmonics
     
-    int K2 = K*(K+1)/2;    
-    //#pragma omp parallel for    
-    for (int k=0; k<K2; k++) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N3) { 
+        int q = tid%N2;     // [1, Na*(L+1)]           
+        int k = (tid-q)/N2; // spherical basis index [1, K2] 
+        int n = q%Na;       // atom index n [1, Na] 
+        int l = (q-n)/Na;   // radial basis index [1, (L+1)]                      
         int k2 = indk[k];
         int k1 = indk[K2+k];
-        for (int l=0; l<(L+1); l++) { // loop over orbital quantum number
-            for (int n=0; n<Na; n++) {  // loop over each atom          
-                int l1 = (k*(L+1) + l)*Na + n; // global index of atom n
-                p[l1] = (T) 0.0;
-                for (int m=0; m<(2*l+1); m++) { // loop over magnetic quantum number
-                    int i1 = ((l*l + m)*K + k1)*Na + n;
-                    int j1 = ((l*l + m)*K + k2)*Na + n;
-                    p[l1] += ar[i1]*ar[j1] + ai[i1]*ai[j1]; // power spectrum           
-                }
-            }    
-        }
-    }                 
+        int l1 = (k*(L+1) + l)*Na + n; // global index of atom n
+        p[l1] = (T) 0.0;
+        for (int m=0; m<(2*l+1); m++) { // loop over magnetic quantum number
+            int i1 = ((l*l + m)*K + k1)*Na + n;
+            int j1 = ((l*l + m)*K + k2)*Na + n;
+            p[l1] += ar[i1]*ar[j1] + ai[i1]*ai[j1]; // power spectrum           
+        }                
+        tid += blockDim.x * gridDim.x;
+    }             
+}
+template <typename T> void gpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, 
+        int *indk, int Na, int L, int K)
+{        
+    int K2 = K*(K+1)/2;        
+    int N1 = Na;    // number of atoms in the simulation domain
+    int N2 = (L+1)*Na;
+    int N3 = K2*(L+1)*Na;                        
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsPower<<<gridDim, blockDim>>>(p, ar, ai, indk, L, K, K2, N1, N2, N3);
 }
 template void gpuRadialSphericalHarmonicsPower(double*, double*, double*, int*, int, int, int);
 template void gpuRadialSphericalHarmonicsPower(float*, float*, float*, int*, int, int, int);
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
-        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, T *arx, T *aix, 
+       T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int L, int K, int N, int K2, int Na, int N2, int N3)
 {   
     // L                      : the maximum degree of spherical harmonics
     // K                      : the maximum degree of spherical Bessel functions    
@@ -571,33 +583,47 @@ template <typename T> void gpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T
     
     // Compute partial derivatives of the power spectrum components
     
-    int N = Nnb[Na]-Nnb[0]; // total number of neighbors 
-    int K2 = K*(K+1)/2;    
-    //#pragma omp parallel for         
-    for (int k=0; k<K2; k++) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N3) { 
+        int q = tid%N2;     // [1, Na*(L+1)]           
+        int k = (tid-q)/N2; // spherical basis index [1, K2] 
+        int n = q%Na;       // atom index n [1, Na] 
+        int l = (q-n)/Na;   // radial basis index [1, (L+1)]                      
         int k2 = indk[k];
         int k1 = indk[K2+k];
-        for (int l=0; l<(L+1); l++) {     
-            for (int n=0; n<Na; n++)  {  // loop over each atom
-                int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n
-                for (int i=0; i<numnb; i++) {// loop over each neighbor of atom n                         
-                    int j = (k*(L+1) + l)*N + Nnb[n] + i; // index of px, py, pz
-                    px[j] = (T) 0.0;
-                    py[j] = (T) 0.0;
-                    pz[j] = (T) 0.0;
-                    for (int m=0; m<(2*l+1); m++) {
-                        int i1 = ((l*l + m)*K + k1)*Na + n; // index of ar and ai 
-                        int j1 = ((l*l + m)*K + k2)*Na + n; // index of ar and ai                                         
-                        int i2 = ((l*l + m)*K + k1)*N + Nnb[n] + i;  // index of arx and aix     
-                        int j2 = ((l*l + m)*K + k2)*N + Nnb[n] + i;  // index of arx and aix                                                    
-                        px[j] += ar[i1]*arx[j2] + arx[i2]*ar[j1] + ai[i1]*aix[j2] + aix[i2]*ai[j1];
-                        py[j] += ar[i1]*ary[j2] + ary[i2]*ar[j1] + ai[i1]*aiy[j2] + aiy[i2]*ai[j1];
-                        pz[j] += ar[i1]*arz[j2] + arz[i2]*ar[j1] + ai[i1]*aiz[j2] + aiz[i2]*ai[j1];                    
-                    }
-                }
-            }    
+
+        int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n
+        for (int i=0; i<numnb; i++) {// loop over each neighbor of atom n                         
+            int j = (k*(L+1) + l)*N + Nnb[n] + i; // index of px, py, pz
+            px[j] = (T) 0.0;
+            py[j] = (T) 0.0;
+            pz[j] = (T) 0.0;
+            for (int m=0; m<(2*l+1); m++) {
+                int i1 = ((l*l + m)*K + k1)*Na + n; // index of ar and ai 
+                int j1 = ((l*l + m)*K + k2)*Na + n; // index of ar and ai                                         
+                int i2 = ((l*l + m)*K + k1)*N + Nnb[n] + i;  // index of arx and aix     
+                int j2 = ((l*l + m)*K + k2)*N + Nnb[n] + i;  // index of arx and aix                                                    
+                px[j] += ar[i1]*arx[j2] + arx[i2]*ar[j1] + ai[i1]*aix[j2] + aix[i2]*ai[j1];
+                py[j] += ar[i1]*ary[j2] + ary[i2]*ar[j1] + ai[i1]*aiy[j2] + aiy[i2]*ai[j1];
+                pz[j] += ar[i1]*arz[j2] + arz[i2]*ar[j1] + ai[i1]*aiz[j2] + aiz[i2]*ai[j1];                    
+            }
         }
-    }
+        tid += blockDim.x * gridDim.x;
+    }                         
+}
+template <typename T> void gpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K)
+{        
+    int N = Nnb[Na]-Nnb[0]; // total number of neighbors 
+    int K2 = K*(K+1)/2;        
+    int N1 = Na;    // number of atoms in the simulation domain
+    int N2 = (L+1)*Na;
+    int N3 = K2*(L+1)*Na;                        
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsPowerDeriv<<<gridDim, blockDim>>>(px, py, pz, ar, ai, arx, aix, 
+            ary, aiy, arz, aiz, indk, Nnb, L, K, N, K2, N1, N2, N3);
 }
 template void gpuRadialSphericalHarmonicsPowerDeriv(double*, double*, double*, double*, double*, double*, 
         double*, double*, double*, double*, double*, int*, int*, int, int, int);
@@ -605,8 +631,8 @@ template void gpuRadialSphericalHarmonicsPowerDeriv(float*, float*, float*, floa
         float*, float*, float*, float*, float*, int*, int*, int, int, int);
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
-        int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
+        int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K, int K2, int N2, int N3)
 {   
     // L                      : the maximum degree of spherical harmonics
     // K                      : the maximum degree of spherical Bessel functions
@@ -624,44 +650,56 @@ template <typename T> void gpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T 
     
     // Compute the bispectrum components for radial spherical harmonics
     
-    int K2 = K*(K+1)/2;    
-    //#pragma omp parallel for      
-
-    for (int k=0; k<K2; k++) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N3) { 
+        int q = tid%N2;     // [1, Na*Nub]           
+        int k = (tid-q)/N2; // spherical basis index [1, K2] 
+        int n = q%Na;       // atom index n [1, Na] 
+        int i = (q-n)/Na;   // radial basis index [1, Nub]                      
         int k2 = indk[k];
         int k1 = indk[K2+k];
-        for (int i=0; i<Nub; i++) {        
-            int l2 = indl[i];
-            int l1 = indl[Nub+i];
-            int l = indl[2*Nub+i];                 
-            int nm = rowm[i+1]-rowm[i];
-            for (int n=0; n<Na; n++) {  // loop over each atom          
-                int indn = (k*Nub + i)*Na + n; // global index of atom n
-                b[indn] = (T) 0.0;
-                for (int j = 0; j<nm; j++) {
-                    int m2 = indm[rowm[i]+j];
-                    int m1 = indm[Ncg+rowm[i]+j];
-                    int m = indm[2*Ncg + rowm[i]+j];                  
-                    T a1, b1, a2, b2, a3, b3;                                
-                    a1 = ar[((l*l + l + m)*K + k1)*Na + n];
-                    b1 = ai[((l*l + l + m)*K + k1)*Na + n];
-                    a2 = ar[((l1*l1 + l1 + m1)*K + k2)*Na + n];
-                    b2 = ai[((l1*l1 + l1 + m1)*K + k2)*Na + n];
-                    a3 = ar[((l2*l2 + l2 + m2)*K + k2)*Na + n];
-                    b3 = ai[((l2*l2 + l2 + m2)*K + k2)*Na + n];
-                    b[indn] += cg[rowm[i]+j]*(a1*a2*a3 + a2*b1*b3 + a3*b1*b2 - a1*b2*b3);                                              
-                }                                
-            }
+        int l2 = indl[i];
+        int l1 = indl[Nub+i];
+        int l = indl[2*Nub+i];                 
+        int nm = rowm[i+1]-rowm[i];
+        int indn = (k*Nub + i)*Na + n; // global index of atom n
+        b[indn] = (T) 0.0;
+        for (int j = 0; j<nm; j++) {
+            int m2 = indm[rowm[i]+j];
+            int m1 = indm[Ncg+rowm[i]+j];
+            int m = indm[2*Ncg + rowm[i]+j];                  
+            T a1, b1, a2, b2, a3, b3;                                
+            a1 = ar[((l*l + l + m)*K + k1)*Na + n];
+            b1 = ai[((l*l + l + m)*K + k1)*Na + n];
+            a2 = ar[((l1*l1 + l1 + m1)*K + k2)*Na + n];
+            b2 = ai[((l1*l1 + l1 + m1)*K + k2)*Na + n];
+            a3 = ar[((l2*l2 + l2 + m2)*K + k2)*Na + n];
+            b3 = ai[((l2*l2 + l2 + m2)*K + k2)*Na + n];
+            b[indn] += cg[rowm[i]+j]*(a1*a2*a3 + a2*b1*b3 + a3*b1*b2 - a1*b2*b3);                                              
         }
-    }                
+        tid += blockDim.x * gridDim.x;
+    }                         
+}
+template <typename T> void gpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
+        int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K)
+{        
+    int K2 = K*(K+1)/2;        
+    int N1 = Na;    // number of atoms in the simulation domain
+    int N2 = Nub*Na;
+    int N3 = K2*Nub*Na;                        
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsBispectrum<<<gridDim, blockDim>>>(b, ar, ai, cg, indk, indl, indm, rowm,
+            Nub, Ncg, Na, L, K, K2, N2, N3);
 }
 template void gpuRadialSphericalHarmonicsBispectrum(double*, double*, double*, double*, int*, int*, int*, int*, int, int, int, int, int);
 template void gpuRadialSphericalHarmonicsBispectrum(float*, float*, float*, float*, int*, int*, int*, int*, int, int, int, int, int);
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, T *ar, T *ai, 
-        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
-        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, 
+        T *ar, T *ai, T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K, int N, int K2, int N2, int N3)
 {   
     // K                      : the maximum degree of spherical Bessel functions
     // N                      : total number of neighbors 
@@ -689,89 +727,104 @@ template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *
         
     // Compute partial derivatives of the bispectrum components
     
-    int N = Nnb[Na]-Nnb[0]; // total number of neighbors 
-    int K2 = K*(K+1)/2;    
-    for (int k=0; k<K2; k++) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N3) { 
+        int s = tid%N2;     // [1, Na*Nub]           
+        int k = (tid-s)/N2; // spherical basis index [1, K2] 
+        int n = s%Na;       // atom index n [1, Na] 
+        int i = (s-n)/Na;   // radial basis index [1, Nub]                      
         int k2 = indk[k];
         int k1 = indk[K2+k];
-        for (int i=0; i<Nub; i++) {        
-            int l2 = indl[i];
-            int l1 = indl[Nub+i];
-            int l = indl[2*Nub+i];     
-            int nm = rowm[i+1]-rowm[i];
-            for (int n=0; n<Na; n++)  {  // loop over each atom
-                int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n
-                for (int q=0; q<numnb; q++) {// loop over each neighbor of atom n                         
-                    int ii = (k*Nub + i)*N + Nnb[n] + q; // index of bx, by, bz                                        
-                    bx[ii] = (T) 0.0;
-                    by[ii] = (T) 0.0;
-                    bz[ii] = (T) 0.0;                                    
-                    for (int j = 0; j<nm; j++) {
-                        int m2 = indm[rowm[i]+j];
-                        int m1 = indm[Ncg+rowm[i]+j];
-                        int m = indm[2*Ncg + rowm[i]+j];                            
-                        int n1 = (l*l + l + m)*K + k1;    
-                        int n2 = (l1*l1 + l1 + m1)*K + k2;
-                        int n3 = (l2*l2 + l2 + m2)*K + k2;                        
-                        int lm1 = n1*Na + n; // index of ar and ai 
-                        int lm2 = n2*Na + n; // index of ar and ai                                         
-                        int lm3 = n3*Na + n; // index of ar and ai                                                                 
-                        int mlk1 = n1*N + Nnb[n] + q; // index of arx and aix      
-                        int mlk2 = n2*N + Nnb[n] + q; // index of arx and aix            
-                        int mlk3 = n3*N + Nnb[n] + q; // index of arx and aix                                                  
-                        
-                        T c = cg[rowm[i]+j];                    
-                        T a1, b1, a2, b2, a3, b3;                                
-                        T a1x, b1x, a2x, b2x, a3x, b3x;
-                        T a1y, b1y, a2y, b2y, a3y, b3y;
-                        T a1z, b1z, a2z, b2z, a3z, b3z;
-                        a1 = ar[lm1];
-                        b1 = ai[lm1];
-                        a2 = ar[lm2];
-                        b2 = ai[lm2];
-                        a3 = ar[lm3];
-                        b3 = ai[lm3];
-                        a1x = arx[mlk1];
-                        a1y = ary[mlk1];
-                        a1z = arz[mlk1];
-                        b1x = aix[mlk1];
-                        b1y = aiy[mlk1];
-                        b1z = aiz[mlk1];
-                        a2x = arx[mlk2];
-                        a2y = ary[mlk2];
-                        a2z = arz[mlk2];
-                        b2x = aix[mlk2];
-                        b2y = aiy[mlk2];
-                        b2z = aiz[mlk2];
-                        a3x = arx[mlk3];
-                        a3y = ary[mlk3];
-                        a3z = arz[mlk3];
-                        b3x = aix[mlk3];
-                        b3y = aiy[mlk3];
-                        b3z = aiz[mlk3];
+        int l2 = indl[i];
+        int l1 = indl[Nub+i];
+        int l = indl[2*Nub+i];                 
+        int nm = rowm[i+1]-rowm[i];
+        int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n
+        for (int q=0; q<numnb; q++) {// loop over each neighbor of atom n                         
+            int ii = (k*Nub + i)*N + Nnb[n] + q; // index of bx, by, bz                                        
+            bx[ii] = (T) 0.0;
+            by[ii] = (T) 0.0;
+            bz[ii] = (T) 0.0;                                    
+            for (int j = 0; j<nm; j++) {
+                int m2 = indm[rowm[i]+j];
+                int m1 = indm[Ncg+rowm[i]+j];
+                int m = indm[2*Ncg + rowm[i]+j];                            
+                int n1 = (l*l + l + m)*K + k1;    
+                int n2 = (l1*l1 + l1 + m1)*K + k2;
+                int n3 = (l2*l2 + l2 + m2)*K + k2;                        
+                int lm1 = n1*Na + n; // index of ar and ai 
+                int lm2 = n2*Na + n; // index of ar and ai                                         
+                int lm3 = n3*Na + n; // index of ar and ai                                                                 
+                int mlk1 = n1*N + Nnb[n] + q; // index of arx and aix      
+                int mlk2 = n2*N + Nnb[n] + q; // index of arx and aix            
+                int mlk3 = n3*N + Nnb[n] + q; // index of arx and aix                                                  
 
-                        T t1 = a1x*a2*a3 + a1*a2x*a3 + a1*a2*a3x;                
-                        T t2 = a2x*b1*b3 + a2*b1x*b3 + a2*b1*b3x;
-                        T t3 = a3x*b1*b2 + a3*b1x*b2 + a3*b1*b2x;
-                        T t4 = a1x*b2*b3 + a1*b2x*b3 + a1*b2*b3x;
-                        bx[ii] += c*(t1 + t2 + t3 - t4);
+                T c = cg[rowm[i]+j];                    
+                T a1, b1, a2, b2, a3, b3;                                
+                T a1x, b1x, a2x, b2x, a3x, b3x;
+                T a1y, b1y, a2y, b2y, a3y, b3y;
+                T a1z, b1z, a2z, b2z, a3z, b3z;
+                a1 = ar[lm1];
+                b1 = ai[lm1];
+                a2 = ar[lm2];
+                b2 = ai[lm2];
+                a3 = ar[lm3];
+                b3 = ai[lm3];
+                a1x = arx[mlk1];
+                a1y = ary[mlk1];
+                a1z = arz[mlk1];
+                b1x = aix[mlk1];
+                b1y = aiy[mlk1];
+                b1z = aiz[mlk1];
+                a2x = arx[mlk2];
+                a2y = ary[mlk2];
+                a2z = arz[mlk2];
+                b2x = aix[mlk2];
+                b2y = aiy[mlk2];
+                b2z = aiz[mlk2];
+                a3x = arx[mlk3];
+                a3y = ary[mlk3];
+                a3z = arz[mlk3];
+                b3x = aix[mlk3];
+                b3y = aiy[mlk3];
+                b3z = aiz[mlk3];
 
-                        t1 = a1y*a2*a3 + a1*a2y*a3 + a1*a2*a3y;                
-                        t2 = a2y*b1*b3 + a2*b1y*b3 + a2*b1*b3y;
-                        t3 = a3y*b1*b2 + a3*b1y*b2 + a3*b1*b2y;
-                        t4 = a1y*b2*b3 + a1*b2y*b3 + a1*b2*b3y;
-                        by[ii] += c*(t1 + t2 + t3 - t4);
+                T t1 = a1x*a2*a3 + a1*a2x*a3 + a1*a2*a3x;                
+                T t2 = a2x*b1*b3 + a2*b1x*b3 + a2*b1*b3x;
+                T t3 = a3x*b1*b2 + a3*b1x*b2 + a3*b1*b2x;
+                T t4 = a1x*b2*b3 + a1*b2x*b3 + a1*b2*b3x;
+                bx[ii] += c*(t1 + t2 + t3 - t4);
 
-                        t1 = a1z*a2*a3 + a1*a2z*a3 + a1*a2*a3z;                
-                        t2 = a2z*b1*b3 + a2*b1z*b3 + a2*b1*b3z;
-                        t3 = a3z*b1*b2 + a3*b1z*b2 + a3*b1*b2z;
-                        t4 = a1z*b2*b3 + a1*b2z*b3 + a1*b2*b3z;
-                        bz[ii] += c*(t1 + t2 + t3 - t4);                    
-                    }
-                }               
+                t1 = a1y*a2*a3 + a1*a2y*a3 + a1*a2*a3y;                
+                t2 = a2y*b1*b3 + a2*b1y*b3 + a2*b1*b3y;
+                t3 = a3y*b1*b2 + a3*b1y*b2 + a3*b1*b2y;
+                t4 = a1y*b2*b3 + a1*b2y*b3 + a1*b2*b3y;
+                by[ii] += c*(t1 + t2 + t3 - t4);
+
+                t1 = a1z*a2*a3 + a1*a2z*a3 + a1*a2*a3z;                
+                t2 = a2z*b1*b3 + a2*b1z*b3 + a2*b1*b3z;
+                t3 = a3z*b1*b2 + a3*b1z*b2 + a3*b1*b2z;
+                t4 = a1z*b2*b3 + a1*b2z*b3 + a1*b2*b3z;
+                bz[ii] += c*(t1 + t2 + t3 - t4);                    
             }
-        }
-    }
+        }               
+        tid += blockDim.x * gridDim.x;
+    }                                     
+}
+template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, 
+        T *ar, T *ai, T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K)
+{        
+    int N = Nnb[Na]-Nnb[0]; // total number of neighbors 
+    int K2 = K*(K+1)/2;        
+    int N1 = Na;    // number of atoms in the simulation domain
+    int N2 = Nub*Na;
+    int N3 = K2*Nub*Na;                        
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsBispectrumDeriv<<<gridDim, blockDim>>>(bx, by, bz, ar, ai, arx, aix, 
+            ary, aiy, arz, aiz, cg, indk, indl, indm, rowm, Nnb, Na, Nub, Ncg, K, N, K2, N2, N3);
 }
 template void gpuRadialSphericalHarmonicsBispectrumDeriv(double*, double*, double*, double*, double*, double*, 
         double*, double*, double*, double*, double*, double*, int*, int*, int*, int*, int*, int, int, int, int);
@@ -779,36 +832,47 @@ template void gpuRadialSphericalHarmonicsBispectrumDeriv(float*, float*, float*,
         float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, int*, int, int, int, int);
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
-        int Ntype, int Na, int Nbf)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
+        int Ntype, int Na, int Nbf, int N)
 {       
     // Ntype                : number of atom types 
     // Na                   : number of atoms in the simulation domain 
     // Nbf                  : number of basis functions per atom type    
-    // atomtype [Ng]        : a list containing the types of atoms
-    // c        [Ng*Nbf]    : spectrum components for all atoms
+    // atomtype [Ntype]     : a list containing the types of atoms
+    // c        [Na*Nbf]    : spectrum components for all atoms
     // d        [Nbf*Ntype] : basis functions based on atom types
     
-    for (int t=0; t< Ntype; t++) // for each atom type
-        for (int m=0; m<Nbf; m++) // for each basis function
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N) { 
+        int m = tid%Nbf;     // [1, Nbf]           
+        int t = (tid-m)/Nbf; // [1, Ntype]        
+        int k = Nbf*t + m;       // index of the basis function            
+        d[k] = (T) 0.0;
+        for (int n=0; n<Na; n++) // for each atom n        
         {
-            int k = Nbf*t + m;       // index of the basis function            
-            d[k] = (T) 0.0;
-            for (int n=0; n<Na; n++) // for each atom n        
-            {
-                int tn = atomtype[n]; // type of atom n      
-                if (tn==t) { // type of atom n is equal to t
-                    d[k] += c[m*Nbf + n];
-                }
-            }                
-        }    
+            int tn = atomtype[n]; // type of atom n      
+            if (tn==t) { // type of atom n is equal to t
+                d[k] += c[m*Nbf + n];
+            }
+        }                        
+        tid += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
+        int Ntype, int Na, int Nbf)
+{        
+    int N = Nbf*Ntype;
+    int blockDim = 256;
+    int gridDim = (N + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsBasis<<<gridDim, blockDim>>>(d, c, atomtype, Ntype, Na, Nbf, N);
 }
 template void gpuRadialSphericalHarmonicsBasis(double*, double*, int*, int, int, int);
 template void gpuRadialSphericalHarmonicsBasis(float*, float*, int*, int, int, int);
 
 // core function
-template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, T *cx, T *cy, T *cz,
-        int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf)
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, T *cx, 
+        T *cy, T *cz, int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf, int N, int N2, int N3)
 {       
     // Ntype                : number of atom types 
     // Na                   : number of atoms in the simulation domain 
@@ -816,52 +880,70 @@ template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T
     // N = Nnb[Na]-Nnb[0] : total number of neighbors     
     // atomtype [Na]        : a list containing the types of atoms
     // neighborlist [N]     : a list containing the indices of neighbors
+    // Nnb [Na+1]           : a list containing the number of neighbors for each global atom                
     // c [Na*Nbf]           : spectrum components for all atoms
     // d [Nbf*Ntype]        : basis functions based on atom types
     // cx, cy, cz [N*Nbf]   : derivatives of spectrum components  
     // dx, dy, dz [Na*Nbf*Ntype]: derivatives of the basis functions
     
-    int N = Nnb[Na]-Nnb[0]; // total number of neighbors     
-    for (int t=0; t< Ntype; t++) // for each atom type
-        for (int m=0; m<Nbf; m++) // for each basis function
-            for (int n=0; n<Na; n++) // for each atom n            
-            {
-                int nmt = Na*Nbf*t + Na*m + n; //index of the derivatives of the basis function                
-                dx[nmt] = (T) 0.0;
-                dy[nmt] = (T) 0.0;
-                dz[nmt] = (T) 0.0;                
-                int tn = atomtype[n]; // type of atom n                
-                int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n                                                   
-                
-                for (int q=0; q<numnb; q++) { // loop over each neighbor of atom n                    
-                    if (tn==t) {// type of atom n is equal to t
-                        // atom n is self, atom i is neighbor
-                        int qnm = m*N + (Nnb[n] + q);  // index of the spectrum components of the atom pair (i, n)                    
-                        dx[nmt] +=  -cx[qnm];
-                        dy[nmt] +=  -cy[qnm];
-                        dz[nmt] +=  -cz[qnm]; 
-                    }                    
-                    
-                    int i = neighlist[Nnb[n] + q]; // atom i 
-                    int ti = atomtype[i];             // type of atom i                                        
-                    if (ti==t) { // type of atom i is equal to t                    
-                        int Nnbi = Nnb[i+1]-Nnb[i];  // number of neighbors for atom i
-                        int r;
-                        for (r=0; r<Nnbi; r++) // loop over each neighbor of atom i
-                            if (neighlist[Nnb[i] + r] == n) // if a neighbor of atom i matchs atom n
-                                break;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N3) { 
+        int s = tid%N2;     // [1, Na*Nbf]           
+        int t = (tid-s)/N2; // spherical basis index [1, Ntype] 
+        int n = s%Na;       // atom index n [1, Na] 
+        int m = (s-n)/Na;   // radial basis index [1, Nbf]       
+             
+        int nmt = Na*Nbf*t + Na*m + n; //index of the derivatives of the basis function                
+        dx[nmt] = (T) 0.0;
+        dy[nmt] = (T) 0.0;
+        dz[nmt] = (T) 0.0;                
+        int tn = atomtype[n]; // type of atom n                
+        int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n                                                   
 
-                        int rim = m*N + (Nnb[i] + r); // index of the spectrum components of the atom pair (n, i)                                        
-                        // atom n is neighbor, atom i is self
-                        dx[nmt] += cx[rim];
-                        dy[nmt] += cy[rim];
-                        dz[nmt] += cz[rim];
-                    }
-                }
-            }                
+        for (int q=0; q<numnb; q++) { // loop over each neighbor of atom n                    
+            if (tn==t) {// type of atom n is equal to t
+                // atom n is self, atom i is neighbor
+                int qnm = m*N + (Nnb[n] + q);  // index of the spectrum components of the atom pair (i, n)                    
+                dx[nmt] +=  -cx[qnm];
+                dy[nmt] +=  -cy[qnm];
+                dz[nmt] +=  -cz[qnm]; 
+            }                    
+
+            int i = neighlist[Nnb[n] + q]; // atom i 
+            int ti = atomtype[i];             // type of atom i                                        
+            if (ti==t) { // type of atom i is equal to t                    
+                int Nnbi = Nnb[i+1]-Nnb[i];  // number of neighbors for atom i
+                int r;
+                for (r=0; r<Nnbi; r++) // loop over each neighbor of atom i
+                    if (neighlist[Nnb[i] + r] == n) // if a neighbor of atom i matchs atom n
+                        break;
+
+                int rim = m*N + (Nnb[i] + r); // index of the spectrum components of the atom pair (n, i)                                        
+                // atom n is neighbor, atom i is self
+                dx[nmt] += cx[rim];
+                dy[nmt] += cy[rim];
+                dz[nmt] += cz[rim];
+            }
+        }                
+        tid += blockDim.x * gridDim.x;                
+    }
+}
+template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, 
+        T *cx, T *cy, T *cz, int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf)
+{            
+    int N = Nnb[Na]-Nnb[0]; // total number of neighbors     
+    int N1 = Na;    // number of atoms in the simulation domain
+    int N2 = Nbf*Na;
+    int N3 = Ntype*Nbf*Na;                            
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsBasisDeriv<<<gridDim, blockDim>>>(dx, dy, dz, cx, cy, cz, atomtype, 
+            neighlist, Nnb, Ntype, Na, Nbf, N, N2, N3);
 }
 template void gpuRadialSphericalHarmonicsBasisDeriv(double*, double*, double*, double*, double*, double*, int*, int*, int*, int, int, int);
 template void gpuRadialSphericalHarmonicsBasisDeriv(float*, float*, float*, float*, float*, float*, int*, int*, int*, int, int, int);
+
 
 #endif
 

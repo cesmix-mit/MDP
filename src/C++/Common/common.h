@@ -278,16 +278,12 @@ template <typename T> static void cudaCopytoHost(T *h_data, T *d_data, Int n)
 
 template <typename T> static void TemplateMalloc(T **data, Int n, Int backend)
 {
-#ifdef HAVE_ONETHREAD         
     if (backend == 0)       // One thread CPU
         // allocate the memory on the CPU        
         *data = (T *) malloc(n*sizeof(T));      
-#endif                   
-#ifdef HAVE_OPENMP        
     if (backend == 1)  // Open MP
         // allocate the memory on the CPU        
         *data = (T *) malloc(n*sizeof(T));      
-#endif                 
 #ifdef HAVE_CUDA            
     if (backend == 2)  // CUDA C                
         // allocate the memory on the GPU            
@@ -295,32 +291,12 @@ template <typename T> static void TemplateMalloc(T **data, Int n, Int backend)
 #endif                  
 }
 
-struct trainingstruct {     
-    string trainingfile;    // name of a mother file for training data
-    Int Ntrainconfig;   // number of training configurations
-    Int *Ntrain;        // a list containing number of global atoms in each training configuration          
-    void freememory()
-    {
-        CPUFREE(Ntrain);
-    }                         
-};
-
-struct validationstruct {     
-    string validationfile;  // name of a mother file for validation data
-    Int Nvalidconfig;   // number of validation configurations
-    Int *Nvalid;        // a list containing number of global atoms in each validation configuration    
-    void freememory()
-    {
-        CPUFREE(Nvalid);
-    }                         
-};
-
 struct commonstruct {     
     string filein;       // Name of binary file with input data
     string fileout;      // Name of binary file to write the solution    
             
-    Int backend;   // 0: Serial; 1: OpenMP; 2: CUDA  
-    Int cpuMemory; // 1: data in CPU memory; 0: data in GPU memory
+    Int backend=1;   // 1: CPU; 2: CUDA GPU  
+    //Int cpuMemory; // 1: data in CPU memory; 0: data in GPU memory
     
     Int mpiRank;  // MPI rank      
     Int mpiProcs; // number of MPI ranks
@@ -403,9 +379,9 @@ struct appstruct {
     dstype *intermoleculeweights=NULL; // weight for the interaction between two different types of molecules
             
     // custom destructor
-    void freememory(Int hostmemory)
+    void freememory(Int backend)
     {
-       if (hostmemory==1) {
+       if (backend<=1) {
             CPUFREE(flags);    
             CPUFREE(fac);            
             CPUFREE(bzeros);            
@@ -436,11 +412,115 @@ struct appstruct {
     }
 };
 
-// struct neighborstruct {  
-//   Int *ilist;          // local indices of I atoms
-//   Int *numneigh;       // number of J neighbors for each I atom  
-//   Int *ptrneigh;       // local indices of J neighbors    
-// };
+struct configstruct {     
+    string filename;    // name of a file for reading configurations 
+    Int nconfigs;       // number of configurations    
+    Int *numatoms;      // a list containing the number of atoms in each configuration   
+    Int natoms;         // the number of atoms for all configurations    
+    Int ntypes;         // number of atom types    
+    dstype **x;         // positions of atoms for all configurations        
+    dstype **f;         // forces acting on atoms for all configurations            
+    Int **t;            // atomic types of atoms for all configurations            
+    dstype simubox[3*3];// 3 principal vectors of the simulation box    
+    void freememory()
+    {        
+        CPUFREE(numatoms);
+        CPUFREE(x);
+        CPUFREE(f);
+        CPUFREE(t);
+    }                         
+};
+
+struct neighborstruct {  
+    Int *ilist;          // indices of I atoms
+    Int *numneigh;       // numbers of neighbors for each atom i 
+    Int *neighlist;      // indices of neighbors for each atom i     
+    Int *atomtype;       // type of each atom i  
+    dstype *xi;          //  positions of each atom i  
+    dstype *xij;         // xij = xi - xj, where xj positions of neighbor j of atom i  
+    void freememory(Int backend)
+    {
+        if (backend<=1) {
+            CPUFREE(ilist); 
+            CPUFREE(numneigh); 
+            CPUFREE(neighlist); 
+            CPUFREE(atomtype); 
+            CPUFREE(xi); 
+            CPUFREE(xij); 
+        }
+        else {
+            CPUFREE(ilist); 
+            CPUFREE(numneigh); 
+            CPUFREE(neighlist); 
+            CPUFREE(atomtype); 
+            CPUFREE(xi); 
+            CPUFREE(xij);             
+        }
+    }
+};
+
+struct sysstruct {        
+    Int *type; // a vector of atom types for every local atom    
+    dstype *x=NULL;    // cartesian coordinates of local atoms in processor mpiRank        
+    dstype *v=NULL;    // velocities of local atoms in processor mpiRank        
+    dstype *f=NULL;    // atomic forces of local atoms in processor mpiRank        
+    dstype *q=NULL;    // atomic charges of local atoms in processor mpiRank           
+    dstype *s=NULL;    // stresses
+    dstype *d=NULL;    // basis functions
+    dstype *c=NULL;    // vector of coeffcients associated with the basis functions            
+    
+    void freememory(Int backend)
+    {
+       if (backend<=1) {
+            CPUFREE(type); 
+            CPUFREE(x); 
+            CPUFREE(v); 
+            CPUFREE(f); 
+            CPUFREE(q); 
+            CPUFREE(s);             
+            CPUFREE(d);             
+            CPUFREE(c);             
+        }            
+#ifdef HAVE_CUDA      
+       else {
+            GPUFREE(type); 
+            GPUFREE(x);
+            GPUFREE(v);   
+            GPUFREE(f);
+            GPUFREE(q);
+            GPUFREE(s);
+            GPUFREE(d);
+            GPUFREE(c);                   
+       }
+#endif       
+    }                     
+};
+
+  
+struct tempstruct {
+    dstype *tempn=NULL; 
+    dstype *tempg=NULL;
+    dstype *buffrecv=NULL;
+    dstype *buffsend=NULL;
+    
+    void freememory(Int backend)
+    {
+       if (backend<=1) {
+            CPUFREE(tempn); 
+            CPUFREE(tempg); 
+            CPUFREE(buffrecv); 
+            CPUFREE(buffsend); 
+        }            
+#ifdef HAVE_CUDA      
+       else {
+            GPUFREE(tempn);
+            GPUFREE(tempg);
+            GPUFREE(buffrecv); 
+            GPUFREE(buffsend); 
+       }
+#endif       
+    }                     
+};
 
 struct shstruct {  
     Int *indk=NULL;
@@ -495,68 +575,6 @@ struct shstruct {
     }                         
 };
 
-struct sysstruct {        
-    Int *type; // a vector of atom types for every local atom    
-    dstype *x=NULL;    // cartesian coordinates of local atoms in processor mpiRank        
-    dstype *v=NULL;    // velocities of local atoms in processor mpiRank        
-    dstype *f=NULL;    // atomic forces of local atoms in processor mpiRank        
-    dstype *q=NULL;    // atomic charges of local atoms in processor mpiRank           
-    dstype *s=NULL;    // stresses
-    dstype *d=NULL;    // basis functions
-    dstype *c=NULL;    // vector of coeffcients associated with the basis functions            
-    
-    void freememory(Int hostmemory)
-    {
-       if (hostmemory==1) {
-            CPUFREE(type); 
-            CPUFREE(x); 
-            CPUFREE(v); 
-            CPUFREE(f); 
-            CPUFREE(q); 
-            CPUFREE(s);             
-            CPUFREE(d);             
-            CPUFREE(c);             
-        }            
-#ifdef HAVE_CUDA      
-       else {
-            GPUFREE(type); 
-            GPUFREE(x);
-            GPUFREE(v);   
-            GPUFREE(f);
-            GPUFREE(q);
-            GPUFREE(s);
-            GPUFREE(d);
-            GPUFREE(c);                   
-       }
-#endif       
-    }                     
-};
-
-  
-struct tempstruct {
-    dstype *tempn=NULL; 
-    dstype *tempg=NULL;
-    dstype *buffrecv=NULL;
-    dstype *buffsend=NULL;
-    
-    void freememory(Int hostmemory)
-    {
-       if (hostmemory==1) {
-            CPUFREE(tempn); 
-            CPUFREE(tempg); 
-            CPUFREE(buffrecv); 
-            CPUFREE(buffsend); 
-        }            
-#ifdef HAVE_CUDA      
-       else {
-            GPUFREE(tempn);
-            GPUFREE(tempg);
-            GPUFREE(buffrecv); 
-            GPUFREE(buffsend); 
-       }
-#endif       
-    }                     
-};
 
 const double factable[] = {
   1,

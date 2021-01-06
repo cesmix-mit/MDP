@@ -5,16 +5,8 @@
 #include <math.h>
 #include <string.h>
 //#include <stdlib.h>
-//#include <chrono>
 #include <sys/unistd.h>
 #include <random>
-
-
-#ifdef _OPENMP
-#define HAVE_OPENMP
-#else
-#define HAVE_ONETHREAD
-#endif
 
 #ifdef _CUDA
 #define HAVE_CUDA
@@ -22,10 +14,6 @@
 
 #ifdef _MPI
 #define HAVE_MPI
-#endif
-
-#ifdef HAVE_OPENMP
-#include <omp.h>
 #endif
 
 #ifdef HAVE_CUDA    
@@ -42,28 +30,15 @@
 #include <chrono>
 #endif
 
-
 using namespace std;
 
 #include "../Common/common.h"     // declaration of variables and structs
 #include "../Common/core.h"       // interface to core library
 #include "../Common/pblas.h"      // wrappers for blas libaries and MPI     
-// #include "../Common/application.h"// interface to application library
 
-#include "../Preprocessing/errormsg.cpp"
-#include "../Preprocessing/ioutilities.cpp"
-
-#include "../Core/commonCore.cpp" 
-#include "../Core/opuArrayPermute.cpp" 
-#include "../Core/opuArrayOperations.cpp" 
-
-#include "../Core/cpuCoordinateTransformations.cpp" 
-#include "../Core/cpuPrecompute.cpp" 
-#include "../Core/cpuSphericalHarmonics.cpp" 
-
-//#include "../preprocessing/readbinaryfiles.cpp"
-
-#include "../Descriptors/SphericalHarmonics.cpp"
+#include "../Configuration/Configuration.cpp"     // Configuration class
+#include "../Descriptors/Descriptors.cpp"  // Descriptiors class
+#include "../Regression/Regression.cpp"  // Descriptiors class
 
 int main(int argc, char** argv) 
 {   
@@ -117,11 +92,7 @@ int main(int argc, char** argv)
     nthreads = 1;    
 #endif
     
-#ifdef HAVE_OPENMP
-    backend=1; // multi-thread
-#else
-    backend=0; // single thread
-#endif
+    backend=1; 
 #ifdef HAVE_CUDA  // CUDA          
     backend=2;
 #endif
@@ -170,42 +141,40 @@ int main(int argc, char** argv)
     dstype *y = &xcoord[n];
     dstype *z = &xcoord[2*n];
         
-    cpuArraySphere2Cart(x, y, z, the, phi, r, n);
+    cpuSphere2Cart(x, y, z, the, phi, r, n);
     
     int K = 5, L = 3;
     int L2 = (L+1)*(L+1); 
     int numneigh[2];
     numneigh[1] = n;
     numneigh[0] = 0;
-    
+        
     CSphericalHarmonics shobj(K, L, backend);
     
-    dstype sr[n*K*L2], si[n*K*L2];
-    dstype ar[K*L2], ai[K*L2];    
-    dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
-    dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
-    shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
-    shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
-    shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
-    
-    dstype p[(L+1)*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
-    
-    dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
-        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-    
-    int Nub = shobj.Nub;
-    dstype b[Nub*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
-            
-    dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
-        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-    
-    
-    
-    
+//     dstype sr[n*K*L2], si[n*K*L2];
+//     dstype ar[K*L2], ai[K*L2];    
+//     dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
+//     dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
+//     shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
+//     shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
+//     shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
+//     
+//     dstype p[(L+1)*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
+//     
+//     dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
+//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+//     
+//     int Nub = shobj.Nub;
+//     dstype b[Nub*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
+//             
+//     dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
+//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+//     
+           
     
 //     string filename = "besselzeros.bin";
 //     ifstream fin(filename.c_str(), ios::in | ios::binary);    

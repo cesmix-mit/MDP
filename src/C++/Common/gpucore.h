@@ -71,15 +71,31 @@ template <typename T> void gpuArrayGemmBatch1(T *C, T *A, T *B, int I, int J, in
 template <typename T> void gpuArrayDG2CG(T *ucg, T *udg, int *cgent2dgent, int *rowent2elem, int nent);
 template <typename T> void gpuArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int *rowent2elem, int nent, int npe);
 
-template <typename T> void gpuGetElemNodes(T *un, T *u, int N, int nn, int np, int e1, int nc1, int nc);
-template <typename T> void gpuPutElemNodes(T *un, T *u, int N, int nn, int np, int e1, int nc1, int nc);
-template <typename T> void gpuGetFaceNodes0(T *uh, T *udg, int *facecon, int N, int ndf, int npf, int npe, int nc, int f1);
-template <typename T> void gpuGetFaceNodes1(T *uh, T *udg, int *facecon, int N, int ndf, int npf, int npe, int nc, int f1);
-template <typename T> void gpuGetFaceNodes2(T *uh, T *udg, int *facecon, int N, int ndf, int npf, int npe, int nc, int f1);
-template <typename T> void gpuPutFaceNodes0(T *udg, T *uh, int *facecon, int N, int ndf, int npf, int npe, int nc, int f1);
-template <typename T> void gpuPutFaceNodes1(T *udg, T *uh, int *facecon, int N, int ndf, int npf, int npe, int nc, int f1);
-template <typename T> void gpuPutFaceNodes(T *udg, T *uh, int *rowe2f1, int *cole2f1, int *ent2ind1,
-        int *rowe2f2, int *cole2f2, int *ent2ind2, int npf, int npe, int nc, int e1, int e2, int opts);
+template <typename T> void gpuCart2Sphere(T *the, T *phi, T *r, T *x, T *y, T *z, int N);
+template <typename T> void gpuCart2SphereDeriv(T *the, T *phi, T *r, T *thex, T *they, T *thez, T *phix, T *phiy, T *phiz, T *rx, T *ry, T *rz, T *x, T *y, T *z, int N);
+template <typename T> void gpuSphere2Cart(T *x, T *y, T *z, T *the, T *phi, T *r, int N);
+template <typename T> void gpuEuler2Rotm(T *R11, T *R12, T *R13, T *R21, 
+                T *R22, T *R23, T *R31, T *R32, T *R33, T *alpha, T *beta, T *gamma, int N);
+template <typename T> void gpuRotc(T *X, T *Y, T *Z, T *R, T *x, T *y, T *z, int N);
 
+template <typename T> void gpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
+template <typename T> void gpuSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, 
+      T *x, T *y, T *z, T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
+template <typename T> void gpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T *Si, 
+        int *Nnb, int Na, int L, int K);
+template <typename T> void gpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int Na, int L, int K);
+template <typename T> void gpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K);
+template <typename T> void gpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
+        int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K);
+template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, 
+        T *ar, T *ai, T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K);
+template <typename T> void gpuRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
+        int Ntype, int Na, int Nbf);
+template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, 
+        T *cx, T *cy, T *cz, int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
+                
 #endif  
 

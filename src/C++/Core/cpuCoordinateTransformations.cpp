@@ -1,7 +1,7 @@
 #ifndef __CPUCOORDINATETRANSFORMATIONS
 #define __CPUCOORDINATETRANSFORMATIONS
 
-template <typename T> void cpuArrayCart2Sphere(T *the, T *phi, T *r, T *x, T *y, T *z, int N)
+template <typename T> void cpuCart2Sphere(T *the, T *phi, T *r, T *x, T *y, T *z, int N)
 {    
     //#pragma omp parallel for
     for (int i=0; i<N; i++) {
@@ -10,10 +10,10 @@ template <typename T> void cpuArrayCart2Sphere(T *the, T *phi, T *r, T *x, T *y,
         phi[i] = atan2(y[i],x[i]);
     }
 }
-template void cpuArrayCart2Sphere(double*, double*, double*, double*, double*, double*, int);
-template void cpuArrayCart2Sphere(float*, float*, float*, float*, float*, float*, int);
+template void cpuCart2Sphere(double*, double*, double*, double*, double*, double*, int);
+template void cpuCart2Sphere(float*, float*, float*, float*, float*, float*, int);
 
-template <typename T> void cpuArrayCart2SphereDeriv(T *the, T *phi, T *r, T *thex, T *they, T *thez, T *phix, T *phiy, T *phiz, T *rx, T *ry, T *rz, T *x, T *y, T *z, int N)
+template <typename T> void cpuCart2SphereDeriv(T *the, T *phi, T *r, T *thex, T *they, T *thez, T *phix, T *phiy, T *phiz, T *rx, T *ry, T *rz, T *x, T *y, T *z, int N)
 {    
     //#pragma omp parallel for
     for (int i=0; i<N; i++) {
@@ -37,10 +37,10 @@ template <typename T> void cpuArrayCart2SphereDeriv(T *the, T *phi, T *r, T *the
         phiz[i] = 0.0;        
     }
 }
-template void cpuArrayCart2SphereDeriv(double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, int);
-template void cpuArrayCart2SphereDeriv(float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, int);
+template void cpuCart2SphereDeriv(double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, double*, int);
+template void cpuCart2SphereDeriv(float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*, int);
 
-template <typename T> void cpuArraySphere2Cart(T *x, T *y, T *z, T *the, T *phi, T *r, int N)
+template <typename T> void cpuSphere2Cart(T *x, T *y, T *z, T *the, T *phi, T *r, int N)
 {    
     //#pragma omp parallel for
     for (int i=0; i<N; i++) {
@@ -49,8 +49,8 @@ template <typename T> void cpuArraySphere2Cart(T *x, T *y, T *z, T *the, T *phi,
         z[i] = r[i]*cos(the[i]);
     }
 }
-template void cpuArraySphere2Cart(double*, double*, double*, double*, double*, double*, int);
-template void cpuArraySphere2Cart(float*, float*, float*, float*, float*, float*, int);
+template void cpuSphere2Cart(double*, double*, double*, double*, double*, double*, int);
+template void cpuSphere2Cart(float*, float*, float*, float*, float*, float*, int);
 
 template <typename T> void cpuEuler2Rotm(T *R11, T *R12, T *R13, T *R21, 
                 T *R22, T *R23, T *R31, T *R32, T *R33, T *alpha, T *beta, T *gamma, int N)
