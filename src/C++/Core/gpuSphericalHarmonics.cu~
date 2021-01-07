@@ -1254,9 +1254,9 @@ template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBispectru
         int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n
         for (int q=0; q<numnb; q++) {// loop over each neighbor of atom n                         
             int ii = (k*Nub + i)*N + Nnb[n] + q; // index of bx, by, bz                                        
-            bd[3*ii+0] = (T) 0.0;
-            bd[3*ii+1] = (T) 0.0;
-            bd[3*ii+2] = (T) 0.0;                                    
+            bd[3*ii] = (T) 0.0;
+            bd[ii] = (T) 0.0;
+            bd[ii] = (T) 0.0;                                    
             for (int j = 0; j<nm; j++) {
                 int m2 = indm[rowm[i]+j];
                 int m1 = indm[Ncg+rowm[i]+j];
@@ -1305,25 +1305,25 @@ template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBispectru
                 T t2 = a2x*b1*b3 + a2*b1x*b3 + a2*b1*b3x;
                 T t3 = a3x*b1*b2 + a3*b1x*b2 + a3*b1*b2x;
                 T t4 = a1x*b2*b3 + a1*b2x*b3 + a1*b2*b3x;
-                bd[3*ii+0] += c*(t1 + t2 + t3 - t4);
+                bx[ii] += c*(t1 + t2 + t3 - t4);
 
                 t1 = a1y*a2*a3 + a1*a2y*a3 + a1*a2*a3y;                
                 t2 = a2y*b1*b3 + a2*b1y*b3 + a2*b1*b3y;
                 t3 = a3y*b1*b2 + a3*b1y*b2 + a3*b1*b2y;
                 t4 = a1y*b2*b3 + a1*b2y*b3 + a1*b2*b3y;
-                bd[3*ii+1] += c*(t1 + t2 + t3 - t4);
+                by[ii] += c*(t1 + t2 + t3 - t4);
 
                 t1 = a1z*a2*a3 + a1*a2z*a3 + a1*a2*a3z;                
                 t2 = a2z*b1*b3 + a2*b1z*b3 + a2*b1*b3z;
                 t3 = a3z*b1*b2 + a3*b1z*b2 + a3*b1*b2z;
                 t4 = a1z*b2*b3 + a1*b2z*b3 + a1*b2*b3z;
-                bd[3*ii+2] += c*(t1 + t2 + t3 - t4);                    
+                bz[ii] += c*(t1 + t2 + t3 - t4);                    
             }
         }               
         tid += blockDim.x * gridDim.x;
     }                                     
 }
-template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv2(T *bd, 
+template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv2(T *bx, T *by, T *bz, 
         T *ar, T *ai, T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
         int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K)
 {        
@@ -1335,12 +1335,12 @@ template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv2(T *bd,
     int blockDim = 256;
     int gridDim = (N3 + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
-    gpuKernelRadialSphericalHarmonicsBispectrumDeriv2<<<gridDim, blockDim>>>(bd, ar, ai, arx, aix, 
+    gpuKernelRadialSphericalHarmonicsBispectrumDeriv2<<<gridDim, blockDim>>>(bx, by, bz, ar, ai, arx, aix, 
             ary, aiy, arz, aiz, cg, indk, indl, indm, rowm, Nnb, Na, Nub, Ncg, K, N, K2, N2, N3);
 }
-template void gpuRadialSphericalHarmonicsBispectrumDeriv2(double*, double*, double*, double*, 
+template void gpuRadialSphericalHarmonicsBispectrumDeriv2(double*, double*, double*, double*, double*, double*, 
         double*, double*, double*, double*, double*, double*, int*, int*, int*, int*, int*, int, int, int, int);
-template void gpuRadialSphericalHarmonicsBispectrumDeriv2(float*, float*, float*, float*,  
+template void gpuRadialSphericalHarmonicsBispectrumDeriv2(float*, float*, float*, float*, float*, float*,  
         float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, int*, int, int, int, int);
 
 // core function
@@ -1455,80 +1455,6 @@ template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T
 }
 template void gpuRadialSphericalHarmonicsBasisDeriv(double*, double*, double*, double*, double*, double*, int*, int*, int*, int, int, int);
 template void gpuRadialSphericalHarmonicsBasisDeriv(float*, float*, float*, float*, float*, float*, int*, int*, int*, int, int, int);
-
-// core function
-template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBasisDeriv2(T *dd, T *cd, 
-        int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf, int N, int N2, int N3)
-{       
-    // Ntype                : number of atom types 
-    // Na                   : number of atoms in the simulation domain 
-    // Nbf                  : number of basis functions per atom type
-    // N = Nnb[Na]-Nnb[0] : total number of neighbors     
-    // atomtype [Na]        : a list containing the types of atoms
-    // neighborlist [N]     : a list containing the indices of neighbors
-    // Nnb [Na+1]           : a list containing the number of neighbors for each global atom                
-    // c [Na*Nbf]           : spectrum components for all atoms
-    // d [Nbf*Ntype]        : basis functions based on atom types
-    // cd [3*N*Nbf]         : derivatives of spectrum components  
-    // dd [3*Na*Nbf*Ntype]  : derivatives of the basis functions
-    
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
-    while (tid < N3) { 
-        int s = tid%N2;     // [1, Na*Nbf]           
-        int t = (tid-s)/N2; // spherical basis index [1, Ntype] 
-        int n = s%Na;       // atom index n [1, Na] 
-        int m = (s-n)/Na;   // radial basis index [1, Nbf]       
-             
-        int nmt = Na*Nbf*t + Na*m + n; //index of the derivatives of the basis function                
-        dd[3*nmt+0] = (T) 0.0;
-        dd[3*nmt+1] = (T) 0.0;
-        dd[3*nmt+2] = (T) 0.0;                
-        int tn = atomtype[n]; // type of atom n                
-        int numnb = Nnb[n+1]-Nnb[n];  // number of neighbors for atom n                                                   
-
-        for (int q=0; q<numnb; q++) { // loop over each neighbor of atom n                    
-            if (tn==t) {// type of atom n is equal to t
-                // atom n is self, atom i is neighbor
-                int qnm = m*N + (Nnb[n] + q);  // index of the spectrum components of the atom pair (i, n)                    
-                dd[3*nmt+0] +=  -cd[3*qnm+0];
-                dd[3*nmt+1] +=  -cd[3*qnm+1];
-                dd[3*nmt+2] +=  -cd[3*qnm+2]; 
-            }                    
-
-            int i = neighlist[Nnb[n] + q]; // atom i 
-            int ti = atomtype[i];             // type of atom i                                        
-            if (ti==t) { // type of atom i is equal to t                    
-                int Nnbi = Nnb[i+1]-Nnb[i];  // number of neighbors for atom i
-                int r;
-                for (r=0; r<Nnbi; r++) // loop over each neighbor of atom i
-                    if (neighlist[Nnb[i] + r] == n) // if a neighbor of atom i matchs atom n
-                        break;
-
-                int rim = m*N + (Nnb[i] + r); // index of the spectrum components of the atom pair (n, i)                                        
-                // atom n is neighbor, atom i is self
-                dd[3*nmt+0] += cd[3*rim+0];
-                dd[3*nmt+1] += cd[3*rim+1];
-                dd[3*nmt+2] += cd[3*rim+2];
-            }
-        }                
-        tid += blockDim.x * gridDim.x;                
-    }
-}
-template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv2(T *dd, T *cd, 
-        int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf)
-{            
-    int N = Nnb[Na]-Nnb[0]; // total number of neighbors     
-    int N1 = Na;    // number of atoms in the simulation domain
-    int N2 = Nbf*Na;
-    int N3 = Ntype*Nbf*Na;                            
-    int blockDim = 256;
-    int gridDim = (N3 + blockDim - 1) / blockDim;
-    gridDim = (gridDim>1024)? 1024 : gridDim;
-    gpuKernelRadialSphericalHarmonicsBasisDeriv2<<<gridDim, blockDim>>>(dd, cd, atomtype, 
-            neighlist, Nnb, Ntype, Na, Nbf, N, N2, N3);
-}
-template void gpuRadialSphericalHarmonicsBasisDeriv2(double*, double*, int*, int*, int*, int, int, int);
-template void gpuRadialSphericalHarmonicsBasisDeriv2(float*, float*, int*, int*, int*, int, int, int);
 
 
 #endif
