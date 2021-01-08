@@ -4,26 +4,48 @@
 class CDescriptors {
 private:
 public:
-    Int backend;         // computing platform
+    Int backend;      // computing platform: 1 -> CPU, 2-> (CUDA) GPU
+    Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
+    Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
+    Int natomtypes;   // number of atom types;    
+    Int niatoms;      // number of i atoms
+    Int nijatoms;     // number of (i,j) atom pairs    
+    Int nbasis;       // number of basis functions
+    cublasHandle_t cublasHandle;
+            
     neighborstruct nb;
-    sysstruct sys;         
-    CSphericalHarmonics shd;
-                
+    sysstruct sys;     
+    tempstruct tmp;    
+    CSphericalHarmonics csh;
+    
+    void SetNeighborStruct(CConfiguration& cconf);
+    void SetSysStruct(CConfiguration& cconf);
+    void SetTempStruct(CConfiguration& cconf);
+    void Init(CConfiguration& cconf);
+    
+    void NeighborList(dstype* x, Int* atomtype, Int numatoms);
+    void BasisFunctions(dstype* d, dstype* x, Int* atomtype, Int numatoms);
+    void BasisFunctionsDeriv(dstype* dd, dstype* x, Int* atomtype, Int numatoms);
+    void BasisFunctionsWithDeriv(dstype* d, dstype* dd, dstype* x, Int* atomtype, Int numatoms);
+    
+    void Energy(dstype e, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff);
+    void Forces(dstype* f, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff);
+    void Stresses(dstype* s, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff);
+    void EnergyForces(dstype e, dstype* f, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff);
+    void EnergyForcesStresses(dstype e, dstype* f, dstype* s, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff);
+        
     // constructor 
-    CDescriptors(CConfiguration& conf, Int confignum)
-        : shd(conf.common.K, conf.common.L, conf.common.backend)
-        {backend = conf.common.backend;};    
+    CDescriptors(CConfiguration& cconf)
+        : csh(cconf.common.K, cconf.common.L, cconf.common.backend)
+        {
+            this->Init(cconf);                        
+        };    
         
     // destructor        
     ~CDescriptors(); 
     
-    void NeighborList(CConfiguration& conf, Int confignum);
-    void Energy(dstype* coeff);
-    void Forces(dstype* coeff);
-    void Stresses(dstype* coeff);    
-    void BasisFunctions();
-    void BasisFunctionsDeriv();
 };
+
 
 
 #endif        

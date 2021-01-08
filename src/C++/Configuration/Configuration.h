@@ -4,11 +4,10 @@
 class CConfiguration {
 private:
 public:          
-    commonstruct common;   
     configstruct config;
     appstruct app;
-    tempstruct tmp;
-    
+    commonstruct common;
+        
     // default constructor 
     CConfiguration(){}; 
     
@@ -18,11 +17,10 @@ public:
     // destructor        
     ~CConfiguration(); 
     
-    void ReadConfigStruct(string filename, Int backend);
-    void ReadAppStruct(string filename, Int backend);    
-    void SetCommonStruct(Int backend);
-    void SetTmpStruct(Int backend);         
-    void SetStructs(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend);     
+    void ReadConfigStruct(string filename, Int mpiprocs, Int mpirank, Int backend);
+    void ReadAppStruct(string filename, Int mpiprocs, Int mpirank, Int backend);    
+    void SetCommonStruct(Int mpiprocs, Int mpirank, Int backend);
+    void Init(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend);     
 };
 
 #endif        

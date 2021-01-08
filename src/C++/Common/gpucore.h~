@@ -89,22 +89,15 @@ template <typename T> void gpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T
 template <typename T> void gpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int Na, int L, int K);
 template <typename T> void gpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
         T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K);
-template <typename T> void gpuRadialSphericalHarmonicsPowerDeriv2(T *pd, T *ar, T *ai, 
-        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K);
 template <typename T> void gpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
         int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K);
 template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, 
         T *ar, T *ai, T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
         int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K);
-template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv2(T *bd, T *ar, T *ai, 
-        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
-        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K);
 template <typename T> void gpuRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
         int Ntype, int Na, int Nbf);
 template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, 
         T *cx, T *cy, T *cz, int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
-template <typename T> void gpuRadialSphericalHarmonicsBasisDeriv2(T *dd, T *cd,
-        int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
                 
 #endif  
 

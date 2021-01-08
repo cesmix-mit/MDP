@@ -93,6 +93,7 @@ void CSphericalHarmonics::Init(Int Kin, Int Lin, Int backendin)
         for (int l=0; l<(L+1); l++)
             x0[k*(L+1) + l] = bzeros[k*25 + l];
     
+    // free memory
     sh.freememory(backend);
          
     // allocate memory for sh struct
@@ -147,7 +148,7 @@ void CSphericalHarmonics::Init(Int Kin, Int Lin, Int backendin)
 // CPU constructor
 CSphericalHarmonics::CSphericalHarmonics(Int Kin, Int Lin, Int backend) 
 {
-    Init(Kin, Lin, backend);
+    this->Init(Kin, Lin, backend);
 }
 
 // destructor 
@@ -165,7 +166,12 @@ void CSphericalHarmonics::SphericalHarmonicsBesselDeriv(dstype *Srx, dstype *Six
 {
     coreSphericalHarmonicsBesselDeriv(Srx, Six, Sry, Siy, Srz, Siz, x, y, z, sh.x0, sh.P, sh.tmp, sh.f, sh.dP, sh.dtmp, sh.df, sh.fac, M_PI, L, K, N, backend);    
 }
-                
+
+void CSphericalHarmonics::SphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, dstype *x, dstype *y, dstype *z, Int N)
+{
+    coreSphericalHarmonicsBesselWithDeriv(Sr, Si, Srx, Six, Sry, Siy, Srz, Siz, x, y, z, sh.x0, sh.P, sh.tmp, sh.f, sh.dP, sh.dtmp, sh.df, sh.fac, M_PI, L, K, N, backend);    
+}
+
 void CSphericalHarmonics::RadialSphericalHarmonicsSum(dstype *ar, dstype *ai, dstype *Sr, dstype *Si, Int *numneigh, Int Na)
 {
     coreRadialSphericalHarmonicsSum(ar, ai, Sr, Si, numneigh, Na, L, K, backend);
@@ -181,7 +187,13 @@ void CSphericalHarmonics::RadialSphericalHarmonicsPowerDeriv(dstype *px, dstype 
 {
     coreRadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, arx, aix, ary, aiy, arz, aiz, sh.indk, numneigh, Na, L, K, backend);
 }
-        
+
+void CSphericalHarmonics::RadialSphericalHarmonicsPowerDeriv2(dstype *pd, dstype *ar, dstype *ai, 
+        dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, Int *numneigh, Int Na)
+{
+    coreRadialSphericalHarmonicsPowerDeriv2(pd, ar, ai, arx, aix, ary, aiy, arz, aiz, sh.indk, numneigh, Na, L, K, backend);
+}
+
 void CSphericalHarmonics::RadialSphericalHarmonicsBispectrum(dstype *b, dstype *ar, dstype *ai, Int Na)
 {    
     coreRadialSphericalHarmonicsBispectrum(b, ar, ai, sh.cg, sh.indk, sh.indl, sh.indm, sh.rowm, Nub, Ncg, Na, L, K, backend);
@@ -191,6 +203,13 @@ void CSphericalHarmonics::RadialSphericalHarmonicsBispectrumDeriv(dstype *bx, ds
         dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, Int *numneigh, Int Na)
 {
     coreRadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, arx, aix, ary, aiy, arz, aiz, 
+             sh.cg, sh.indk, sh.indl, sh.indm, sh.rowm, numneigh, Na, Nub, Ncg, K, backend);
+}
+
+void CSphericalHarmonics::RadialSphericalHarmonicsBispectrumDeriv2(dstype *bd, dstype *ar, dstype *ai, 
+        dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, Int *numneigh, Int Na)
+{
+    coreRadialSphericalHarmonicsBispectrumDeriv2(bd, ar, ai, arx, aix, ary, aiy, arz, aiz, 
              sh.cg, sh.indk, sh.indl, sh.indm, sh.rowm, numneigh, Na, Nub, Ncg, K, backend);
 }
 
@@ -204,5 +223,11 @@ void CSphericalHarmonics::RadialSphericalHarmonicsBasisDeriv(dstype *dx, dstype 
 {
     coreRadialSphericalHarmonicsBasisDeriv(dx, dy, dz, cx, cy, cx, atomtype, neighlist, numneigh, Ntype, Na, Nbf, backend);
 }
-        
+
+void CSphericalHarmonics::RadialSphericalHarmonicsBasisDeriv2(dstype *dd, dstype *cd,
+        int *atomtype, int *neighlist, int *numneigh, int Ntype, int Na, int Nbf)
+{
+    coreRadialSphericalHarmonicsBasisDeriv2(dd, cd, atomtype, neighlist, numneigh, Ntype, Na, Nbf, backend);
+}
+
 #endif        

@@ -347,6 +347,19 @@ static void coreSphericalHarmonicsBesselDeriv(dstype *Srx, dstype *Six, dstype *
 #endif                  
 }
 
+static void coreSphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, 
+      dstype *x, dstype *y, dstype *z, dstype *x0, dstype *P, dstype *tmp, dstype *f, dstype *dP, dstype *dtmp, dstype *df, dstype *fac, dstype pi, Int L, Int K, Int N, Int backend)
+{
+    if (backend == 1)  
+        cpuSphericalHarmonicsBesselWithDeriv(Sr, Si, Srx, Six, Sry, Siy, Srz, Siz, x, y, z, 
+            x0, P, tmp, f, dP, dtmp, df, fac, pi, L, K, N);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuSphericalHarmonicsBesselWithDeriv(Sr, Si, Srx, Six, Sry, Siy, Srz, Siz, x, y, z, 
+            x0, P, tmp, f, dP, dtmp, df, fac, pi, L, K, N);    
+#endif                  
+}
+
 static void coreRadialSphericalHarmonicsSum(dstype *ar, dstype *ai, dstype *Sr, dstype *Si, Int *Nnb, Int Na, Int L, Int K, Int backend)
 {
     if (backend == 1)  
@@ -380,6 +393,19 @@ static void coreRadialSphericalHarmonicsPowerDeriv(dstype *px, dstype *py, dstyp
 #endif                  
 }
 
+static void coreRadialSphericalHarmonicsPowerDeriv2(dstype *pd, dstype *ar, dstype *ai, dstype *arx, dstype *aix,
+        dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, Int *indk, Int *Nnb, Int Na, Int L, Int K, Int backend)
+{
+    if (backend == 1)  
+        cpuRadialSphericalHarmonicsPowerDeriv2(pd, ar, ai, arx, aix, 
+            ary, aiy, arz, aiz, indk, Nnb, Na, L, K);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuRadialSphericalHarmonicsPowerDeriv2(pd, ar, ai, arx, aix, 
+            ary, aiy, arz, aiz, indk, Nnb, Na, L, K);
+#endif                  
+}
+
 static void coreRadialSphericalHarmonicsBispectrum(dstype *b, dstype *ar, dstype *ai, dstype *cg, Int *indk, 
         Int *indl, Int *indm, Int *rowm, Int Nub, Int Ncg, Int Na, Int L, Int K, Int backend)
 {
@@ -407,6 +433,20 @@ static void coreRadialSphericalHarmonicsBispectrumDeriv(dstype *bx, dstype *by, 
 #endif                  
 }
 
+static void coreRadialSphericalHarmonicsBispectrumDeriv2(dstype *bd, dstype *ar, dstype *ai, 
+        dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, dstype*cg, 
+        Int *indk, Int *indl, Int *indm, Int *rowm, Int *Nnb, Int Na, Int Nub, Int Ncg, Int K, Int backend)
+{
+    if (backend == 1)  
+        cpuRadialSphericalHarmonicsBispectrumDeriv2(bd, ar, ai, arx, aix, 
+            ary, aiy, arz, aiz, cg, indk, indl, indm, rowm, Nnb, Na, Nub, Ncg, K);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuRadialSphericalHarmonicsBispectrumDeriv2(bd, ar, ai, arx, aix, 
+            ary, aiy, arz, aiz, cg, indk, indl, indm, rowm, Nnb, Na, Nub, Ncg, K);
+#endif                  
+}
+
 static void coreRadialSphericalHarmonicsBasis(dstype *d, dstype *c, Int *atomtype, 
         Int Ntype, Int Na, Int Nbf, Int backend)
 {
@@ -428,6 +468,17 @@ static void coreRadialSphericalHarmonicsBasisDeriv(dstype *dx, dstype *dy, dstyp
     if (backend == 2)  
         gpuRadialSphericalHarmonicsBasisDeriv(dx, dy, dz, cx, cy, cz, atomtype, 
             neighlist, Nnb, Ntype, Na, Nbf);
+#endif                  
+}
+
+static void coreRadialSphericalHarmonicsBasisDeriv2(dstype *dd, dstype *cd, 
+        Int *atomtype, Int *neighlist, Int *Nnb, Int Ntype, Int Na, Int Nbf, Int backend)
+{
+    if (backend == 1)  
+        cpuRadialSphericalHarmonicsBasisDeriv2(dd, cd, atomtype, neighlist, Nnb, Ntype, Na, Nbf);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuRadialSphericalHarmonicsBasisDeriv2(dd, cd, atomtype, neighlist, Nnb, Ntype, Na, Nbf);
 #endif                  
 }
 

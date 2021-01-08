@@ -4,13 +4,13 @@
 class CRegression {
 private:
 public:
-    CConfiguration conf;   // configuration class
-    CDescriptors desc;     // descriptors class
+    CConfiguration cconf;   // configuration class
+    CDescriptors cdesc;     // descriptors class
         
     // constructor 
     CRegression(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend)   
-       : conf(configfile, appfile, mpiprocs, mpirank, backend),
-         desc(conf, backend){ };        
+       : cconf(configfile, appfile, mpiprocs, mpirank, backend),
+         cdesc(cconf){ };        
     
     // destructor        
     ~CRegression(){  }; 

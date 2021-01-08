@@ -1,0 +1,46 @@
+#ifndef __DESCRIPTORS_H__
+#define __DESCRIPTORS_H__
+
+class CDescriptors {
+private:
+public:
+    Int backend;      // computing platform: 1 -> CPU, 2-> (CUDA) GPU
+    Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
+    Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
+    Int niatoms;      // number of i atoms
+    Int nijatoms;     // number of (i,j) atom pairs   
+    Int natomtypes;   // number of atom types;    
+    neighborstruct nb;
+    sysstruct sys;     
+    tempstruct tmp;    
+    CSphericalHarmonics shd;
+    
+    void SetNeighborStruct(CConfiguration& conf, Int confignum);
+    void SetSysStruct(CConfiguration& conf, Int confignum);
+    void SetTempStruct(CConfiguration& conf, Int confignum);
+    void Init(CConfiguration& conf, Int confignum);
+    void NeighborList(dstype* x);
+    void Energy(dstype e, dstype* x, dstype* coeff);
+    void Forces
+    void Stresses(CConfiguration& conf, Int confignum, dstype* coeff);    
+    void EnergyForces(CConfiguration& conf, Int confignum, dstype* coeff);
+    void EnergyForcesStresses(CConfiguration& conf, Int confignum, dstype* coeff);
+    void BasisFunctions(CConfiguration& conf, Int confignum);
+    void BasisFunctionsDeriv(CConfiguration& conf, Int confignum);
+    
+    // constructor 
+    CDescriptors(CConfiguration& conf, Int confignum)
+        : shd(conf.common.K, conf.common.L, conf.common.backend)
+        {
+            this->Init(conf, confignum);                        
+        };    
+        
+    // destructor        
+    ~CDescriptors(); 
+    
+};
+
+
+
+#endif        
+

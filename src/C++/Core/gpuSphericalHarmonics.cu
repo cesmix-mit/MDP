@@ -1496,7 +1496,7 @@ template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBasisDeri
             }                    
 
             int i = neighlist[Nnb[n] + q]; // atom i 
-            int ti = atomtype[i];             // type of atom i                                        
+            int ti = atomtype[i];          // type of atom i                                        
             if (ti==t) { // type of atom i is equal to t                    
                 int Nnbi = Nnb[i+1]-Nnb[i];  // number of neighbors for atom i
                 int r;

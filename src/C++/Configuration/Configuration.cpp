@@ -14,45 +14,37 @@
 CConfiguration::~CConfiguration()
 {
     app.freememory(common.backend);
-    tmp.freememory(common.backend);
-    config.freememory();
+    config.freememory();    
     common.freememory();
 }
 
-void CConfiguration::ReadConfigStruct(string filename, Int backend)
+void CConfiguration::ReadConfigStruct(string filename, Int mpiprocs, Int mpirank, Int backend)
 {
     
 }
 
-void CConfiguration::ReadAppStruct(string filename, Int backend)
+void CConfiguration::ReadAppStruct(string filename, Int mpiprocs, Int mpirank, Int backend)
 {
     
 }
 
-void CConfiguration::SetCommonStruct(Int backend)
+void CConfiguration::SetCommonStruct(Int mpiprocs, Int mpirank, Int backend)
 {
     
 }
 
-void CConfiguration::SetTmpStruct(Int backend)
+void CConfiguration::Init(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend)
 {
-    
-}
-
-void CConfiguration::SetStructs(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend)
-{
-    this->ReadConfigStruct(configfile, backend);
-    this->ReadAppStruct(appfile, backend);
-    this->SetCommonStruct(backend);
-    this->SetTmpStruct(backend);
+    this->ReadConfigStruct(configfile, mpiprocs, mpirank, backend);
+    this->ReadAppStruct(appfile, mpiprocs, mpirank, backend);
+    this->SetCommonStruct(mpiprocs,  mpirank, backend);
 }
 
 // constructor 
 CConfiguration::CConfiguration(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend) 
 {
-    this->SetStructs(configfile, appfile, mpiprocs, mpirank, backend);
+    this->Init(configfile, appfile, mpiprocs, mpirank, backend);
 }
-
 
 #endif
 

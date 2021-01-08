@@ -63,6 +63,21 @@ void CDescriptors::NeighborList(dstype* x, Int* atomtype, Int numatoms)
     niatoms = numatoms;
 }
     
+void CDescriptors::Stresses(dstype* s, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
+{
+    this->NeighborList(x, atomtype, numatoms);  
+}
+        
+void CDescriptors::EnergyForces(dstype e, dstype* f, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
+{
+    this->NeighborList(x, atomtype, numatoms);  
+}
+
+void CDescriptors::EnergyForcesStresses(dstype e, dstype* f, dstype* s, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
+{
+    this->NeighborList(x, atomtype, numatoms);  
+}
+
 void CDescriptors::BasisFunctions(dstype *d, dstype *x, Int* atomtype, Int numatoms)
 {       
     this->NeighborList(x, atomtype, numatoms);    
@@ -169,26 +184,26 @@ void CDescriptors::BasisFunctionsWithDeriv(dstype* d, dstype* dd, dstype* x, Int
         csh.RadialSphericalHarmonicsSum(ar, ai, sr, si, nb.numneigh, niatoms);    
         
         if (spectrum==0) {  // power spectrum    
-            csh.RadialSphericalHarmonicsPower(c, ar, ai, niatoms);               
-            csh.RadialSphericalHarmonicsPowerDeriv2(cd, ar, ai, srx, six, sry, siy, srz, siz, nb.numneigh, niatoms);
+            csh.RadialSphericalHarmonicsPower(c, ar, ai, niatoms);   
             csh.RadialSphericalHarmonicsBasis(d, c, nb.atomtype, natomtypes, niatoms, nbasis);                                
+            csh.RadialSphericalHarmonicsPowerDeriv2(cd, ar, ai, srx, six, sry, siy, srz, siz, nb.numneigh, niatoms);
             csh.RadialSphericalHarmonicsBasisDeriv2(dd, cd, nb.atomtype, nb.neighlist, nb.numneigh, 
                     natomtypes, niatoms, nbasis);            
         }
         else if (spectrum==1) { // bispectrum
-            csh.RadialSphericalHarmonicsBispectrum(c, ar, ai, niatoms);               
-            csh.RadialSphericalHarmonicsBispectrumDeriv2(cd, ar, ai, srx, six, sry, siy, srz, siz, nb.numneigh, niatoms);
+            csh.RadialSphericalHarmonicsBispectrum(c, ar, ai, niatoms);   
             csh.RadialSphericalHarmonicsBasis(d, c, nb.atomtype, natomtypes, niatoms, nbasis);                   
+            csh.RadialSphericalHarmonicsBispectrumDeriv2(cd, ar, ai, srx, six, sry, siy, srz, siz, nb.numneigh, niatoms);
             csh.RadialSphericalHarmonicsBasisDeriv2(dd, cd, nb.atomtype, nb.neighlist, nb.numneigh, 
                     natomtypes, niatoms, nbasis);                        
         }
         else if (spectrum==2) { // power spectrum and bispectrum         
             Int npower = (L+1)*K*(K+1)/2;      // number of power components
             csh.RadialSphericalHarmonicsPower(c, ar, ai, niatoms);   
-            csh.RadialSphericalHarmonicsBispectrum(&c[niatoms*npower], ar, ai, niatoms);               
+            csh.RadialSphericalHarmonicsBispectrum(&c[niatoms*npower], ar, ai, niatoms);   
+            csh.RadialSphericalHarmonicsBasis(d, c, nb.atomtype, natomtypes, niatoms, nbasis);    
             csh.RadialSphericalHarmonicsPowerDeriv2(cd, ar, ai, srx, six, sry, siy, srz, siz, nb.numneigh, niatoms);
             csh.RadialSphericalHarmonicsBispectrumDeriv2(&cd[3*nijatoms*npower], ar, ai, srx, six, sry, siy, srz, siz, nb.numneigh, niatoms);
-            csh.RadialSphericalHarmonicsBasis(d, c, nb.atomtype, natomtypes, niatoms, nbasis);    
             csh.RadialSphericalHarmonicsBasisDeriv2(dd, cd, nb.atomtype, nb.neighlist, nb.numneigh, 
                     natomtypes, niatoms, nbasis);                        
         }
@@ -197,33 +212,15 @@ void CDescriptors::BasisFunctionsWithDeriv(dstype* d, dstype* dd, dstype* x, Int
 
 void CDescriptors::Energy(dstype e, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
 {    
-    dstype *d = &tmp.tempmem[0];
+    
     this->BasisFunctions(d, x, atomtype, numatoms);
     DOT(cublasHandle, ncoeff, d, inc1, coeff, inc1, &e, backend);
 }
 
 void CDescriptors::Forces(dstype* f, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
 {
-    dstype *dd = &tmp.tempmem[0];
-    this->BasisFunctionsDeriv(dd, x, atomtype, numatoms);     
-    PGEMNV(cublasHandle, 3*numatoms, ncoeff, &one, dd, 3*numatoms, coeff, inc1, &zero, f, inc1, backend);        
-}
-
-void CDescriptors::EnergyForces(dstype e, dstype* f, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
-{
-    dstype *d = &tmp.tempmem[0];
-    dstype *dd = &tmp.tempmem[ncoeff];
-    this->BasisFunctionsWithDeriv(d, dd, x, atomtype, numatoms);     
-    DOT(cublasHandle, ncoeff, d, inc1, coeff, inc1, &e, backend);
-    PGEMNV(cublasHandle, 3*numatoms, ncoeff, &one, dd, 3*numatoms, coeff, inc1, &zero, f, inc1, backend);            
-}
-
-void CDescriptors::Stresses(dstype* s, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
-{
-}
-        
-void CDescriptors::EnergyForcesStresses(dstype e, dstype* f, dstype* s, dstype* x, dstype* coeff, Int* atomtype, Int numatoms, Int ncoeff)
-{
+    this->BasisFunctionsDeriv(dd, x, atomtype, numatoms);        
+    
 }
 
 #endif        

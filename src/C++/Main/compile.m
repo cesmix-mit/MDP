@@ -17,7 +17,7 @@ delete('../Core/libcpuCore.so');
 compilerstr{1} = cpucompiler + " -fPIC -O3 -c ../Core/cpuCore.cpp -o ../Core/cpuCore.o";
 compilerstr{2} = cpucompiler + " --shared ../Core/cpuCore.o -o ../Core/libcpuCore.so";
 compilerstr{3} = "ar rvs ../Core/cpuCore.a ../Core/cpuCore.o";
-compilerstr{4} = cpucompiler + " -std=c++11 main.cpp -o cpuSerialGOLFF ../Core/cpuCore.a -O3";
+compilerstr{4} = cpucompiler + " -std=c++11 main.cpp -o cpuSerialGOLFF ../Core/cpuCore.a -O3 -lblas";
 for i = 1:4
     eval(char("!" + compilerstr{i}));
 end

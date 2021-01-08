@@ -12,7 +12,7 @@ str = `$cpucompiler --shared ../Core/cpuCore.o -o ../Core/libcpuCore.so`;
 run(str);
 str = `ar rvs ../Core/cpuCore.a ../Core/cpuCore.o`;
 run(str);
-str = `$cpucompiler -std=c++11 main.cpp -o cpuSerialGOLFF ../Core/cpuCore.a -O3`;
+str = `$cpucompiler -std=c++11 main.cpp -o cpuSerialGOLFF ../Core/cpuCore.a -O3 -lblas`;
 run(str);
 rm("../Core/cpuCore.o");
 

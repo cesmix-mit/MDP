@@ -151,29 +151,29 @@ int main(int argc, char** argv)
         
     CSphericalHarmonics shobj(K, L, backend);
     
-//     dstype sr[n*K*L2], si[n*K*L2];
-//     dstype ar[K*L2], ai[K*L2];    
-//     dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
-//     dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
-//     shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
-//     shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
-//     shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
-//     
-//     dstype p[(L+1)*K*(K+1)/2];
-//     shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
-//     
-//     dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
-//     shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
-//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-//     
-//     int Nub = shobj.Nub;
-//     dstype b[Nub*K*(K+1)/2];
-//     shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
-//             
-//     dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
-//     shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
-//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-//     
+    dstype sr[n*K*L2], si[n*K*L2];
+    dstype ar[K*L2], ai[K*L2];    
+    dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
+    dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
+    shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
+    shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
+    shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
+    
+    dstype p[(L+1)*K*(K+1)/2];
+    shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
+    
+    dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
+    shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
+        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+    
+    int Nub = shobj.Nub;
+    dstype b[Nub*K*(K+1)/2];
+    shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
+            
+    dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
+    shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
+        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+    
            
     
 //     string filename = "besselzeros.bin";

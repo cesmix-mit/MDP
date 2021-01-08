@@ -96,6 +96,8 @@ template <typename T> void cpuSphericalHarmonicsBesselSum(T *Sr, T *Si, T *x, T 
                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
                 T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int L, int K);
 template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
         T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int L, int K, int N);
@@ -109,16 +111,22 @@ template <typename T> void cpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T
 template <typename T> void cpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int Na, int L, int K);
 template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 
         T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K);
+template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv2(T *pd, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *Nnb, int Na, int L, int K);
 template <typename T> void cpuRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
         int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K);
 template <typename T> void cpuRadialSphericalHarmonicsBispectrumDeriv(T *bx, T *by, T *bz, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K);
+template <typename T> void cpuRadialSphericalHarmonicsBispectrumDeriv2(T *bd, T *ar, T *ai, 
         T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
         int *indm, int *rowm, int *Nnb, int Na, int Nub, int Ncg, int K);
 template <typename T> void cpuRadialSphericalHarmonicsBasis(T *d, T *c, int *atomtype, 
         int Ntype, int Na, int Nbf);
 template <typename T> void cpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T *dz, T *cx, T *cy, T *cz,
         int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
-
+template <typename T> void cpuRadialSphericalHarmonicsBasisDeriv2(T *dd, T *cd,
+        int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
 
 #endif  
 

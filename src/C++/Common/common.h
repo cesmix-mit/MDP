@@ -296,8 +296,8 @@ struct commonstruct {
     string fileout;      // Name of binary file to write the solution    
             
     Int backend=1;   // 1: CPU; 2: CUDA GPU  
-    //Int cpuMemory; // 1: data in CPU memory; 0: data in GPU memory
-    
+    Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
+    Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     Int mpiRank;  // MPI rank      
     Int mpiProcs; // number of MPI ranks
 
@@ -414,14 +414,15 @@ struct appstruct {
 
 struct configstruct {     
     string filename;    // name of a file for reading configurations 
-    Int nconfigs;       // number of configurations    
-    Int *numatoms;      // a list containing the number of atoms in each configuration   
+    Int nconfigs;       // number of configurations        
     Int natoms;         // the number of atoms for all configurations    
-    Int ntypes;         // number of atom types    
+    Int natomtypes;     // number of atom types    
+    Int *numatoms;      // a list containing the number of atoms in each configuration   
+    Int **t;            // atomic types of atoms for all configurations 
     dstype **x;         // positions of atoms for all configurations        
-    dstype **f;         // forces acting on atoms for all configurations            
-    Int **t;            // atomic types of atoms for all configurations            
-    dstype simubox[3*3];// 3 principal vectors of the simulation box    
+    dstype **f;         // forces acting on atoms for all configurations                           
+    dstype simbox[3*3]; // 3 principal vectors of the simulation box    
+    dstype bcs[6];      // boundary conditions
     void freememory()
     {        
         CPUFREE(numatoms);
@@ -432,30 +433,32 @@ struct configstruct {
 };
 
 struct neighborstruct {  
-    Int *ilist;          // indices of I atoms
+    Int *simbox;         // 3 principal vectors of the simulation box    
     Int *numneigh;       // numbers of neighbors for each atom i 
     Int *neighlist;      // indices of neighbors for each atom i     
     Int *atomtype;       // type of each atom i  
-    dstype *xi;          //  positions of each atom i  
+    dstype *bcs;         // boundary conditions
     dstype *xij;         // xij = xi - xj, where xj positions of neighbor j of atom i  
     void freememory(Int backend)
     {
         if (backend<=1) {
-            CPUFREE(ilist); 
+            CPUFREE(simbox); 
+            CPUFREE(bcs); 
             CPUFREE(numneigh); 
             CPUFREE(neighlist); 
             CPUFREE(atomtype); 
-            CPUFREE(xi); 
             CPUFREE(xij); 
         }
-        else {
-            CPUFREE(ilist); 
-            CPUFREE(numneigh); 
-            CPUFREE(neighlist); 
-            CPUFREE(atomtype); 
-            CPUFREE(xi); 
-            CPUFREE(xij);             
+#ifdef HAVE_CUDA                 
+        else {         
+            GPUFREE(simbox); 
+            GPUFREE(bcs); 
+            GPUFREE(numneigh); 
+            GPUFREE(neighlist); 
+            GPUFREE(atomtype); 
+            GPUFREE(xij);             
         }
+#endif               
     }
 };
 
@@ -498,23 +501,20 @@ struct sysstruct {
 
   
 struct tempstruct {
-    dstype *tempn=NULL; 
-    dstype *tempg=NULL;
+    dstype *tempmem=NULL;     
     dstype *buffrecv=NULL;
     dstype *buffsend=NULL;
     
     void freememory(Int backend)
     {
        if (backend<=1) {
-            CPUFREE(tempn); 
-            CPUFREE(tempg); 
+            CPUFREE(tempmem); 
             CPUFREE(buffrecv); 
             CPUFREE(buffsend); 
         }            
 #ifdef HAVE_CUDA      
        else {
-            GPUFREE(tempn);
-            GPUFREE(tempg);
+            GPUFREE(tempmem);
             GPUFREE(buffrecv); 
             GPUFREE(buffsend); 
        }
