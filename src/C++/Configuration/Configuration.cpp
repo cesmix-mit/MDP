@@ -14,7 +14,7 @@
 CConfiguration::~CConfiguration()
 {
     app.freememory(common.backend);
-    config.freememory();    
+    config.freememory();     
     common.freememory();
 }
 
@@ -34,7 +34,6 @@ void CConfiguration::SetCommonStruct(Int mpiprocs, Int mpirank, Int backend)
 }
 
 void CConfiguration::Init(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend)
-{
     this->ReadConfigStruct(configfile, mpiprocs, mpirank, backend);
     this->ReadAppStruct(appfile, mpiprocs, mpirank, backend);
     this->SetCommonStruct(mpiprocs,  mpirank, backend);

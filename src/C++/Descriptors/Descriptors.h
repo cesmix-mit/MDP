@@ -11,6 +11,7 @@ public:
     Int niatoms;      // number of i atoms
     Int nijatoms;     // number of (i,j) atom pairs    
     Int nbasis;       // number of basis functions
+    cudaEvent_t eventHandle;
     cublasHandle_t cublasHandle;
             
     neighborstruct nb;
@@ -42,10 +43,8 @@ public:
         };    
         
     // destructor        
-    ~CDescriptors(); 
-    
+    ~CDescriptors();     
 };
-
 
 
 #endif        

@@ -412,8 +412,8 @@ struct appstruct {
     }
 };
 
-struct configstruct {     
-    string filename;    // name of a file for reading configurations 
+struct configstruct {
+    string filename;    // name of a file for reading configurations
     Int nconfigs;       // number of configurations        
     Int natoms;         // the number of atoms for all configurations    
     Int natomtypes;     // number of atom types    
