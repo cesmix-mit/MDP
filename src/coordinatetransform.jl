@@ -10,13 +10,12 @@ struct Spherical{T}
     ϕ::T
 end
 
-Base.:+(f::Cartesian, g::Cartesian) = Cartesian(f.x+g.x,f.y+g.y,f.z+g.z)
-Base.:-(f::Cartesian, g::Cartesian) = Cartesian(f.x-g.x,f.y-g.y,f.z-g.z)
-Base.:abs(f::Cartesian) = abs(f.x^2+f.y^2+f.z^2)
+Base.:+(f::Cartesian, g::Cartesian) = Cartesian(f.x + g.x, f.y + g.y, f.z + g.z)
+Base.:-(f::Cartesian, g::Cartesian) = Cartesian(f.x - g.x, f.y - g.y, f.z - g.z)
+Base.:abs(f::Cartesian) = abs(f.x^2 + f.y^2 + f.z^2)
 
 function convert(::Type{Spherical}, coord::Cartesian)
     x, y, z = coord.x, coord.y, coord.z
-
     r = sqrt(x^2 + y^2 + z^2)
     θ = acos(z / r)
     ϕ = atan(y, x)
@@ -25,7 +24,6 @@ end
 
 function convert(::Type{Cartesian}, coord::Spherical)
     r, θ, ϕ = coord.r, coord.θ, coord.ϕ
-
     x = r * sin(θ) * cos(ϕ)
     y = r * sin(θ) * sin(ϕ)
     z = r * cos(θ)

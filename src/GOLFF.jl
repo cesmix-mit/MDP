@@ -23,14 +23,14 @@ function get_input_parameters()
     J = 3
 
     # `Nj`: 1D array of number of atoms for each configuration j
-    Nj = @SArray [ 2, 2, 4 ]
+    Nj = @SArray [2, 2, 4]
     
     # Configuration 1: H, H
     # Configuration 2: O, O
     # Configuration 3: H, O, Na, Cl
     
     # `w`: 1D array of weights for each configuration j
-    w = @SArray [ 1.0, 1.0, 1.0 ]
+    w = @SArray [1.0, 1.0, 1.0]
     
     # `T`: is the number of atom types.
     T = 4
@@ -97,6 +97,35 @@ function get_input_parameters()
     
 end
 
+"""
+    P(l, m, x) Associated Legendre Polynomials
+    
+    `l`: degree
+    `m`: order
+    `x`: cos(θ)
+    
+    see https://en.wikipedia.org/wiki/Associated_Legendre_polynomials
+"""
+function P(l, m, x)
+    comb(n, p) = factorial(n) / (factorial(p) * factorial(n - p))
+    res = 0.0
+    if m == 0
+        res =   1.0 / 2.0^l * 
+                sum([(-1.0)^(l - k) * comb(l , k) * comb(2 * k, l)
+                      * x^(2 * k - l)
+                      for k = ceil(l / 2.0):l end])
+    else
+        res =   (-1.0)^m * (1.0 - x^2)^(m / 2.0) * 1.0 / 2.0^l * 
+                sum([(-1.0)^(l - k) * comb(l, k) * comb(2 * k, l) 
+                      * factorial(2.0 * k - l) / factorial(2.0 * k - l - m)
+                      * x^(2.0 * k - l - m)
+                      for k = ceil((l + m) / 2.0):l end])
+        if m < 0
+            res = -1.0^m * factorial(l - m) / factorial(l + m) * res
+        end
+    end
+    return res
+end
 
 """
     calculate_forces()
@@ -105,35 +134,29 @@ end
 function calculate_forces()
     # TODO: complete functions deriv and deriv_d
 
-    # `P(l,m,x)`: Associated Legendre Polynomials
-    #             https://en.wikipedia.org/wiki/Associated_Legendre_polynomials
-    P(l,x) = 1.0 / ( 2^l * factorial(l) ) * deriv(l, (x^2-1)^l )
-    deriv_P(l,x) = deriv(m,P(l,x))
-    P(l,m,x) = (-1)^m * sin(θ)^m * deriv_P(l,cos(θ))
+    # `Y(l, m, theta, phi)`: spherical harmonics of degree l and order m (Eq. 12).
+    Y(l, m, θ, ϕ) = sqrt(
+                         (2 * l + 1) * factorial(l - m) /
+                         (4 * π * factorial(l + m))
+                         * P(l, m, cos(θ)) * exp(i * m * ϕ)
+                        )
 
-    # `Y(l,m,theta,phi)`: spherical harmonics of degree l and order m (Eq. 12).
-    Y(l,m,θ,ϕ) = sqrt(
-                        ( 2 * l + 1 ) * factorial( l - m ) /
-                        ( 4 * π * factorial( l + m ) )
-                        * P(l,m,cos(θ)) * exp(i * m * ϕ)
-                     )
+    # `g(l, k, r)`: radial basis function
+    g(l, k, r) = sphericalbessely(l, r)
 
-    # `g(l,k,r)`: radial basis function
-    g(l,k,r) = sphericalbessely(l,r)
-
-    # `u(m,l,k,r)`: 3D basic functions (Eq. 11).
-    u(k,l,m,r) = g(l,k,r) * Y(l,m,convert(Spherical,r).θ,convert(Spherical,r).ϕ) 
+    # `u(m, l, k, r)`: 3D basic functions (Eq. 11).
+    u(k, l, m, r) = g(l, k, r) * Y(l, m, convert(Spherical, r).θ, convert(Spherical, r).ϕ) 
     
-    # `p(q_p,i_p,k,k_p,l,r_n)`: partial derivatives of the power spectrum components
-    p(q_p,i_p,k,k_p,l,r_n) = 
+    # `p(q_p, i_p, k, k_p, l, r_n)`: partial derivatives of the power spectrum components
+    p(q_p, i_p, k, k_p, l, r_n) = 
 
-    # `deriv_d(t,k,k_p,l,r_N,r_n)`: partial derivatives of the basis function.
-    #                                 (Eq. 28)
-    deriv_d(m,r_Nj,r_i) = ?
-    deriv_d(t,k,k_p,l,r_N,r_n) = ?
+    # `deriv_d(t, k, k_p, l, r_N, r_n)`: partial derivatives of the basis function.
+    #                                   (Eq. 28)
+    deriv_d(m, r_Nj, r_i) = ?
+    deriv_d(t, k, k_p, l, r_N, r_n) = ?
     
-    # `f(c,j)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
-    f(i,j,c) = sum([ c[m] * deriv_d(m,r_Nj[j],r[i]) for m = 1:M ])
+    # `f(c, j)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
+    f(i, j, c) = sum([c[m] * deriv_d(m, r_Nj[j] , r[i]) for m = 1:M])
     return f
 end
 
@@ -149,17 +172,16 @@ end
 - `J`: number of configurations 
 
 """
-function optimize_coefficients(w,f,f_qm,M,J)
+function optimize_coefficients(w, f, f_qm, M, J)
     # Eq. 4
-    cost_function(c,p) = sum([w[j] * sum((abs.(f(c,j) .- f_qm(j)).^2)) for j=1:J])
+    cost_function(c, p) = sum([w[j] * sum((abs.(f(c, j) .- f_qm(j)).^2)) for j=1:J])
     
     c0 = zeros(M)
     prob = OptimizationProblem(cost_function,c0)
-    sol = solve(prob,NelderMead())
+    sol = solve(prob, NelderMead())
     
     return sol.minimizer
 end
-
 
 
 """
@@ -168,17 +190,16 @@ end
 """
 function GOLFF()
     # Input variables ##########################################################
-    N, J, Nj, w, T, M, Z, c, q, x, y, z, f_qm, g, h 
-        = get_input_parameters()
+    N, J, Nj, w, T, M, Z, c, q, x, y, z, f_qm, g, h = get_input_parameters()
 
     # Force calculation ########################################################
     f = calculate_forces()
 
     # Optimize coeffiecients ###################################################
-    c_opt = optimize_coefficients(w,f,f_qm,M,J)
+    c_opt = optimize_coefficients(w, f, f_qm, M, J)
 
     # Print/plot/save results ##################################################
-    println("Coefficients:",c_opt)
+    println("Coefficients:", c_opt)
 
     # Call LAMMPS ##############################################################
     # TODO
