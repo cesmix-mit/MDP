@@ -22,9 +22,9 @@ function get_input_parameters()
     # Order
     m = ?
     
-    # k and k_p
+    # k and k′
     k = ?
-    k_p = ?
+    k′ = ?
 
     # `N`: number of atoms
     N = 8
@@ -107,17 +107,19 @@ function get_input_parameters()
 
     # `r_cut`: cut radii needed to calculate the neighbors of each atom 
     r_cut = rand()
-    
-    # `Ω`: Ω[i,t] returns the neighbors of the atom i if the type of i is t, else it returns empty
-    # `Ω′`: Ω′[i,t] returns the neighbors of the atom i whose type is t
-    Ω = Array{Array}(undef, N)
-    Ω′ = [[ [] for j=1:NZ ] for i=1:N]
+
+    # `Ω`   : Ω[i] returns the neighbors of the atom i
+    # `Ω′`  : Ω′[i,t] returns the neighbors of the atom i whose type is t
+    # `Ω′′` : Ω′′[i,t] returns the neighbors of the atom i if the type of i is t, else it returns empty
+    Ω   = Array{Int32}(undef, N)
+    Ω′  = Array{Array}(undef, N)
+    Ω′′ = [[ [] for j=1:NZ ] for i=1:N]
     for i = 1:N
         for j = 1:N
             if j != i && norm(r_N[i] - r_N[j]) < r_cut
-                push!(Ω[i,Z[i]], j)
-                k = Z[j]
-                push!(Ω′[i,k], j)
+                push!(Ω[i], j)
+                push!(Ω′[i,Z[j]], j)
+                push!(Ω′′[i,Z[i]], j)
             end
         end
     end
@@ -192,26 +194,28 @@ function calculate_forces()
     # `u(m, l, k, r)`: 3D basic functions (Eq. 11).
     u(k, l, m, r) = g(l, k, r) * Y(l, m, convert(Spherical, r).θ, convert(Spherical, r).ϕ) 
     
-    # `p(q_p, i_p, k, k_p, l, r_n)`: partial derivatives of the power spectrum components
+    # `p(n, i, k, k′, l, r_Nj_j)`: partial derivatives of the power spectrum components. (Eq. 24).
     h = 0.001
-    p(q_p, i_p, k, k_p, l, r_n) = 
-        sum([(u(k, l, m, x(q,i)+h) - u(k, l, m, x(q,i)-h)) / (2.0 * h)
-             sum([u(k_p, l, m, x(j,i))
-                  for j = 1:N_i_nb]])
+    p(n, i, k, k′, l, r) = 
+        sum([[ u(k, l, m, r[n] - r[i] + [h, 0.0, 0.0]) - u(k, l, m, r[n] - r[i] - [h, 0.0, 0.0]) / (2.0 * h),
+               u(k, l, m, r[n] - r[i] + [0.0, h, 0.0]) - u(k, l, m, r[n] - r[i] - [0.0, h, 0.0]) / (2.0 * h),
+               u(k, l, m, r[n] - r[i] + [0.0, 0.0, h]) - u(k, l, m, r[n] - r[i] - [0.0, 0.0, h]) / (2.0 * h)]
+             * sum([u(k′, l, m, r[j] - r[i]) for j = 1:Ω[i]])
              for m = -l:l])
-      + sum([(u(k, l, m, x_qi+h) - u(k, l, m, x_qi-h)) / (2.0 * h)
-             sum([u(k_p, l, m, x(j,i))
-                  for j = 1:N_i_nb]])
+      + sum([[ u(k′, l, m, r[n] - r[i] + [h, 0.0, 0.0]) - u(k, l, m, r[n] - r[i] - [h, 0.0, 0.0]) / (2.0 * h),
+               u(k′, l, m, r[n] - r[i] + [0.0, h, 0.0]) - u(k, l, m, r[n] - r[i] - [0.0, h, 0.0]) / (2.0 * h),
+               u(k′, l, m, r[n] - r[i] + [0.0, 0.0, h]) - u(k, l, m, r[n] - r[i] - [0.0, 0.0, h]) / (2.0 * h)]
+             * sum([u(k, l, m, r[j] - r[i]) for j = 1:Ω[i]])
              for m = -l:l])
 
-    # `deriv_d(t, k, k_p, l, r_Nj_j, n)`: partial derivatives of the basis function.
+    # `deriv_d(t, k, k′, l, r_Nj_j, n)`: partial derivatives of the basis function.
     #                                   (Eq. 28)
-    deriv_d(t, k, k_p, l, r_Nj_j, n) = 
-                           sum([ p(q_p, i_p, k, k_p, l, r_Nj_j) for i in Ω′[n,t]])
-                         - (Z[n] == t) * sum([ p(q, n, k, k_p, l, r_N) for j in Ω[n,t]])
+    deriv_d(t, k, k′, l, r_Nj_j, n) = 
+                           sum([ p(n, i, k, k′, l, r_Nj_j) for i in Ω′[n,t]])
+                         - sum([ p(j, n, k, k′, l, r_Nj_j) for j in Ω′′[n,t]])
     
     # `f(i, j, c, r_Nj)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
-    f(i, j, c, r_Nj) = sum([c[m] * deriv_d(t, k, k_p, l, r_Nj[j], i) for m = 1:M])
+    f(i, j, c, r_Nj) = sum([c[m] * deriv_d(t, k, k′, l, r_Nj[j], i) for m = 1:M])
     
     return f
 end
