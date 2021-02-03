@@ -19,9 +19,6 @@ function get_input_parameters()
     # Degree
     l = ?
     
-    # Order
-    m = ?
-    
     # k and k′
     k = ?
     k′ = ?
@@ -65,7 +62,6 @@ function get_input_parameters()
     #      q(i=3,j=3)=3
     #      q(i=4,j=3)=4
     # q = @SArray [1, 1, 2, 2, 1, 2, 3, 4]
-
 
     # `Z`: 1D array indicating the type of atom i in configuration j
     # E.g. if we define H is type 1, O is type 2, Na is type 3, and Cl is type 4
@@ -140,7 +136,7 @@ function get_input_parameters()
         f_qm[i] = Cartesian(rand(),rand(),rand())
     end
     
-    return N, J, Nj, w, T, M, Z, c, q, r_N, Ω, f_qm
+    return N, J, Nj, w, T, M, Z, c, q, r_N, Ω, Ω′, Ω′′, f_qm
     
 end
 
@@ -179,9 +175,8 @@ end
 
 """
 function calculate_forces()
-    # TODO: complete function deriv_d and p
 
-    # `Y(l, m, theta, phi)`: spherical harmonics of degree l and order m (Eq. 12).
+    # `Y(l, m, theta, phi)`: spherical harmonics of degree l and order m (Eq. 12)
     Y(l, m, θ, ϕ) = sqrt(
                          (2 * l + 1) * factorial(l - m) /
                          (4 * π * factorial(l + m))
@@ -191,31 +186,33 @@ function calculate_forces()
     # `g(l, k, r)`: radial basis function
     g(l, k, r) = sphericalbessely(l, r)
 
-    # `u(m, l, k, r)`: 3D basic functions (Eq. 11).
-    u(k, l, m, r) = g(l, k, r) * Y(l, m, convert(Spherical, r).θ, convert(Spherical, r).ϕ) 
-    
-    # `p(n, i, k, k′, l, r_Nj_j)`: partial derivatives of the power spectrum components. (Eq. 24).
-    h = 0.001
-    p(n, i, k, k′, l, r) = 
-        sum([[ u(k, l, m, r[n] - r[i] + [h, 0.0, 0.0]) - u(k, l, m, r[n] - r[i] - [h, 0.0, 0.0]) / (2.0 * h),
-               u(k, l, m, r[n] - r[i] + [0.0, h, 0.0]) - u(k, l, m, r[n] - r[i] - [0.0, h, 0.0]) / (2.0 * h),
-               u(k, l, m, r[n] - r[i] + [0.0, 0.0, h]) - u(k, l, m, r[n] - r[i] - [0.0, 0.0, h]) / (2.0 * h)]
-             * sum([u(k′, l, m, r[j] - r[i]) for j = 1:Ω[i]])
-             for m = -l:l])
-      + sum([[ u(k′, l, m, r[n] - r[i] + [h, 0.0, 0.0]) - u(k, l, m, r[n] - r[i] - [h, 0.0, 0.0]) / (2.0 * h),
-               u(k′, l, m, r[n] - r[i] + [0.0, h, 0.0]) - u(k, l, m, r[n] - r[i] - [0.0, h, 0.0]) / (2.0 * h),
-               u(k′, l, m, r[n] - r[i] + [0.0, 0.0, h]) - u(k, l, m, r[n] - r[i] - [0.0, 0.0, h]) / (2.0 * h)]
-             * sum([u(k, l, m, r[j] - r[i]) for j = 1:Ω[i]])
-             for m = -l:l])
+    # `u(m, l, k, r)`: 3D basic functions (Eq. 11)
+    u(k, l, m, r) = g(l, k, r) * Y(l, m, convert(Spherical, r).θ, convert(Spherical, r).ϕ)
 
-    # `deriv_d(t, k, k′, l, r_Nj_j, n)`: partial derivatives of the basis function.
-    #                                   (Eq. 28)
-    deriv_d(t, k, k′, l, r_Nj_j, n) = 
-                           sum([ p(n, i, k, k′, l, r_Nj_j) for i in Ω′[n,t]])
-                         - sum([ p(j, n, k, k′, l, r_Nj_j) for j in Ω′′[n,t]])
+    # `deriv_u(k, l, m, r)`: derivative of the 3D basic functions
+    h = 0.001
+    deriv_u(k, l, m, r) = 
+         [ u(k, l, m, r + [h, 0.0, 0.0]) - u(k, l, m, r - [h, 0.0, 0.0]) / (2.0 * h),
+           u(k, l, m, r + [0.0, h, 0.0]) - u(k, l, m, r - [0.0, h, 0.0]) / (2.0 * h),
+           u(k, l, m, r + [0.0, 0.0, h]) - u(k, l, m, r - [0.0, 0.0, h]) / (2.0 * h)]
+    
+    # `p(n, i, k, k′, l, r)`: partial derivatives of the power spectrum components (Eq. 24)
+    # TODO: check r[i0] and r[i1]
+    p(i0, i1, k, k′, l, m, r) = 
+            sum([  deriv_u(k, l, m, r[i0] - r[i1])
+                 * sum([u(k′, l, m, r[j] - r[i1]) for j = 1:Ω[i]])
+                 for m = -l:l])
+          + sum([  deriv_u(k′, l, m, r[i0] - r[i1])
+                 * sum([u(k, l, m, r[j] - r[i1]) for j = 1:Ω[i]])
+                 for m = -l:l])
+
+    # `deriv_d(t, k, k′, l, r, i)`: partial derivatives of the basis function (Eq. 28)
+    deriv_d(t, k, k′, l, r, i) = 
+           sum([ p(i, j, k, k′, l, m, r) for j in Ω′[i,t]])
+         - sum([ p(j, i, k, k′, l, m, r) for j in Ω′′[i,t]])
     
     # `f(i, j, c, r_Nj)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
-    f(i, j, c, r_Nj) = sum([c[m] * deriv_d(t, k, k′, l, r_Nj[j], i) for m = 1:M])
+    f(i, j, c, r_Nj) = sum([c[m] * deriv_d(t, k, k′, l, m, r_Nj[j], i) for m = 1:M])
     
     return f
 end
@@ -249,7 +246,7 @@ end
 """
 function GOLFF()
     # Input variables ##########################################################
-    N, J, Nj, w, T, M, Z, c, q, r_N, Ω, f_qm = get_input_parameters()
+    N, J, Nj, w, T, M, Z, c, q, r_N, Ω, Ω′, Ω′′, f_qm = get_input_parameters()
 
     # Force calculation ########################################################
     f = calculate_forces()
