@@ -12,7 +12,8 @@ end
 
 Base.:+(f::Cartesian, g::Cartesian) = Cartesian(f.x + g.x, f.y + g.y, f.z + g.z)
 Base.:-(f::Cartesian, g::Cartesian) = Cartesian(f.x - g.x, f.y - g.y, f.z - g.z)
-Base.:abs(f::Cartesian) = abs(f.x^2 + f.y^2 + f.z^2)
+Base.:norm(f::Cartesian) = sqrt(f.x^2 + f.y^2 + f.z^2)
+Base.:normsq(f::Cartesian) = (f.x^2 + f.y^2 + f.z^2)
 
 function convert(::Type{Spherical}, coord::Cartesian)
     x, y, z = coord.x, coord.y, coord.z
