@@ -36,7 +36,7 @@ function get_input_parameters()
     r_N = Array{Array}(undef, J)
     for j = 1:J
         positions_j = []
-        for k = 1:Nj[j]
+        for k = 1:N[j]
             push!(positions_j, Cartesian(rand(),rand(),rand()))
         end
         r_N[j] = positions_j
@@ -67,7 +67,7 @@ function get_input_parameters()
     f_qm = Array{Array}(undef, J)
     for j = 1:J
         forces_j = []
-        for k = 1:Nj[j]
+        for k = 1:N[j]
             push!(forces_j, Cartesian(rand(),rand(),rand()))
         end
         f_qm[j] = forces_j
@@ -76,12 +76,6 @@ function get_input_parameters()
     # `M`: number of basis functions. M must be divisible by NZ.
     M = 12
     
-    # Degree
-    l = ?
-    
-    # k and k′
-    k = ?
-    k′ = ?
 
     # `c[m]`: coefficient needed to calculate the potential/force.
     c =  @SArray [10.0, 2.0, 30.0, 20.0, 1.0, 4.0, 5.0, 7.0, 9.0, 10.0, 11.0, 12.0]
@@ -92,7 +86,7 @@ function get_input_parameters()
     # `Δ`: finite difference Delta
     Δ = 0.001
     
-    return  J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, M, l, k, k′, c, w, Δ
+    return  J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, M, c, w, Δ
     
 end
 
@@ -145,36 +139,39 @@ function calculate_forces(M, Ω, Ω′, Ω′′, Δ)
            u(k, l, m, r + [0.0, Δ, 0.0]) - u(k, l, m, r - [0.0, Δ, 0.0]) / (2.0 * Δ),
            u(k, l, m, r + [0.0, 0.0, Δ]) - u(k, l, m, r - [0.0, 0.0, Δ]) / (2.0 * Δ)]
     
-    # `p(n, i, k, k′, l, r)`: partial derivatives of the power spectrum components (Eq. 24)
-    p(i0, i1, k, k′, l, m, r) = 
+    # `p(n, i, k, k′, l, r, j)`: partial derivatives of the power spectrum components (Eq. 24)
+    p(i0, i1, k, k′, l, r, j) = 
             sum([  deriv_u(k, l, m, r[i0] - r[i1])
-                 * sum([u(k′, l, m, r[s] - r[i1]) for s = 1:Ω[j][i]])
+                 * sum([u(k′, l, m, r[s] - r[i1]) for s = 1:Ω[j][i1]])
                  for m = -l:l])
           + sum([  deriv_u(k′, l, m, r[i0] - r[i1])
-                 * sum([u(k, l, m, r[s] - r[i1]) for s = 1:Ω[j][i]])
+                 * sum([u(k, l, m, r[s] - r[i1]) for s = 1:Ω[j][i1]])
                  for m = -l:l])
 
     # `deriv_d(t, k, k′, l, r, i)`: partial derivatives of the basis function (Eq. 28)
-    deriv_d(t, k, k′, l, r, i) = 
-           sum([ p(i, s, k, k′, l, m, r) for s in Ω′[j][i][t]])
-         - sum([ p(s, i, k, k′, l, m, r) for s in Ω′′[j][i][t]])
+    deriv_d(t, k, k′, l, r, i, j) = 
+           sum([ p(i, s, k, k′, l, r, j) for s in Ω′[j][i][t]])
+         - sum([ p(s, i, k, k′, l, r, j) for s in Ω′′[j][i][t]])
+         
+    # pars(m) = [t, k, k′, l]
+    pars(m) = [1.0, 1.0, 1.0, 1.0]
     
-    # `f(i, c, r)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
-    f(i, c, r) = sum([c[m] * deriv_d(t, k, k′, l, r, i) for m = 1:M])
+    # `f(i, j, c, r)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
+    f(i, j, c, r) = sum([c[m] * deriv_d(pars(m)...,r, i, j) for m = 1:M])
     
     return f
 end
 
 
 """
-    optimize_coefficients(w, f, f_qm, r_N, M, J)
+    optimize_coefficients(w, f, f_qm, r_N, M, N, J)
     
 """
-function optimize_coefficients(w, f, f_qm, r_N, M, J)
+function optimize_coefficients(w, f, f_qm, r_N, M, N, J)
     # Eq. 4
     cost_function(c, p) = sum([w[j] * 
-                               sum([normsq.(f(i, c, r_N[j]) .- f_qm[j]))
-                                    for i=1:Nj[j]])
+                               sum([normsq.(f(i, j, c, r_N[j]) .- f_qm[j]))
+                                    for i=1:N[j]])
                                for j=1:J])
 
     c0 = zeros(M)
@@ -191,13 +188,13 @@ end
 """
 function GOLFF()
     # Input variables ##########################################################
-    J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, M, l, k, k′, c, w, Δ = get_input_parameters()
+    J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, M, c, w, Δ = get_input_parameters()
 
     # Force calculation ########################################################
     f = calculate_forces(M, Ω, Ω′, Ω′′, Δ)
 
     # Optimize coeffiecients ###################################################
-    c_opt = optimize_coefficients(w, f, f_qm, r_N, M, J)
+    c_opt = optimize_coefficients(w, f, f_qm, r_N, M, N, J)
 
     # Print/plot/save results ##################################################
     println("Coefficients:", c_opt)
