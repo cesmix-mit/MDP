@@ -37,7 +37,7 @@ function get_input_parameters()
     for j = 1:J
         positions_j = []
         for k = 1:N[j]
-            push!(positions_j, Cartesian(rand(),rand(),rand()))
+            push!(positions_j, Cartesian(rand(), rand(), rand()))
         end
         r_N[j] = positions_j
     end
@@ -68,7 +68,7 @@ function get_input_parameters()
     for j = 1:J
         forces_j = []
         for k = 1:N[j]
-            push!(forces_j, Cartesian(rand(),rand(),rand()))
+            push!(forces_j, Cartesian(rand(), rand(), rand()))
         end
         f_qm[j] = forces_j
     end
@@ -76,7 +76,6 @@ function get_input_parameters()
     # `M`: number of basis functions. M must be divisible by NZ.
     M = 12
     
-
     # `c[m]`: coefficient needed to calculate the potential/force.
     c =  @SArray [10.0, 2.0, 30.0, 20.0, 1.0, 4.0, 5.0, 7.0, 9.0, 10.0, 11.0, 12.0]
     
@@ -100,7 +99,7 @@ function P(l, m, x)
     res = 0.0
     if m == 0
         res =   1.0 / 2.0^l * 
-                sum([(-1.0)^(l - k) * comb(l , k) * comb(2 * k, l)
+                sum([(-1.0)^(l - k) * comb(l, k) * comb(2 * k, l)
                       * x^(2 * k - l)
                       for k = ceil(l / 2.0):l])
     else
@@ -157,7 +156,7 @@ function calculate_forces(M, Ω, Ω′, Ω′′, Δ)
     pars(m) = [1.0, 1.0, 1.0, 1.0]
     
     # `f(i, j, c, r)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
-    f(i, j, c, r) = sum([c[m] * deriv_d(pars(m)...,r, i, j) for m = 1:M])
+    f(i, j, c, r) = sum([c[m] * deriv_d(pars(m)..., r, i, j) for m = 1:M])
     
     return f
 end
