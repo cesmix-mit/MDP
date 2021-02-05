@@ -15,6 +15,66 @@ function get_input_parameters()
     #TODO: open input files with actual input information
     
     # Input parameters #
+
+    # Configuration 1: H, H
+    # Configuration 2: O, O
+    # Configuration 3: H, O, Na, Cl
+
+    # `J`: number of configurations
+    J = 3
+
+    # `N[j]`: number of atoms in configuration j
+    N = @SArray [2, 2, 4]
+    
+    # `Z[j][i]`: atomic number of atom i in configuration j
+    Z = @SArray [[1, 1], [8, 8], [1, 8, 11, 17]]
+
+    # `NZ`: number of unique atomic numbers in all configurations
+    NZ = length(unique(vcat(unique.(Z)...)))
+
+    # `r_N[j][i]`: position (Cartesian) of atom i in the configuration j
+    r_N = Array{Array}(undef, J)
+    for j = 1:J
+        positions_j = []
+        for k = 1:Nj[j]
+            push!(positions_j, Cartesian(rand(),rand(),rand()))
+        end
+        r_N[j] = positions_j
+    end
+
+    # `r_cut`: cut radius needed to calculate the neighbors of each atom 
+    r_cut = rand()
+
+    # `Ω[j][i]`: neighbors of the atom i in conf. j
+    # `Ω′[j][i][t]`: neighbors of the atom i in conf. j, whose atomic number is t
+    # `Ω′′[j][i][t]`: neighbors of the atom i in conf. j, if the atomic number of i is t, else it returns empty
+    Ω   = [[ [] for i=1:N[j]] for j=1:J]
+    Ω′  = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
+    Ω′′ = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
+    for j = 1:J
+        for i0 = 1:r_N[j]
+            for i1 = 1:r_N[j]
+                if i0 != i1 && norm(r_N[i0] - r_N[i1]) < r_cut
+                    push!(Ω[j][i0], i1)
+                    push!(Ω′[j][i0][Z[j][i1]], i1)
+                    push!(Ω′′[j][i0][Z[j][i0]], i1)
+                end
+            end
+        end
+    end
+    
+    # `f_qm[j][i]` quantum force associated to the atom i in the configuration j
+    f_qm = Array{Array}(undef, J)
+    for j = 1:J
+        forces_j = []
+        for k = 1:Nj[j]
+            push!(forces_j, Cartesian(rand(),rand(),rand()))
+        end
+        f_qm[j] = forces_j
+    end
+    
+    # `M`: number of basis functions. M must be divisible by NZ.
+    M = 12
     
     # Degree
     l = ?
@@ -23,131 +83,23 @@ function get_input_parameters()
     k = ?
     k′ = ?
 
-    # `N`: number of atoms
-    N = 8
-    
-    # `J`: number of configurations
-    J = 3
-
-    # `Nj`: 1D array of number of atoms for each configuration j
-    Nj = @SArray [2, 2, 4]
-    
-    # Configuration 1: H, H
-    # Configuration 2: O, O
-    # Configuration 3: H, O, Na, Cl
-    
-    # `w`: 1D array of weights for each configuration j
-    w = @SArray [1.0, 1.0, 1.0]
-    
-    # `T`: is the number of atom types.
-    T = 4
-
-    # `M`: number of basis functions. M must be divisible by T.
-    M = 12
-
-    # `Z`: 1D array of size T, where Z[t] is the atomic number for atom type t.
-    # Z =  @SArray [1, 8, 11, 17] # E.g.: H, O, Na, Cl
-    
-    # `c`: 1D array of M coefficients needed to calculate the potential/force.
+    # `c[m]`: coefficient needed to calculate the potential/force.
     c =  @SArray [10.0, 2.0, 30.0, 20.0, 1.0, 4.0, 5.0, 7.0, 9.0, 10.0, 11.0, 12.0]
     
-    # `q`: 1D array indicating the type of atom i in configuration j
-    # E.g. if we define H is type 1, O is type 2, Na is type 3, and Cl is type 4
-    #      q(i=1,j=1)=1
-    #      q(i=2,j=1)=1
-    #      q(i=1,j=2)=2
-    #      q(i=2,j=2)=2
-    #      q(i=1,j=3)=1
-    #      q(i=2,j=3)=2
-    #      q(i=3,j=3)=3
-    #      q(i=4,j=3)=4
-    # q = @SArray [1, 1, 2, 2, 1, 2, 3, 4]
-
-    # `Z`: 1D array indicating the type of atom i in configuration j
-    # E.g. if we define H is type 1, O is type 2, Na is type 3, and Cl is type 4
-    #      q(i=1,j=1)=1
-    #      q(i=2,j=1)=1
-    #      q(i=1,j=2)=2
-    #      q(i=2,j=2)=2
-    #      q(i=1,j=3)=1
-    #      q(i=2,j=3)=2
-    #      q(i=3,j=3)=3
-    #      q(i=4,j=3)=4
-    Z = @SArray [1, 1, 2, 2, 1, 2, 3, 4]
-
-    NZ = length(unique(Z))
-
-    # `r_N_italic`: array positions (Cartesian) of each atom sorted by configuration
-    #        each position is associated to the atom i in configuration j
-    #      r_N_italic[1] is the position of atom i=1 in conf. j=1
-    #      r_N_italic[2] is the position of atom i=2 in conf. j=1
-    #      r_N_italic[3] is the position of atom i=1 in conf. j=2
-    #      r_N_italic[4] is the position of atom i=2 in conf. j=2
-    #      r_N_italic[5] is the position of atom i=1 in conf. j=3
-    #      r_N_italic[6] is the position of atom i=2 in conf. j=3
-    #      r_N_italic[7] is the position of atom i=3 in conf. j=3
-    #      r_N_italic[8] is the position of atom i=4 in conf. j=3
-    #    r_N_italic = Array{Cartesian}(undef, N) 
-    #    for i = 1:N
-    #        r_N_italic[i] = Cartesian(rand(),rand(),rand())
-    #    end
+    # `w[j]`: weight associated to the configuration j
+    w = @SArray [1.0, 1.0, 1.0]
     
-    r_Nj = Array{Array}(undef, J)
-    for j = 1:J
-        positions_j = []
-        for k = 1:Nj[j]
-            push!(positions_j, Cartesian(rand(),rand(),rand()))
-        end
-        r_Nj[j] = positions_j
-    end
-
-    # `r_cut`: cut radii needed to calculate the neighbors of each atom 
-    r_cut = rand()
-
-    # `Ω`   : Ω[i] returns the neighbors of the atom i
-    # `Ω′`  : Ω′[i,t] returns the neighbors of the atom i whose type is t
-    # `Ω′′` : Ω′′[i,t] returns the neighbors of the atom i if the type of i is t, else it returns empty
-    Ω   = Array{Int32}(undef, N)
-    Ω′  = Array{Array}(undef, N)
-    Ω′′ = [[ [] for j=1:NZ ] for i=1:N]
-    for i = 1:N
-        for j = 1:N
-            if j != i && norm(r_N[i] - r_N[j]) < r_cut
-                push!(Ω[i], j)
-                push!(Ω′[i,Z[j]], j)
-                push!(Ω′′[i,Z[i]], j)
-            end
-        end
-    end
+    # `Δ`: finite difference Delta
+    Δ = 0.001
     
-    # `f_qm`: array of quantum forces (Cartesian) of each atom
-    #         each position is associated to the atom i in configuration j
-    # E.g. if we define H is type 1, O is type 2, Na is type 3, and Cl is type 4
-    #      f_qm[1] is quantum force associated to atom i=1 in conf. j=1
-    #      f_qm[2] is quantum force associated to atom i=2 in conf. j=1
-    #      f_qm[3] is quantum force associated to atom i=1 in conf. j=2
-    #      f_qm[4] is quantum force associated to atom i=2 in conf. j=2
-    #      f_qm[5] is quantum force associated to atom i=1 in conf. j=3
-    #      f_qm[6] is quantum force associated to atom i=2 in conf. j=3
-    #      f_qm[7] is quantum force associated to atom i=3 in conf. j=3
-    #      f_qm[8] is quantum force associated to atom i=4 in conf. j=3
-    f_qm = Array{Cartesian}(undef, N) 
-    for i = 1:N
-        f_qm[i] = Cartesian(rand(),rand(),rand())
-    end
-    
-    return N, J, Nj, w, T, M, Z, c, q, r_N, Ω, Ω′, Ω′′, f_qm
+    return  J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, M, l, k, k′, c, w, Δ
     
 end
 
 """
     P(l, m, x) Associated Legendre Polynomials
+    See https://en.wikipedia.org/wiki/Associated_Legendre_polynomials
     
-    `l`: degree
-    `m`: order
-    `x`: cos(θ)
-    
-    see https://en.wikipedia.org/wiki/Associated_Legendre_polynomials
 """
 function P(l, m, x)
     comb(n, p) = factorial(n) / (factorial(p) * factorial(n - p))
@@ -171,17 +123,15 @@ function P(l, m, x)
 end
 
 """
-    calculate_forces()
-
+    calculate_forces(M, Ω, Ω′, Ω′′, Δ)
+    
 """
-function calculate_forces()
+function calculate_forces(M, Ω, Ω′, Ω′′, Δ)
 
     # `Y(l, m, theta, phi)`: spherical harmonics of degree l and order m (Eq. 12)
-    Y(l, m, θ, ϕ) = sqrt(
-                         (2 * l + 1) * factorial(l - m) /
-                         (4 * π * factorial(l + m))
-                         * P(l, m, cos(θ)) * exp(i * m * ϕ)
-                        )
+    Y(l, m, θ, ϕ) = √((2 * l + 1) * factorial(l - m) /
+                      (4 * π * factorial(l + m))
+                       * P(l, m, cos(θ)) * exp(im * m * ϕ))
 
     # `g(l, k, r)`: radial basis function
     g(l, k, r) = sphericalbessely(l, r)
@@ -190,50 +140,45 @@ function calculate_forces()
     u(k, l, m, r) = g(l, k, r) * Y(l, m, convert(Spherical, r).θ, convert(Spherical, r).ϕ)
 
     # `deriv_u(k, l, m, r)`: derivative of the 3D basic functions
-    h = 0.001
     deriv_u(k, l, m, r) = 
-         [ u(k, l, m, r + [h, 0.0, 0.0]) - u(k, l, m, r - [h, 0.0, 0.0]) / (2.0 * h),
-           u(k, l, m, r + [0.0, h, 0.0]) - u(k, l, m, r - [0.0, h, 0.0]) / (2.0 * h),
-           u(k, l, m, r + [0.0, 0.0, h]) - u(k, l, m, r - [0.0, 0.0, h]) / (2.0 * h)]
+         [ u(k, l, m, r + [Δ, 0.0, 0.0]) - u(k, l, m, r - [Δ, 0.0, 0.0]) / (2.0 * Δ),
+           u(k, l, m, r + [0.0, Δ, 0.0]) - u(k, l, m, r - [0.0, Δ, 0.0]) / (2.0 * Δ),
+           u(k, l, m, r + [0.0, 0.0, Δ]) - u(k, l, m, r - [0.0, 0.0, Δ]) / (2.0 * Δ)]
     
     # `p(n, i, k, k′, l, r)`: partial derivatives of the power spectrum components (Eq. 24)
-    # TODO: check r[i0] and r[i1]
     p(i0, i1, k, k′, l, m, r) = 
             sum([  deriv_u(k, l, m, r[i0] - r[i1])
-                 * sum([u(k′, l, m, r[j] - r[i1]) for j = 1:Ω[i]])
+                 * sum([u(k′, l, m, r[s] - r[i1]) for s = 1:Ω[j][i]])
                  for m = -l:l])
           + sum([  deriv_u(k′, l, m, r[i0] - r[i1])
-                 * sum([u(k, l, m, r[j] - r[i1]) for j = 1:Ω[i]])
+                 * sum([u(k, l, m, r[s] - r[i1]) for s = 1:Ω[j][i]])
                  for m = -l:l])
 
     # `deriv_d(t, k, k′, l, r, i)`: partial derivatives of the basis function (Eq. 28)
     deriv_d(t, k, k′, l, r, i) = 
-           sum([ p(i, j, k, k′, l, m, r) for j in Ω′[i,t]])
-         - sum([ p(j, i, k, k′, l, m, r) for j in Ω′′[i,t]])
+           sum([ p(i, s, k, k′, l, m, r) for s in Ω′[j][i][t]])
+         - sum([ p(s, i, k, k′, l, m, r) for s in Ω′′[j][i][t]])
     
-    # `f(i, j, c, r_Nj)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
-    f(i, j, c, r_Nj) = sum([c[m] * deriv_d(t, k, k′, l, m, r_Nj[j], i) for m = 1:M])
+    # `f(i, c, r)`: atomic forces. The `c` vector will be optimized. (Eq. 3).
+    f(i, c, r) = sum([c[m] * deriv_d(t, k, k′, l, r, i) for m = 1:M])
     
     return f
 end
 
 
 """
-    optimize_coefficients(f,f_qm)
-
-    `w`: 1D array of weights for each configuration j
-    `f`: forces (they depend on a coeff. vector c, which will be minimized)
-    `f_qm`: quantum mechanical forces
-    `M`: number of basis functions. M must be divisible by T.
-    `J`: number of configurations 
-
-"""
-function optimize_coefficients(w, f, f_qm, M, J)
-    # Eq. 4
-    cost_function(c, p) = sum([w[j] * sum(normsq.(f(c, j) .- f_qm(j))) for j=1:J])
+    optimize_coefficients(w, f, f_qm, r_N, M, J)
     
+"""
+function optimize_coefficients(w, f, f_qm, r_N, M, J)
+    # Eq. 4
+    cost_function(c, p) = sum([w[j] * 
+                               sum([normsq.(f(i, c, r_N[j]) .- f_qm[j]))
+                                    for i=1:Nj[j]])
+                               for j=1:J])
+
     c0 = zeros(M)
-    prob = OptimizationProblem(cost_function,c0)
+    prob = OptimizationProblem(cost_function, c0)
     sol = solve(prob, NelderMead())
     
     return sol.minimizer
@@ -242,17 +187,17 @@ end
 
 """
     GOLFF(): main function
-
+    
 """
 function GOLFF()
     # Input variables ##########################################################
-    N, J, Nj, w, T, M, Z, c, q, r_N, Ω, Ω′, Ω′′, f_qm = get_input_parameters()
+    J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, M, l, k, k′, c, w, Δ = get_input_parameters()
 
     # Force calculation ########################################################
-    f = calculate_forces()
+    f = calculate_forces(M, Ω, Ω′, Ω′′, Δ)
 
     # Optimize coeffiecients ###################################################
-    c_opt = optimize_coefficients(w, f, f_qm, M, J)
+    c_opt = optimize_coefficients(w, f, f_qm, r_N, M, J)
 
     # Print/plot/save results ##################################################
     println("Coefficients:", c_opt)
