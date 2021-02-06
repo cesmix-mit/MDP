@@ -15,7 +15,7 @@ function sphericalharmonics(coords::Vector{Spherical{T}}, L) where T
     the = getfield.(coords, :θ)
     phi = getfield.(coords, :ϕ)
     costhe = cos.(the)
-    a = -.(sin.(the))
+    a = -(sin.(the))
 
     l = 1
     n = 2*l+1    
