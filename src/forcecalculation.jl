@@ -78,7 +78,7 @@ function calculate_forces(NZ, K, L, Ω, Ω′, Ω′′, Δ)
     # TODO: check index m
     f(i, j, c, r) = Cartesian((
                         sum([c[1] * deriv_d(t, k, k′, l, r, i, j)
-                             for t = 1:NZ for k = 1:K for k′ = 1:k for l = 0:L ]))...)
+                             for t = 1:NZ for k = 1:K for k′ = k:K for l = 0:L ]))...)
 
     return f
 end

@@ -1,0 +1,292 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage}%varioref,multicol
+
+%\topmargin 0.25in
+\usepackage{bm}
+%\usepackage{latexsym}
+\usepackage{amsmath,amssymb}
+%\usepackage{amssymb,amsbsy,exscale,amsmath,amsfonts,amssymb,amscd}
+\usepackage{amsthm}
+\usepackage{wrapfig}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{makeidx}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{soul}
+
+%\usepackage{subeqn}
+%\usepackage{crop}
+%\crop
+\newcommand{\pr}{\mathrm{pr}}
+\newcommand{\du}{\mathrm{du}}
+\newcommand{\RR}{{\mathbb R}}
+\newcommand{\K}{{\mathcal K}}
+\newcommand{\T}{{\mathbb T}}
+\newcommand{\Em}{{\mbox{\small \,${\rm E}$\,--\,}}}
+\newcommand{\Ep}{{\mbox{\small \,${\rm E}$\,+\,}}}
+\newcommand{\N}{{\cal N}}
+\newcommand{\M}{{\cal M}}
+\newcommand{\D}{{\cal D}}
+\newcommand{\I}{{\mathbb I}}
+\newcommand{\refeq}[1]{(\ref{#1})}
+\newcommand{\R}{I\hspace{-1ex}R}
+\newtheorem{thm}{Theorem}
+\newtheorem{lem}[thm]{Lemma}
+\newcommand{\ex}{{\rm ex}}
+\newcommand{\bk}{{\rm bk}}
+\newcommand{\df}{{\rm df}}
+\newcommand{\std}{{\rm std}}
+\newcommand{\cov}{{\rm cov}}
+\newcommand{\true}{{\rm true}}
+%\makeindex
+
+
+% definitions used by included articles, reproduced here for
+% educational benefit, and to minimize alterations needed to be made
+% in developing this sample file.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\graphicspath{{../../figures/}}
+%\DeclareGraphicsExtensions{.jpg,.png,.mps,.pdf}
+\DeclareGraphicsRule{*}{mps}{*}{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Define shortcuts
+\newcommand{\del}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\ddel}[2]{\dfrac{\partial #1}{\partial #2}}
+\def\mathbi#1{\textbf{\em #1}}
+
+\newcommand\rev[1]{\textcolor{black}{#1}}
+\newcommand\revisePF[1]{\textcolor{red}{#1}}
+
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+\newcommand{\bmu}{\bs{\mu}}
+
+\usepackage{tabularx}
+\usepackage{booktabs}
+
+
+\begin{document}
+
+
+\title{GOLFF.jl: Generation and Optimization of Machine
+Learning Force Field - Summary of the Implemented Equations - Draft}
+
+\date{\today}
+
+%
+\maketitle
+
+\begin{abstract}
+This draft presents a summary of the equations that are currently implemented in GOLFF.jl (and its auxiliary files). It is based on the file GOLFF.pdf. 
+Some of the terminology was slightly redefined in order to smooth the transition between the original equations and their computational implementation. This draft was not yet validated.
+\end{abstract}
+
+\section{Input Variables/Parameters}
+
+The following table shows all the relevant input variables or parameters needed in the computational implementation. As mentioned above, some of them were slightly redefined and new definitions were added. 
+
+\begin{center}
+    \label{table:def}
+    \begin{tabular}{ | l | p{7.5cm} | l | p{7.5cm} |}
+    \hline
+    $J$ & Number of configurations. & $\Omega_{ji}$ & Neighbors of the atom $i$ in configuration $j$. \\ \hline
+    
+    $N_j$ & Number of atoms in configuration $j$. & $\Omega'_{jit}$ & Neighbors of the atom $i$ in configuration $j$, whose atomic number type is $t$. \\ \hline
+    
+    $Z_{ji}$ & Atomic number of atom $i$ in configuration $j$. & $\Omega''_{jit}$ & If the atomic number type of $i$ is $t$, returns the neighbors of the atom $i$ in configuration $j$, else it returns empty. \\ \hline
+    
+    $T_z$ & Type of the atomic number z. Each atomic number z is indexed in T. & $K$ & ? \\ \hline
+    
+    $N_z$ & Number of the different atomic numbers (or atomic number types) present in all configurations. &  L & Degree \\ \hline
+    
+    $\bm {r}^{N_j}_{i}$ & Position of atom $i$ in the configuration $j$. & M & Number of basis functions.\\ \hline
+    
+    $\bm {r}^{N_j}$ & Positions of all the atoms in configuration $j$ ($N_j \times 3$). & $c_{tkk'l}$  & Coefficient needed to calculate the potential/force. A linearized version $c_{m}$ was finally used. See Equation \ref{eq:force}.\\ \hline %[1ex]
+    
+    $\bm f^{\rm qm}_{ji}$ & Quantum force associated to the atom $i$ in the configuration $j$. & $w_j$ & Weight associated to the configuration j. \\ \hline
+    
+    $r_{\rm cut}$ & Cut radius needed to calculate the neighbors of each atom. &  $h$ & Finite difference increment. \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\section{Equation Summary}
+\subsection{Main goal}
+
+The goal is to find an optimal coefficient vector $\bm c^*$ to match a set of input quantum mechanical (QM) forces. The optimization problem is formulated in the Equation 4 of the original manuscript. Here, the problem is formulated as follows:
+
+\begin{equation}
+\bm c^* = \arg \min_{\bm c \in \mathbb{R}^M } \sum_{j=1}^J w_j \sum_{i=1}^{N_j}  \left|\bm f_{ji}(\bm {r}^{N_j}, \bm c) - \bm f^{\rm qm}_{ji}(\bm r^{N_j}) \right|^2.
+\label{eq:min1}
+\end{equation}
+
+where $w_j$ are the user-defined weights in configuration $j$, $1 \le j \le J$, the default value of $w_j$ is 1. $\bm f_{ji}$  depicts a (complex) atomic force, the definition of which can be found below. The value of this force depends on the configuration $j$, the atom $i$ in the $j$-th configuration, the position of all atoms in the $j$-th configuration $\bm {r}^{N_j}$, and the variable for which the minimization is performed $\bm c \in \mathbb{R}^M$. An analogous description is associated to the input QM forces $\bm f^{\rm qm}_{ji}$, with the exception of the dependence of variable $\bm c$.
+
+Each atomic force $\bm f_{ji}$ is calculated through a set of basis functions, namely $d_{tkk'l}(\bm r^{N_j})$. In the original manuscript this force is defined in Equations 4 and 5. Here, the atomic force is formulated as follows:
+
+\begin{equation}
+    \bm f_{ji}(\bm {r}^{N_j}; \bm c) = 
+    \sum_{t=1}^{N_z}
+    \sum_{k=1}^K
+    \sum_{k'=k}^{K}
+    \sum_{l=0}^L
+    c_{tkk'l}
+    \frac{\partial d_{tkk'l}(\bm r^{N_j})}{\partial \bm r^{N_j}_i}
+    \label{eq:force}
+\end{equation}
+
+Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j})}{\partial \bm r_i}$ is the gradient vector of $d_{tkk'l}$ with respect to the position of the $i$-th atom in the $j$-configuration, i.e., $f$ is a vector quantity.
+
+Current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$.
+
+In future versions, neural networks will be used to perform the optimization.
+
+\subsection{Basis functions}
+
+The derivatives of the basis functions are defined in Equations 23 and 24 in the original manuscript. Here, it is formulated as:
+
+\begin{equation}
+    \label{eq:derd}
+    \frac{\partial d_{tkk'l}(\bm r^{N_j})}{\partial \bm r^{N_j}_i} = \sum_{s \in \Omega'_{jit}} p_{iskk'l}^{\partial}(\bm r^{N_j}, j) - \sum_{s \in \Omega''_{jit}} p_{sikk'l}^{\partial} ( \bm r^{N_j}, j),
+\end{equation}
+where 
+\begin{equation}
+    p_{i_0i_1kk'l}^{\partial}(\bm r^{N_j}, j) = \sum_{m=-l}^l \left( \frac{\partial u_{klm}(\bm r_{i_0}^{N_j}- \bm r_{i_1}^{N_j})}{\partial (\bm r_{i_0}^{N_j}-\bm r_{i_1}^{N_j})} \sum_{s \in \Omega_{j,i_1}} \left( u_{k'lm} (\bm r^{N_j}_s- \bm r^{N_j}_{i_1}) \right) \right) + 
+\end{equation}
+\begin{equation*}
+\sum_{m=-l}^l \left( \frac{\partial u_{k'lm}(\bm r_{i_0}^{N_j}- \bm r_{i_1}^{N_j})}{\partial (\bm r_{i_0}^{N_j}- \bm r_{i_1}^{N_j})} \sum_{s \in \Omega_{j,i_1}} \left( u_{klm} (\bm r^{N_j}_s- \bm r^{N_j}_{i_1}) \right) \right)
+\end{equation*}
+
+$\Omega$, $\Omega'$, and $\Omega''$ were introduced to simplify the notation and to have precomputed neighbor information. Two atoms, $s$ and $q$, are neighbours if $s \ne q$ and $|| \bm r_s^{N_j} - \bm r_q^{N_j} || \le r_{\rm cut} $ \textbf{but this must take into account the periodic boundary conditions}. 
+
+The derivative of the (complex) function $u_{klm}$ is not present in the original manuscript. Here, it is computed through the finite difference method.
+
+\begin{equation}
+\begin{split}
+     \frac{\partial u_{klm}(\bm r)}{\partial (\bm r)} =  
+        \bigg( \frac{ u_{klm}(\bm r + \bm \Delta x) - u_{klm}(\bm r - \bm \Delta x) } {2 |\bm \Delta x|}, \\
+          \frac{ u_{klm}(\bm r + \bm \Delta y) - u_{klm}(\bm r - \bm \Delta y) } {2 |\bm \Delta y|},\\
+          \frac{ u_{klm}(\bm r + \bm \Delta z) - u_{klm}(\bm r - \bm \Delta z) } {2 |\bm \Delta z|} \bigg)
+\end{split}
+\end{equation}
+
+where $\bm \Delta x = (h, 0, 0)$, $\bm \Delta y = (0, h, 0)$, and $\bm \Delta z = (0, 0, h)$.
+
+The function $u_{klm}: \mathbb{R}^3 \rightarrow \mathbb{C}$ is defined in the Equation 11. Here, it is formulated as
+
+\begin{equation}
+    \label{eq:us}
+    u_{klm}(\bm r) =  g_{lk}(r) Y_{lm}(\theta,\phi)
+\end{equation}
+
+Note that $\bm r$ is expressed in cartesian coordinates $(x,y,z)$, but spherical coordinates are needed to invoke $g_{lk}$ and $Y_{lm}$. Then, the following transformations are used:
+
+\begin{equation*}
+    r = \sqrt{x^2 + y^2 + z^2}
+\end{equation*}
+\begin{equation*}
+    \theta = \arccos(z/r)    
+\end{equation*}
+\begin{equation*}
+    \phi = \text{atan}(y,x) \footnote{Use the Julia atan function with two arguments ($y$,$x$) that returns the angle in radians between the positive $x$-axis and the point $(x, y)$ in the interval $[-\pi, \pi]$.}
+\end{equation*}
+
+In Equation \ref{eq:us}, $g_{lk}$ is a radial basis functions. Currently, the Julia spherical Bessel function "sphericalbessely(l, r)" is used. Other function should be implemented in the future, including polynomials and Gaussian functions.
+
+Returning to Equation \ref{eq:us}, the spherical harmonics of degree $l$ and order $m$ ($Y_{lm}$) is presented in Equation 12 in the original manuscript. Here, it is formulated as
+\begin{equation}
+ Y_{lm}(\theta,\phi) = \sqrt{\frac{(2l + 1)}{4 \pi} \frac{(l-m)!}{(l+m)!}} P_{lm}(\cos(\theta)) e^{i m \phi}
+\end{equation}
+$P_{lm}$ are the associated Legendre polynomials. They are not included in the original manuscript. Here they are defined as
+\begin{equation}
+    \label{eq:leg}
+    P_{lm}(x) = (-1)^m (1-x^2)^{m/2}  \frac{\mathrm{d}^m}{\mathrm{d}x^m} P_l(x), \ if \ m \ge 0
+\end{equation}
+\begin{equation}
+    \label{eq:leg2}
+    P_{lm} (x) = (-1)^{|m|} \frac{(l-|m|)!}{(l+|m|)!} P_{l|m|}, \ if \ m < 0
+\end{equation}
+$P_l$ is the Legendre polynomial of degree $l$ given by:
+\begin{equation}
+    \label{eq:leg3}
+    P_l(x)=\frac{1}{2^l l!} \frac{\mathrm{d}^l}{\mathrm{d}x^l}(x^2-1)^l
+\end{equation}
+
+By combining Equations \ref{eq:leg} and \ref{eq:leg3}, we obtain the following expressions for $P_{lm}(x)$, $l \ge 0$, $0 \le m \le l$ (Equations \ref{eq:leg4} and \ref{eq:leg5}). The case $-l \le m <0$ follows from Equation \ref{eq:leg2}. See Appendix \ref{app:legendre} for a brief proof.
+
+\begin{equation}
+    \label{eq:leg4}
+    P_{lm}(x) = (-1)^m (1-x^2)^{m/2} \Bigg( \frac{1}{2!} \sum_{k=\lceil \frac{l+m}{2} \rceil}^l  (-1)^{l-k} {l \choose k} {2k \choose l} \frac{(2k-l)!}{(2k-l-m)!} x^{2k-l-m} \Bigg), \quad m >0
+\end{equation}
+\begin{equation}
+    \label{eq:leg5}
+    P_{lm}(x) = P_l(x)  \quad m = 0.
+\end{equation} 
+In Equation \ref{eq:leg4}, $\lceil . \rceil$ denotes the ceiling function.
+
+
+%The basis functions $\{d_m(\bm r^N), \ 1 \le m \le M \}$ are given by\footnote{The arguments of the basis functions in Equation \ref{eq:min2} are referred to the atoms in the $j$-th configuration.}:
+%\begin{equation*}
+%    d_{tkk'l}(\bm r^{N_j}) =  \sum_{s, Z_s=t} \sum_{m=-l}^l \left( \left(\sum_{q \in \Omega_{js}} u_{klm}(\bm r_{qs}) \right) \left( \sum_{s \in \Omega_{js}} u_{k'lm} \left(\bm r_{qs} \right)  \right) \right),  \quad t=1, \ldots, NZ,
+%\end{equation*}
+%where $\bm r_{qs} = \bm r_q^{N_j}- \bm r_s^{N_j}$ (note that $s$ and $q$ are the $s$-th and $q$-th atoms in the configuration $j$). Hereafter, we drop the superscript $N_j$. We remark that there are $M=(NZ (L+1) K (K+1))/2$ basis functions.
+%\textbf{Por el momento no sé si s tiene que ser de la confugiración j, entiendo que sí para que tenga sentido hacer la resta teniendo $r^{N_j}$. Tal vez se pueda quitar esta definición.} 
+
+
+
+\begin{appendix}
+\section{Associated Legendre polynomials}
+\label{app:legendre}
+    
+In this Appendix, it is presented a derivation of Equation \ref{eq:leg4} from the definitions of Legendre polynomials (Equation \ref{eq:leg3}) and associated Legendre polynomials (Equation \ref{eq:leg}).
+
+By applying the binomial theorem:
+\begin{equation}
+    \label{eq:fleg}
+    P_l(x)= \frac{1}{2^l l!} \frac{\mathrm{d}^l}{\mathrm{d}x^l}(x^2-1)^l = \frac{1}{2^l l!} \sum_{k=0}^l {l \choose k} (-1)^{l-k} \frac{\mathrm{d}^l}{\mathrm{d}x^l}(x^{2k}).
+\end{equation}
+
+The $l$-th derivative of $x^{2k}$ can be written as:
+
+\[ \frac{\mathrm{d}^l}{\mathrm{d}x^l}(x^{2k}) =
+  \begin{cases}
+    2k (2k-1) \ldots (2k-l+1) x^{2k-l}      & \quad \text{if } 2k \ge l \\
+    0 & \quad \text{if } 2k < l
+  \end{cases}
+\]
+
+Therefore, replacing the derivative in Equation \ref{eq:fleg}:
+\begin{equation*}
+    P_l(x) = \frac{1}{2^l} \sum_{k=\lceil l/2 \rceil}^l {l \choose k} (-1)^{l-k} \frac{(2k)!}{(2k-l)! l!} x^{2k-l}
+\end{equation*}
+\begin{equation}
+    \label{eq:fleg2}
+    P_l(x) = \frac{1}{2^l} \sum_{k=\lceil l/2 \rceil}^l {l \choose k} (-1)^{l-k} {2k \choose l} x^{2k-l}
+\end{equation}
+
+We proceed in a similar way to obtain the $m$-th derivative of $P_l(x)$ for $0 < m \le l$ using Equation \ref{eq:fleg2}:
+
+\[ \frac{\mathrm{d}^m}{\mathrm{d}x^m}(x^{2k-l}) =
+  \begin{cases}
+    (2k-l) (2k-l-1) \ldots (2k-l-m+1) x^{2k-l-m}      & \quad \text{if } 2k-l \ge m \\
+    0 & \quad \text{if } 2k -l < m
+  \end{cases}
+\]
+
+Consequently:
+\begin{equation*}
+    P_{lm}(x)=(-1)^m (1-x^2)^{m/2} \frac{\mathrm{d}^m}{\mathrm{d}x^m} P_l(x) = 
+\end{equation*}
+\begin{equation*}
+     = (-1)^m (1-x^2)^{m/2} \frac{1}{2^l} \sum_{k = \lceil \frac{l+m}{2} \rceil}^{l} (-1)^{l-k} {l \choose k} {2k \choose l} \frac{(2k-l)!}{(2k-l-m)!} x^{2k-l-m}
+\end{equation*}
+
+\end{appendix}
+
+
+\end{document}
