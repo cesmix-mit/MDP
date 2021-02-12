@@ -22,13 +22,9 @@ function Cartesian(x)
     return Cartesian(x, x, x)
 end
 
-function normsq(f::Cartesian) 
-    return f.x^2 + f.y^2 + f.z^2
-end
-
 function convert(::Type{Spherical}, coord::Cartesian)
     x, y, z = coord.x, coord.y, coord.z
-    r = sqrt(x^2 + y^2 + z^2)
+    r = √(x^2 + y^2 + z^2)
     θ = acos(z / r)
     ϕ = atan(y, x)
     return Spherical(r, θ, ϕ)

@@ -48,6 +48,17 @@ function get_input_parameters()
         end
         r_N[j] = positions_j
     end
+    
+    # `f_qm[j][i]`: Quantum force associated to the atom i in the configuration j.
+    f_qm = Array{Array}(undef, J)
+    for j = 1:J
+        forces_j = []
+        for k = 1:N[j]
+            push!(forces_j, Cartesian(rand() + im * rand(), rand() + im * rand(),
+                                      rand() + im * rand()))
+        end
+        f_qm[j] = forces_j
+    end
 
     # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
     r_cut = rand()
@@ -63,6 +74,7 @@ function get_input_parameters()
     for j = 1:J
         for i0 = 1:N[j]
             for i1 = 1:N[j]
+                # TODO: add periodic bodaries
                 if i0 != i1 && norm(r_N[j][i0] - r_N[j][i1]) < r_cut
                     push!(Ω[j][i0], i1)
                     t = T[Z[j][i1]]
@@ -74,17 +86,6 @@ function get_input_parameters()
         end
     end
     
-    # `f_qm[j][i]`: Quantum force associated to the atom i in the configuration j.
-    f_qm = Array{Array}(undef, J)
-    for j = 1:J
-        forces_j = []
-        for k = 1:N[j]
-            push!(forces_j, Cartesian(rand() + im * rand(), rand() + im * rand(),
-                                      rand() + im * rand()))
-        end
-        f_qm[j] = forces_j
-    end
-    
     # `K`: ?
     K = 3
     
@@ -94,9 +95,10 @@ function get_input_parameters()
     # `M`: Number of basis functions.
     M = NZ * K * (K + 1) / 2.0 * (L + 1)
 
-    # `c[t][k][k′][l]`: Coefficient needed to calculate the potential/force.
-    # TODO: analyze performance impact due to 'c' definition as multi-array.
-    c = [[[[ rand() for l=1:L] for k′=1:k] for k=1:K] for t=1:NZ]
+    # `c[m]`: Coefficient needed to calculate the potential/force.
+    #         Linearized version of c[t][k][k′][l].
+    #         Linear version needed in optimization.
+    c = [rand() for m = 1:M]
     
     # `w[j]`: Weight associated to the configuration j.
     w = @SArray [1.0, 1.0, 1.0]
@@ -114,13 +116,13 @@ end
 
 
 """
-    optimize_coefficients(w, f, f_qm, r_N, N, J)
+    optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, N, J)
     
 """
-function optimize_coefficients(w, f, f_qm, r_N, N, J)
-    # Eq. 4
+function optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, N, J)
+    # Eq. 1 in summary. Eq. 4 in original manuscript.
     cost_function(c, p) = sum([w[j] * 
-                               sum([normsq(f(i, j, c, r_N[j]) - f_qm[j][i])
+                               sum([norm(f(i, j, c, r_N[j]) - f_qm[j][i])^2
                                     for i=1:N[j]])
                                for j=1:J])
 
@@ -138,8 +140,8 @@ end
 """
 function compute()
     # Input variables ##########################################################
-    J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, c, w, Δ = get_input_parameters()
-    
+    J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, c, w, Δ = get_input_parameters()
+
     # Force calculation ########################################################
     f = calculate_forces(NZ, K, L, Ω, Ω′, Ω′′, Δ)
 
