@@ -76,9 +76,9 @@ function calculate_forces(NZ, K, L, Ω, Ω′, Ω′′, Δ)
     # `f(i, j, c, r)`: atomic forces. The `c` vector will be optimized.
     # Eq. 2 in summary. Eq. 4 and 5 in original manuscript.
     # TODO: check index m
-    f(i, j, c, r) = Cartesian(( 
-                        sum([c[m] * deriv_d(t, k, k′, l, r, i, j)
-                             for l = 0:L, k′ = 1:k, k = 1:K, t = 1:NZ]))...)
+    f(i, j, c, r) = Cartesian((
+                        sum([c[1] * deriv_d(t, k, k′, l, r, i, j)
+                             for t = 1:NZ for k = 1:K for k′ = 1:k for l = 0:L ]))...)
 
     return f
 end

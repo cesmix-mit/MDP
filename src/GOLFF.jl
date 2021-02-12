@@ -1,4 +1,4 @@
-#module GOLFF
+module GOLFF
 
 using StaticArrays
 using SpecialFunctions
@@ -93,7 +93,7 @@ function get_input_parameters()
     L = 3
     
     # `M`: Number of basis functions.
-    M = NZ * K * (K + 1) / 2.0 * (L + 1)
+    M = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1))
 
     # `c[m]`: Coefficient needed to calculate the potential/force.
     #         Linearized version of c[t][k][k′][l].
@@ -116,20 +116,18 @@ end
 
 
 """
-    optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, N, J)
+    optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
     
 """
-function optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, N, J)
+function optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
     # Eq. 1 in summary. Eq. 4 in original manuscript.
     cost_function(c, p) = sum([w[j] * 
-                               sum([norm(f(i, j, c, r_N[j]) - f_qm[j][i])^2
+                               sum([normsq(f(i, j, c, r_N[j]) - f_qm[j][i])
                                     for i=1:N[j]])
                                for j=1:J])
-
     c0 = zeros(M)
     prob = OptimizationProblem(cost_function, c0)
     sol = solve(prob, NelderMead())
-
     return sol.minimizer
 end
 
@@ -146,7 +144,7 @@ function compute()
     f = calculate_forces(NZ, K, L, Ω, Ω′, Ω′′, Δ)
 
     # Optimize coeffiecients ###################################################
-    c_opt = optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, N, J)
+    c_opt = optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
 
     # Print/plot/save results ##################################################
     println("Coefficients:", c_opt)
@@ -155,7 +153,5 @@ function compute()
     # TODO
 end
 
-compute()
 
-
-#end # module
+end # module
