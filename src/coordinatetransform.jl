@@ -17,7 +17,7 @@ LinearAlgebra.:norm(f::Cartesian) = √(abs(f.x)^2 + abs(f.y)^2 + abs(f.z)^2)
 
 Base.sum(::Type{Cartesian{Float64}}) = 0.0
 Base.zero(::Type{Cartesian{Float64}}) = Cartesian(0.0, 0.0, 0.0)
-Base.zero(::Type{Any}) = 0.0
+Base.zero(::Type{Any}) = [0.0, 0.0, 0.0]
 
 function Cartesian(x)
     return Cartesian(x, x, x)
