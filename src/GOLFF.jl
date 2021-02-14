@@ -74,7 +74,7 @@ function get_input_parameters()
     for j = 1:J
         for i0 = 1:N[j]
             for i1 = 1:N[j]
-                # TODO: add periodic bodaries
+                # TODO: add periodic boundaries
                 if i0 != i1 && norm(r_N[j][i0] - r_N[j][i1]) < r_cut
                     push!(Ω[j][i0], i1)
                     t = T[Z[j][i1]]
@@ -117,10 +117,10 @@ end
 
 """
     optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
+    Eq. 1 in summary. Eq. 4 in original manuscript.
     
 """
 function optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
-    # Eq. 1 in summary. Eq. 4 in original manuscript.
     cost_function(c, p) = sum([w[j] * 
                                sum([normsq(f(i, j, c, r_N[j]) - f_qm[j][i])
                                     for i=1:N[j]])
@@ -140,9 +140,6 @@ function compute()
     # Input variables ##########################################################
     J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, c, w, Δ = get_input_parameters()
 
-    # Force calculation ########################################################
-    f = calculate_forces(NZ, K, L, Ω, Ω′, Ω′′, Δ)
-
     # Optimize coeffiecients ###################################################
     c_opt = optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
 
@@ -152,6 +149,5 @@ function compute()
     # Call LAMMPS ##############################################################
     # TODO
 end
-
 
 end # module
