@@ -1,4 +1,3 @@
-
 """
     P(l, m, x) Associated Legendre Polynomials
     Eq. 8-11 in summary. It is not present in the original manuscript.
