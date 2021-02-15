@@ -10,18 +10,33 @@ struct Spherical{T}
     ϕ::T
 end
 
+Base.:*(c::Float64, f::Cartesian) = Cartesian(c * f.x, c * f.y, c * f.z)
+Base.:+(f::Cartesian, g::Cartesian) = Cartesian(f.x + g.x, f.y + g.y, f.z + g.z)
+Base.:-(f::Cartesian, g::Cartesian) = Cartesian(f.x - g.x, f.y - g.y, f.z - g.z)
+LinearAlgebra.:norm(f::Cartesian) = √(abs(f.x)^2 + abs(f.y)^2 + abs(f.z)^2)
+
+Base.sum(::Type{Cartesian{Float64}}) = 0.0
+Base.zero(::Type{Cartesian{Float64}}) = Cartesian(0.0, 0.0, 0.0)
+Base.zero(::Type{Any}) = [0.0, 0.0, 0.0]
+
+function Cartesian(x)
+    return Cartesian(x, x, x)
+end
+
+function normsq(f::Cartesian)
+    return (abs(f.x)^2 + abs(f.y)^2 + abs(f.z)^2)
+end
+
 function convert(::Type{Spherical}, coord::Cartesian)
     x, y, z = coord.x, coord.y, coord.z
-
-    r = sqrt(x^2 + y^2 + z^2)
+    r = √(x^2 + y^2 + z^2)
     θ = acos(z / r)
-    ϕ = atan2(y, x)
+    ϕ = atan(y, x)
     return Spherical(r, θ, ϕ)
 end
 
 function convert(::Type{Cartesian}, coord::Spherical)
     r, θ, ϕ = coord.r, coord.θ, coord.ϕ
-
     x = r * sin(θ) * cos(ϕ)
     y = r * sin(θ) * sin(ϕ)
     z = r * cos(θ)
