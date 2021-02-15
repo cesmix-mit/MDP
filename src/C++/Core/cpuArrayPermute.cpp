@@ -161,4 +161,66 @@ template void cpuPermute13(float*, float*, int, int, int, int);
 template void cpuPermute23(double*, double*, int, int, int, int);
 template void cpuPermute23(float*, float*, int, int, int, int);
 
+template <typename T> void cpuSmallMatrixInverse(T *invA, T *A, int dim)
+{                 
+    if (dim==2) {
+        T detA = A[0]*A[3] - A[1]*A[2];
+        invA[0] = A[3]/detA;
+        invA[1] = -A[1]/detA;
+        invA[2] = -A[2]/detA;
+        invA[3] = A[0]/detA;
+    }
+    else if (dim==3)
+    {
+        T a11 = A[0];
+        T a21 = A[1];
+        T a31 = A[2];
+        T a12 = A[3];
+        T a22 = A[4];
+        T a32 = A[5];
+        T a13 = A[6];
+        T a23 = A[7];
+        T a33 = A[8];        
+        T detA = (a11*a22*a33 - a11*a23*a32 - a12*a21*a33 + a12*a23*a31 + a13*a21*a32 - a13*a22*a31);
+
+        invA[0] = (a22*a33 - a23*a32)/detA;
+        invA[1] = (a23*a31 - a21*a33)/detA;
+        invA[2] = (a21*a32 - a22*a31)/detA;
+        invA[3] = (a13*a32 - a12*a33)/detA;
+        invA[4] = (a11*a33 - a13*a31)/detA;
+        invA[5] = (a12*a31 - a11*a32)/detA;
+        invA[6] = (a12*a23 - a13*a22)/detA;
+        invA[7] = (a13*a21 - a11*a23)/detA;
+        invA[8] = (a11*a22 - a12*a21)/detA;        
+    }    
+}
+template void cpuSmallMatrixInverse(double*, double*, int);
+template void cpuSmallMatrixInverse(float*, float*, int);
+
+template <typename T> void cpuSmallMatrixInverse(T *invA, T *A1, T *A2, T *A3)
+{                 
+    T a11 = A1[0];
+    T a21 = A1[1];
+    T a31 = A1[2];
+    T a12 = A2[0];
+    T a22 = A2[1];
+    T a32 = A2[2];
+    T a13 = A3[0];
+    T a23 = A3[1];
+    T a33 = A3[2];        
+    T detA = (a11*a22*a33 - a11*a23*a32 - a12*a21*a33 + a12*a23*a31 + a13*a21*a32 - a13*a22*a31);
+
+    invA[0] = (a22*a33 - a23*a32)/detA;
+    invA[1] = (a23*a31 - a21*a33)/detA;
+    invA[2] = (a21*a32 - a22*a31)/detA;
+    invA[3] = (a13*a32 - a12*a33)/detA;
+    invA[4] = (a11*a33 - a13*a31)/detA;
+    invA[5] = (a12*a31 - a11*a32)/detA;
+    invA[6] = (a12*a23 - a13*a22)/detA;
+    invA[7] = (a13*a21 - a11*a23)/detA;
+    invA[8] = (a11*a22 - a12*a21)/detA;            
+}
+template void cpuSmallMatrixInverse(double*, double*, double*, double*);
+template void cpuSmallMatrixInverse(float*, float*, float*, float*);
+
 #endif

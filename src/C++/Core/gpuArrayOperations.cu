@@ -139,6 +139,14 @@ template <typename T> void gpuArraySetValueAtIndex(T *y, T a, int n)
     gpuTemplateArraySetValueAtIndex<<<1, 1>>>(y, a, n);
 }
 
+
+template <typename T> T gpuArrayGetValueAtIndex(T *y, int n)
+{          
+    T val; 
+    cudaMemcpy(&val, &y[n], sizeof(T), cudaMemcpyDeviceToHost); 
+    return val;
+}
+
 template <typename T>
 __global__ void gpuTemplateArraySetValue(T *y, T a, int n)
 {
@@ -1034,6 +1042,7 @@ template <typename T> void gpuArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int 
 // template void gpuPrint3DArray(double*, int, int, int);
 template void gpuArraySetValue(double*, double, int);
 template void gpuArraySetValueAtIndex(double*, double, int);
+template double gpuArrayGetValueAtIndex(double*, int);
 template void gpuArrayAddScalar(double*, double, int);
 template void gpuArrayMultiplyScalar(double*, double, int);
 
@@ -1090,6 +1099,7 @@ template void gpuArrayDG2CG2(double*, double*, int*, int*, int, int);
 // template void gpuPrint3DArray(float*, int, int, int);
 template void gpuArraySetValue(float*, float, int);
 template void gpuArraySetValueAtIndex(float*, float, int);
+template float gpuArrayGetValueAtIndex(float*, int);
 template void gpuArrayAddScalar(float*, float, int);
 template void gpuArrayMultiplyScalar(float*, float, int);
 

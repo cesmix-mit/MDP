@@ -20,6 +20,11 @@ public:
     // constructor for both CPU and GPU
     void Init(Int Kin, Int Lin, Int backendin); 
     
+    void SphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *xij, Int N);    
+    
+    // compute derivatives of spherical harmonics Bessel functions
+    void SphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, dstype *xij, Int N);
+    
     // compute spherical harmonics Bessel functions for N atoms
     void SphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *x, dstype *y, dstype *z, Int N);    
     

@@ -29,7 +29,7 @@ if ~isempty(gpucompiler)
     compilerstr{5} = gpucompiler + " -D_FORCE_INLINES -O3 -c --compiler-options '-fPIC' -w ../Core/gpuCore.cu -o ../Core/gpuCore.o";
     compilerstr{6} = cpucompiler + " --shared ../Core/gpuCore.o -o ../Core/libgpuCore.so";
     compilerstr{7} = "ar rvs ../Core/gpuCore.a ../Core/gpuCore.o";
-    compilerstr{8} = cpucompiler + " -std=c++11 -D _CUDA main.cpp -o gpuSerialGOLFF ../Core/gpuCore.a ../Core/cpuCore.a -O3 -lcudart -lcublas";
+    compilerstr{8} = cpucompiler + " -std=c++11 -D _CUDA main.cpp -o gpuSerialGOLFF ../Core/gpuCore.a ../Core/cpuCore.a -O3 -lblas -lcudart -lcublas";
     for i = 5:8
         eval(char("!" + compilerstr{i}));
     end

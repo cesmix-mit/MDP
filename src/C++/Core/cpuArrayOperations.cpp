@@ -1,6 +1,13 @@
 #ifndef __CPUARRAYOPERATIONS
 #define __CPUARRAYOPERATIONS
 
+void cpuCumsum(int* output, int* input, int length) 
+{
+	output[0] = 0; 
+	for (int j = 1; j < length; ++j)	
+		output[j] = input[j - 1] + output[j - 1];	
+}
+
 template <typename T> T cpuArrayMin(T *a, int n)
 {
     T b = a[0];

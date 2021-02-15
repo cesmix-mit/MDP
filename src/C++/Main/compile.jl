@@ -23,7 +23,7 @@ if length(gpucompiler)>0
     run(str);
     str = `ar rvs ../Core/gpuCore.a ../Core/gpuCore.o`;
     run(str);
-    str = `$cpucompiler -std=c++11 -D _CUDA main.cpp -o gpuSerialGOLFF ../Core/gpuCore.a ../Core/cpuCore.a -O3 -lcudart -lcublas`;
+    str = `$cpucompiler -std=c++11 -D _CUDA main.cpp -o gpuSerialGOLFF ../Core/gpuCore.a ../Core/cpuCore.a -O3 -lblas -lcudart -lcublas`;
     run(str);
     rm("../Core/gpuCore.o");
 end

@@ -4,23 +4,27 @@
 class CConfiguration {
 private:
 public:          
-    configstruct config;
     appstruct app;
+    configstruct config;    
     commonstruct common;
-        
+    neighborstruct nb; 
+    sysstruct sys;     
+    tempstruct tmp;    
+    
     // default constructor 
     CConfiguration(){}; 
     
     // constructor 
-    CConfiguration(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend); 
+    CConfiguration(string filein, string fileout, Int mpiprocs, Int mpirank, Int backend); 
     
     // destructor        
     ~CConfiguration(); 
     
-    void ReadConfigStruct(string filename, Int mpiprocs, Int mpirank, Int backend);
-    void ReadAppStruct(string filename, Int mpiprocs, Int mpirank, Int backend);    
-    void SetCommonStruct(Int mpiprocs, Int mpirank, Int backend);
-    void Init(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend);     
+    void Init(string filein, string fileout, Int mpiprocs, Int mpirank, Int backend) ;     
+    void SetNeighborStruct(Int ci);
+    void SetSysStruct();
+    void SetTempStruct();     
+    void NeighborList(dstype* x, Int *atomtype, Int inum);        
 };
 
 #endif        

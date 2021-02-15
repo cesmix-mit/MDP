@@ -7,7 +7,7 @@
 #include "gpucore.h"
 #endif                
 
-static void GetArrayAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
+inline void GetArrayAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
 {
     if (backend == 1)  
         cpuGetArrayAtIndex(y, x, ind, n);
@@ -17,7 +17,7 @@ static void GetArrayAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
 #endif                  
 }
 
-static void PutArrayAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
+inline void PutArrayAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
 {
     if (backend == 1)  
         cpuPutArrayAtIndex(y, x, ind, n);
@@ -27,7 +27,7 @@ static void PutArrayAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayPlusXAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
+inline void ArrayPlusXAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayPlusXAtIndex(y, x, ind, n);
@@ -37,7 +37,7 @@ static void ArrayPlusXAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend
 #endif                  
 }
 
-static void ArrayMinusXAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
+inline void ArrayMinusXAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayMinusXAtIndex(y, x, ind, n);
@@ -47,7 +47,7 @@ static void ArrayMinusXAtIndex(dstype *y, dstype *x, Int *ind, Int n, Int backen
 #endif                  
 }
 
-static void ArraySquare(dstype *y, dstype *x, Int n, Int backend)
+inline void ArraySquare(dstype *y, dstype *x, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArraySquare(y, x, n);   
@@ -57,7 +57,7 @@ static void ArraySquare(dstype *y, dstype *x, Int n, Int backend)
 #endif                  
 }
 
-static void ArraySetValue(dstype *y, dstype a, Int n, Int backend)
+inline void ArraySetValue(dstype *y, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArraySetValue(y, a, n);
@@ -67,7 +67,41 @@ static void ArraySetValue(dstype *y, dstype a, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayAddScalar(dstype *y, dstype a, Int n, Int backend)
+inline void ArraySetValueAtIndex(dstype *y, dstype a, Int n, Int backend)
+{
+    if (backend == 1)  
+        y[n] = a;
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuArraySetValueAtIndex(y, a, n);
+#endif                  
+}
+
+inline dstype ArrayGetValueAtIndex(dstype *y, Int n, Int backend)
+{
+    dstype val; 
+    if (backend == 1)  
+        val = y[n];
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        val = gpuArrayGetValueAtIndex(y, n);
+#endif                      
+    return val;
+}
+
+inline Int IntArrayGetValueAtIndex(Int *y, Int n, Int backend)
+{
+    Int val; 
+    if (backend == 1)  
+        val = y[n];
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        val = gpuArrayGetValueAtIndex(y, n);
+#endif                      
+    return val;
+}
+
+inline void ArrayAddScalar(dstype *y, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAddScalar(y, a, n);
@@ -77,7 +111,7 @@ static void ArrayAddScalar(dstype *y, dstype a, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayMultiplyScalar(dstype *y, dstype a, Int n, Int backend)
+inline void ArrayMultiplyScalar(dstype *y, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayMultiplyScalar(y, a, n);
@@ -87,7 +121,7 @@ static void ArrayMultiplyScalar(dstype *y, dstype a, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayCopy(dstype *y, dstype *x, Int n, Int backend)
+inline void ArrayCopy(dstype *y, dstype *x, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayCopy(y, x, n);   
@@ -97,7 +131,7 @@ static void ArrayCopy(dstype *y, dstype *x, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayMinus(dstype *y, dstype *x, Int n, Int backend)
+inline void ArrayMinus(dstype *y, dstype *x, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayMinus(y, x, n);   
@@ -107,7 +141,7 @@ static void ArrayMinus(dstype *y, dstype *x, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayAbs(dstype *y, dstype *x, Int n, Int backend)
+inline void ArrayAbs(dstype *y, dstype *x, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAbs(y, x, n);   
@@ -117,7 +151,7 @@ static void ArrayAbs(dstype *y, dstype *x, Int n, Int backend)
 #endif                  
 }
 
-static void ArraySqrt(dstype *y, dstype *x, Int n, Int backend)
+inline void ArraySqrt(dstype *y, dstype *x, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArraySqrt(y, x, n);   
@@ -127,7 +161,7 @@ static void ArraySqrt(dstype *y, dstype *x, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayMultiplyScalarDiagonal(dstype *C, dstype a, Int n, Int backend)
+inline void ArrayMultiplyScalarDiagonal(dstype *C, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayMultiplyScalarDiagonal(C, a, n);   
@@ -137,7 +171,7 @@ static void ArrayMultiplyScalarDiagonal(dstype *C, dstype a, Int n, Int backend)
 #endif                  
 }
 
-static void ArrayAddVectorToDiagonal(dstype *C, dstype *x, dstype a, Int n, Int backend)
+inline void ArrayAddVectorToDiagonal(dstype *C, dstype *x, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAddVectorToDiagonal(C, x, a, n);   
@@ -147,7 +181,7 @@ static void ArrayAddVectorToDiagonal(dstype *C, dstype *x, dstype a, Int n, Int 
 #endif                  
 }
 
-static void ArrayAXPB(dstype *y, dstype *x, dstype a, dstype b, Int n, Int backend)
+inline void ArrayAXPB(dstype *y, dstype *x, dstype a, dstype b, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAXPB(y, x, a, b, n);
@@ -157,7 +191,7 @@ static void ArrayAXPB(dstype *y, dstype *x, dstype a, dstype b, Int n, Int backe
 #endif                  
 }
 
-static void ArrayAXPBY(dstype *z, dstype *x, dstype *y, dstype a, dstype b, Int n, Int backend)
+inline void ArrayAXPBY(dstype *z, dstype *x, dstype *y, dstype a, dstype b, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAXPBY(z, x, y, a, b, n);
@@ -167,7 +201,7 @@ static void ArrayAXPBY(dstype *z, dstype *x, dstype *y, dstype a, dstype b, Int 
 #endif                  
 }
 
-static void ArrayAXY(dstype *z, dstype *x, dstype *y, dstype a, Int n, Int backend)
+inline void ArrayAXY(dstype *z, dstype *x, dstype *y, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAXY(z, x, y, a, n);
@@ -177,7 +211,7 @@ static void ArrayAXY(dstype *z, dstype *x, dstype *y, dstype a, Int n, Int backe
 #endif                  
 }
 
-static void ArrayAXYZ(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, Int n, Int backend)
+inline void ArrayAXYZ(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAXYZ(s, x, y, z, a, n);
@@ -187,7 +221,7 @@ static void ArrayAXYZ(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, Int 
 #endif                  
 }
 
-static void ArrayAXYPBZ(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, dstype b, Int n, Int backend)
+inline void ArrayAXYPBZ(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, dstype b, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAXYPBZ(s, x, y, z, a, b, n);
@@ -197,7 +231,7 @@ static void ArrayAXYPBZ(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, ds
 #endif                  
 }
 
-static void ArrayAdd3Vectors(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, dstype b, dstype c, Int n, Int backend)
+inline void ArrayAdd3Vectors(dstype *s, dstype *x, dstype *y, dstype *z, dstype a, dstype b, dstype c, Int n, Int backend)
 {
     if (backend == 1)  
         cpuArrayAdd3Vectors(s, x, y, z, a, b, c, n);
@@ -207,7 +241,7 @@ static void ArrayAdd3Vectors(dstype *s, dstype *x, dstype *y, dstype *z, dstype 
 #endif                  
 }
 
-static void ArrayExtract(dstype *un, dstype *u, Int I, Int J, Int K, 
+inline void ArrayExtract(dstype *un, dstype *u, Int I, Int J, Int K, 
         Int i1, Int i2, Int j1, Int j2, Int k1, Int k2, Int backend)
 {
     if (backend == 1)  
@@ -218,7 +252,7 @@ static void ArrayExtract(dstype *un, dstype *u, Int I, Int J, Int K,
 #endif                  
 }
 
-static void ArrayInsert(dstype *u, dstype *un, Int I, Int J, Int K, 
+inline void ArrayInsert(dstype *u, dstype *un, Int I, Int J, Int K, 
         Int i1, Int i2, Int j1, Int j2, Int k1, Int k2, Int backend)
 {
     if (backend == 1)  
@@ -229,7 +263,7 @@ static void ArrayInsert(dstype *u, dstype *un, Int I, Int J, Int K,
 #endif                  
 }
 
-static void ArrayGemmBatch(dstype *C, dstype *A, dstype *B, Int I, Int J, Int K, Int S, Int backend)
+inline void ArrayGemmBatch(dstype *C, dstype *A, dstype *B, Int I, Int J, Int K, Int S, Int backend)
 {
     if (backend == 1)  
         cpuArrayGemmBatch(C, A, B, I, J, K, S);    
@@ -239,7 +273,7 @@ static void ArrayGemmBatch(dstype *C, dstype *A, dstype *B, Int I, Int J, Int K,
 #endif                  
 }
 
-static void ArrayGemmBatch1(dstype *C, dstype *A, dstype *B, Int I, Int J, Int K, Int S, Int backend)
+inline void ArrayGemmBatch1(dstype *C, dstype *A, dstype *B, Int I, Int J, Int K, Int S, Int backend)
 {
     if (backend == 1)  
         cpuArrayGemmBatch1(C, A, B, I, J, K, S);    
@@ -249,7 +283,7 @@ static void ArrayGemmBatch1(dstype *C, dstype *A, dstype *B, Int I, Int J, Int K
 #endif                  
 }
 
-static void ArrayDG2CG(dstype *ucg, dstype *udg, Int *cgent2dgent, Int *rowent2elem, Int nent, Int backend)
+inline void ArrayDG2CG(dstype *ucg, dstype *udg, Int *cgent2dgent, Int *rowent2elem, Int nent, Int backend)
 {
     if (backend == 1)  
         cpuArrayDG2CG(ucg, udg, cgent2dgent, rowent2elem, nent);    
@@ -259,7 +293,7 @@ static void ArrayDG2CG(dstype *ucg, dstype *udg, Int *cgent2dgent, Int *rowent2e
 #endif                  
 }
 
-static void ArrayDG2CG2(dstype *ucg, dstype *udg, Int *colent2elem, Int *rowent2elem, Int nent, Int npe, Int backend)
+inline void ArrayDG2CG2(dstype *ucg, dstype *udg, Int *colent2elem, Int *rowent2elem, Int nent, Int npe, Int backend)
 {
     if (backend == 1)  
         cpuArrayDG2CG2(ucg, udg, colent2elem, rowent2elem, nent, npe);    
@@ -269,7 +303,7 @@ static void ArrayDG2CG2(dstype *ucg, dstype *udg, Int *colent2elem, Int *rowent2
 #endif                  
 }
 
-static void Cart2Sphere(dstype *the, dstype *phi, dstype *r, dstype *x, dstype *y, dstype *z, Int N, Int backend)
+inline void Cart2Sphere(dstype *the, dstype *phi, dstype *r, dstype *x, dstype *y, dstype *z, Int N, Int backend)
 {
     if (backend == 1)  
         cpuCart2Sphere(the, phi, r, x, y, z, N);    
@@ -279,7 +313,7 @@ static void Cart2Sphere(dstype *the, dstype *phi, dstype *r, dstype *x, dstype *
 #endif                  
 }
 
-static void Cart2SphereDeriv(dstype *the, dstype *phi, dstype *r, dstype *thex, dstype *they, dstype *thez, dstype *phix, 
+inline void Cart2SphereDeriv(dstype *the, dstype *phi, dstype *r, dstype *thex, dstype *they, dstype *thez, dstype *phix, 
         dstype *phiy, dstype *phiz, dstype *rx, dstype *ry, dstype *rz, dstype *x, dstype *y, dstype *z, Int N, Int backend)
 {
     if (backend == 1)  
@@ -292,7 +326,7 @@ static void Cart2SphereDeriv(dstype *the, dstype *phi, dstype *r, dstype *thex, 
 #endif                  
 }
 
-static void Sphere2Cart(dstype *x, dstype *y, dstype *z, dstype *the, dstype *phi, dstype *r, Int N, Int backend)
+inline void Sphere2Cart(dstype *x, dstype *y, dstype *z, dstype *the, dstype *phi, dstype *r, Int N, Int backend)
 {
     if (backend == 1)  
         cpuSphere2Cart(x, y, z, the, phi, r, N);    
@@ -302,7 +336,7 @@ static void Sphere2Cart(dstype *x, dstype *y, dstype *z, dstype *the, dstype *ph
 #endif                  
 }
 
-static void Euler2Rotm(dstype *R11, dstype *R12, dstype *R13, dstype *R21, 
+inline void Euler2Rotm(dstype *R11, dstype *R12, dstype *R13, dstype *R21, 
                 dstype *R22, dstype *R23, dstype *R31, dstype *R32, dstype *R33, dstype *alpha, dstype *beta, dstype *gamma, Int N, Int backend)
 {
     if (backend == 1)  
@@ -313,7 +347,7 @@ static void Euler2Rotm(dstype *R11, dstype *R12, dstype *R13, dstype *R21,
 #endif                  
 }
 
-static void Rotc(dstype *X, dstype *Y, dstype *Z, dstype *R, dstype *x, dstype *y, dstype *z, Int N, Int backend)
+inline void Rotc(dstype *X, dstype *Y, dstype *Z, dstype *R, dstype *x, dstype *y, dstype *z, Int N, Int backend)
 {
     if (backend == 1)  
         cpuRotc(X, Y, Z, R, x, y, z, N);    
@@ -323,7 +357,260 @@ static void Rotc(dstype *X, dstype *Y, dstype *Z, dstype *R, dstype *x, dstype *
 #endif                  
 }
 
-static void coreSphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *x, dstype *y, dstype *z, 
+inline void GhostAtoms(int *glistnum, dstype *x, dstype *pimages, dstype *wc, dstype *B2C, int n, int m, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuGhostAtoms(glistnum, x, pimages, wc, B2C, n, m, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuGhostAtoms(glistnum, x, pimages, wc, B2C, n, m, dim);    
+#endif                  
+}
+
+inline void CreateAtomList(int *ilist, int *glistnumsum, int *glistnum, int *atomtype, dstype *x, dstype 
+        *pimages, dstype *wc, dstype *B2C, int n, int m, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuCreateAtomList(ilist, glistnumsum, glistnum, atomtype, x, pimages, wc, B2C, n, m, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuCreateAtomList(ilist, glistnumsum, glistnum, atomtype, x, pimages, wc, B2C, n, m, dim);    
+#endif                  
+}
+
+inline void CellList(int *clist, int *c2inum, dstype *x, dstype *eta1, dstype *eta2, dstype *eta3, dstype *B2C, int *nc, 
+        int inum, int pnum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuCellList(clist, c2inum, x, eta1, eta2, eta3, B2C, nc, inum, pnum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuCellList(clist, c2inum, x, eta1, eta2, eta3, B2C, nc, inum, pnum, dim);    
+#endif                  
+}
+
+inline void Cell2AtomList(int *c2ilist, int *c2inumsum, int *c2inum, int *clist, int *nc, 
+        int inum, int pnum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuCell2AtomList(c2ilist, c2inumsum, c2inum, clist, nc, inum, pnum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuCell2AtomList(c2ilist, c2inumsum, c2inum, clist, nc, inum, pnum, dim);    
+#endif                  
+}
+
+inline void VerletAtoms(int *verletnum, dstype *x, dstype *ellipsoid, int *ilist, int *clist, 
+        int *c2ilist, int *c2inum, int *c2inumsum, int *nc, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuVerletAtoms(verletnum, x, ellipsoid, ilist, clist, c2ilist, c2inum, c2inumsum, 
+                nc, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuVerletAtoms(verletnum, x, ellipsoid, ilist, clist, c2ilist, c2inum, c2inumsum, 
+                nc, inum, dim);    
+#endif                  
+}
+
+inline void CreateVerletList(int *verletlist, dstype *x, dstype *ellipsoid, int *verletnum,  int *verletnumsum, 
+    int *ilist, int *clist, int *c2ilist, int *c2inum, int *c2inumsum, int *nc, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuCreateVerletList(verletlist, x, ellipsoid, verletnum, verletnumsum, ilist, clist, c2ilist, 
+                c2inum, c2inumsum, nc, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuCreateVerletList(verletlist, x, ellipsoid, verletnum, verletnumsum, ilist, clist, c2ilist, 
+                c2inum, c2inumsum, nc, inum, dim);     
+#endif                  
+}
+
+inline void FullNeighNum(int *neighnum, dstype *x, dstype* ellipsoid, 
+         int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuFullNeighNum(neighnum, x, ellipsoid, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuFullNeighNum(neighnum, x, ellipsoid, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#endif                  
+}
+
+inline void FullNeighList(int *neighlist, dstype *x, dstype* ellipsoid, int *neighnum, int *neighnumsum,
+         int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuFullNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuFullNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#endif                  
+}
+
+inline void HalfNeighNum(int *neighnum, dstype *x, dstype* ellipsoid, 
+         int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuHalfNeighNum(neighnum, x, ellipsoid, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuHalfNeighNum(neighnum, x, ellipsoid, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#endif                  
+}
+
+inline void HalfNeighList(int *neighlist, dstype *x, dstype* ellipsoid, int *neighnum, int *neighnumsum,
+         int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuHalfNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuHalfNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, ilist, verletlist, verletnum, verletnumsum, inum, dim);    
+#endif                  
+}
+
+inline void VerletAtoms(int *verletnum, dstype *x, dstype *ellipsoid, int *atomtype, int *ilist, int *clist, 
+        int *c2ilist, int *c2inum, int *c2inumsum, int *nc, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuVerletAtoms(verletnum, x, ellipsoid, atomtype, ilist, clist, c2ilist, c2inum, c2inumsum, 
+                nc, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuVerletAtoms(verletnum, x, ellipsoid, atomtype, ilist, clist, c2ilist, c2inum, c2inumsum, 
+                nc, ntype, inum, dim);    
+#endif                  
+}
+
+inline void CreateVerletList(int *verletlist, dstype *x, dstype *ellipsoid, int *verletnum,  int *verletnumsum, int *atomtype, 
+    int *ilist, int *clist, int *c2ilist, int *c2inum, int *c2inumsum, int *nc, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuCreateVerletList(verletlist, x, ellipsoid, verletnum, verletnumsum, atomtype, ilist, clist, c2ilist, 
+                c2inum, c2inumsum, nc, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuCreateVerletList(verletlist, x, ellipsoid, verletnum, verletnumsum, atomtype, ilist, clist, c2ilist, 
+                c2inum, c2inumsum, nc, ntype, inum, dim);     
+#endif                  
+}
+
+inline void FullNeighNum(int *neighnum, dstype *x, dstype* ellipsoid, int *atomtype, 
+         int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuFullNeighNum(neighnum, x, ellipsoid, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuFullNeighNum(neighnum, x, ellipsoid, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#endif                  
+}
+
+inline void FullNeighList(int *neighlist, dstype *x, dstype* ellipsoid, int *neighnum, int *neighnumsum,
+         int *atomtype, int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuFullNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuFullNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#endif                  
+}
+
+inline void HalfNeighNum(int *neighnum, dstype *x, dstype* ellipsoid, int *atomtype, 
+         int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuHalfNeighNum(neighnum, x, ellipsoid, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuHalfNeighNum(neighnum, x, ellipsoid, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#endif                  
+}
+
+inline void HalfNeighList(int *neighlist, dstype *x, dstype* ellipsoid, int *neighnum, int *neighnumsum,
+         int *atomtype, int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuHalfNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuHalfNeighList(neighlist, x, ellipsoid, neighnum, neighnumsum, atomtype, ilist, verletlist, verletnum, verletnumsum, ntype, inum, dim);    
+#endif                  
+}
+
+inline void GetNeighPairs(dstype *xij, dstype *x, int *ti, int *tj, int *ilist, int *neighlist,  
+         int *neighnum, int *neighnumsum, int *atomtype, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuGetNeighPairs(xij, x, ti, tj, ilist, neighlist, neighnum, neighnumsum, atomtype, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuGetNeighPairs(xij, x, ti, tj, ilist, neighlist, neighnum, neighnumsum, atomtype, ntype, inum, dim);    
+#endif                  
+}
+
+inline void GetNeighPairs(dstype *xij, dstype *x, int *anum, int *anumsum, int *ai, int *aj, int *ti, 
+      int *tj, int *ilist, int *neighlist, int *neighnum, int *neighnumsum, int *atomtype, 
+      int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuGetNeighPairs(xij, x, anum, anumsum, ai, aj, ti, tj, ilist, neighlist, neighnum, 
+                neighnumsum, atomtype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuGetNeighPairs(xij, x, anum, anumsum, ai, aj, ti, tj, ilist, neighlist, neighnum, 
+                neighnumsum, atomtype, inum, dim);    
+#endif                  
+}
+
+inline int GetNeighPairs(dstype *xij, dstype *x, int *anum, int *anumsum, int *ai, int *aj, 
+      int *ti, int *tj, int *ilist, int *tlist, int *neighlist, int *neighnum, int *neighnumsum, 
+      int *atomtype, int typei, int inum, int dim, Int backend)
+{
+    int tnum=0;
+    if (backend == 1)  
+        tnum = cpuGetNeighPairs(xij, x, anum, anumsum, ai, aj, ti, tj, ilist, tlist, neighlist, neighnum, 
+                neighnumsum, atomtype, typei, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        tnum = gpuGetNeighPairs(xij, x, anum, anumsum, ai, aj, ti, tj, ilist, tlist, neighlist, neighnum, 
+                neighnumsum, atomtype, typei, inum, dim);    
+#endif        
+    
+    return tnum;
+}
+
+inline int GetNeighPairs(dstype *xij, dstype *x, int *anum, int *anumsum, int *ai, int *aj, 
+      int *ti, int *tj, int *ilist, int *tlist, int *neighlist, int *neighnum, int *neighnumsum, 
+      int *atomtype, int typei, int typej, int inum, int dim, Int backend)
+{
+    int tnum=0;
+    if (backend == 1)  
+        tnum = cpuGetNeighPairs(xij, x, anum, anumsum, ai, aj, ti, tj, ilist, tlist, neighlist, neighnum, 
+                neighnumsum, atomtype, typei, typej, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        tnum = gpuGetNeighPairs(xij, x, anum, anumsum, ai, aj, ti, tj, ilist, tlist, neighlist, neighnum, 
+                neighnumsum, atomtype, typei, typej, inum, dim);    
+#endif         
+    
+    return tnum;
+}
+
+inline void GetNeighPairs(dstype *xi, dstype *xj, dstype *x, int *ti, int *tj, int *ilist, int *neighlist,  
+         int *neighnum, int *neighnumsum, int *atomtype, int ntype, int inum, int dim, Int backend)
+{
+    if (backend == 1)  
+        cpuGetNeighPairs(xi, xj, x, ti, tj, ilist, neighlist, neighnum, neighnumsum, atomtype, ntype, inum, dim);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuGetNeighPairs(xi, xj, x, ti, tj, ilist, neighlist, neighnum, neighnumsum, atomtype, ntype, inum, dim);    
+#endif                  
+}
+
+inline void coreSphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *x, dstype *y, dstype *z, 
                 dstype *x0, dstype *P, dstype *tmp, dstype *f, dstype *fac, dstype pi, Int L, Int K, Int N, Int backend)
 {
     if (backend == 1)  
@@ -334,7 +621,18 @@ static void coreSphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *x, dsty
 #endif                  
 }
 
-static void coreSphericalHarmonicsBesselDeriv(dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, 
+inline void coreSphericalHarmonicsBessel(dstype *Sr, dstype *Si, dstype *xij, dstype *x0, 
+        dstype *P, dstype *tmp, dstype *f, dstype *fac, dstype pi, Int L, Int K, Int N, Int backend)
+{
+    if (backend == 1)  
+        cpuSphericalHarmonicsBessel(Sr, Si, xij, x0, P, tmp, f, fac, pi, L, K, N);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuSphericalHarmonicsBessel(Sr, Si, xij, x0, P, tmp, f, fac, pi, L, K, N);    
+#endif                  
+}
+
+inline void coreSphericalHarmonicsBesselDeriv(dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, 
       dstype *x, dstype *y, dstype *z, dstype *x0, dstype *P, dstype *tmp, dstype *f, dstype *dP, dstype *dtmp, dstype *df, dstype *fac, dstype pi, Int L, Int K, Int N, Int backend)
 {
     if (backend == 1)  
@@ -347,7 +645,7 @@ static void coreSphericalHarmonicsBesselDeriv(dstype *Srx, dstype *Six, dstype *
 #endif                  
 }
 
-static void coreSphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, 
+inline void coreSphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, 
       dstype *x, dstype *y, dstype *z, dstype *x0, dstype *P, dstype *tmp, dstype *f, dstype *dP, dstype *dtmp, dstype *df, dstype *fac, dstype pi, Int L, Int K, Int N, Int backend)
 {
     if (backend == 1)  
@@ -360,7 +658,20 @@ static void coreSphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsSum(dstype *ar, dstype *ai, dstype *Sr, dstype *Si, Int *Nnb, Int Na, Int L, Int K, Int backend)
+inline void coreSphericalHarmonicsBesselWithDeriv(dstype *Sr, dstype *Si, dstype *Srx, dstype *Six, dstype *Sry, dstype *Siy, dstype *Srz, dstype *Siz, 
+      dstype *xij, dstype *x0, dstype *P, dstype *tmp, dstype *f, dstype *dP, dstype *dtmp, dstype *df, dstype *fac, dstype pi, Int L, Int K, Int N, Int backend)
+{
+    if (backend == 1)  
+        cpuSphericalHarmonicsBesselWithDeriv(Sr, Si, Srx, Six, Sry, Siy, Srz, Siz, xij,
+            x0, P, tmp, f, dP, dtmp, df, fac, pi, L, K, N);    
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuSphericalHarmonicsBesselWithDeriv(Sr, Si, Srx, Six, Sry, Siy, Srz, Siz, xij,
+            x0, P, tmp, f, dP, dtmp, df, fac, pi, L, K, N);    
+#endif                  
+}
+
+inline void coreRadialSphericalHarmonicsSum(dstype *ar, dstype *ai, dstype *Sr, dstype *Si, Int *Nnb, Int Na, Int L, Int K, Int backend)
 {
     if (backend == 1)  
         cpuRadialSphericalHarmonicsSum(ar, ai, Sr, Si, Nnb, Na, L, K);    
@@ -370,7 +681,7 @@ static void coreRadialSphericalHarmonicsSum(dstype *ar, dstype *ai, dstype *Sr, 
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsPower(dstype *p, dstype *ar, dstype *ai, Int *indk, Int Na, Int L, Int K, Int backend)
+inline void coreRadialSphericalHarmonicsPower(dstype *p, dstype *ar, dstype *ai, Int *indk, Int Na, Int L, Int K, Int backend)
 {
     if (backend == 1)  
         cpuRadialSphericalHarmonicsPower(p, ar, ai, indk, Na, L, K);    
@@ -380,7 +691,7 @@ static void coreRadialSphericalHarmonicsPower(dstype *p, dstype *ar, dstype *ai,
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsPowerDeriv(dstype *px, dstype *py, dstype *pz, dstype *ar, dstype *ai, 
+inline void coreRadialSphericalHarmonicsPowerDeriv(dstype *px, dstype *py, dstype *pz, dstype *ar, dstype *ai, 
         dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, Int *indk, Int *Nnb, Int Na, Int L, Int K, Int backend)
 {
     if (backend == 1)  
@@ -393,7 +704,7 @@ static void coreRadialSphericalHarmonicsPowerDeriv(dstype *px, dstype *py, dstyp
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsPowerDeriv2(dstype *pd, dstype *ar, dstype *ai, dstype *arx, dstype *aix,
+inline void coreRadialSphericalHarmonicsPowerDeriv2(dstype *pd, dstype *ar, dstype *ai, dstype *arx, dstype *aix,
         dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, Int *indk, Int *Nnb, Int Na, Int L, Int K, Int backend)
 {
     if (backend == 1)  
@@ -406,7 +717,7 @@ static void coreRadialSphericalHarmonicsPowerDeriv2(dstype *pd, dstype *ar, dsty
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsBispectrum(dstype *b, dstype *ar, dstype *ai, dstype *cg, Int *indk, 
+inline void coreRadialSphericalHarmonicsBispectrum(dstype *b, dstype *ar, dstype *ai, dstype *cg, Int *indk, 
         Int *indl, Int *indm, Int *rowm, Int Nub, Int Ncg, Int Na, Int L, Int K, Int backend)
 {
     if (backend == 1)  
@@ -419,7 +730,7 @@ static void coreRadialSphericalHarmonicsBispectrum(dstype *b, dstype *ar, dstype
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsBispectrumDeriv(dstype *bx, dstype *by, dstype *bz, 
+inline void coreRadialSphericalHarmonicsBispectrumDeriv(dstype *bx, dstype *by, dstype *bz, 
         dstype *ar, dstype *ai, dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, dstype*cg, Int *indk, Int *indl,
         Int *indm, Int *rowm, Int *Nnb, Int Na, Int Nub, Int Ncg, Int K, Int backend)
 {
@@ -433,7 +744,7 @@ static void coreRadialSphericalHarmonicsBispectrumDeriv(dstype *bx, dstype *by, 
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsBispectrumDeriv2(dstype *bd, dstype *ar, dstype *ai, 
+inline void coreRadialSphericalHarmonicsBispectrumDeriv2(dstype *bd, dstype *ar, dstype *ai, 
         dstype *arx, dstype *aix, dstype *ary, dstype *aiy, dstype *arz, dstype *aiz, dstype*cg, 
         Int *indk, Int *indl, Int *indm, Int *rowm, Int *Nnb, Int Na, Int Nub, Int Ncg, Int K, Int backend)
 {
@@ -447,7 +758,7 @@ static void coreRadialSphericalHarmonicsBispectrumDeriv2(dstype *bd, dstype *ar,
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsBasis(dstype *d, dstype *c, Int *atomtype, 
+inline void coreRadialSphericalHarmonicsBasis(dstype *d, dstype *c, Int *atomtype, 
         Int Ntype, Int Na, Int Nbf, Int backend)
 {
     if (backend == 1)  
@@ -458,7 +769,7 @@ static void coreRadialSphericalHarmonicsBasis(dstype *d, dstype *c, Int *atomtyp
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsBasisDeriv(dstype *dx, dstype *dy, dstype *dz, 
+inline void coreRadialSphericalHarmonicsBasisDeriv(dstype *dx, dstype *dy, dstype *dz, 
         dstype *cx, dstype *cy, dstype *cz, Int *atomtype, Int *neighlist, Int *Nnb, Int Ntype, Int Na, Int Nbf, Int backend)
 {
     if (backend == 1)  
@@ -471,7 +782,7 @@ static void coreRadialSphericalHarmonicsBasisDeriv(dstype *dx, dstype *dy, dstyp
 #endif                  
 }
 
-static void coreRadialSphericalHarmonicsBasisDeriv2(dstype *dd, dstype *cd, 
+inline void coreRadialSphericalHarmonicsBasisDeriv2(dstype *dd, dstype *cd, 
         Int *atomtype, Int *neighlist, Int *Nnb, Int Ntype, Int Na, Int Nbf, Int backend)
 {
     if (backend == 1)  

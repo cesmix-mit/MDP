@@ -293,6 +293,22 @@ static dstype NORM(cublasHandle_t handle, Int m, dstype* x, Int backend)
     return sqrt(nrm);    
 }
 
+static void DOT(Int m, dstype* x, Int incx, dstype* y, Int incy, dstype *dot) 
+{               
+#ifdef USE_FLOAT    
+    *dot = SDOT(&m, x, &incx, y, &incy);
+#else   
+    *dot = DDOT(&m, x, &incx, y, &incy);
+#endif            
+}
+
+static dstype NORM(dstype* x, Int m) 
+{            
+    dstype nrm;
+    DOT(m, x, inc1, x, inc1, &nrm); 
+    return sqrt(nrm);    
+}
+
 static void PGEMNV(cublasHandle_t handle, Int m, Int n, dstype* alpha, dstype* A, Int lda, 
         dstype* x, Int incx, dstype* beta, dstype* y, Int incy, Int backend) 
 {

@@ -24,6 +24,7 @@ template <typename T> void gpuPrint2DArray(T* a, int m, int n);
 template <typename T> void gpuPrint3DArray(T* a, int m, int n, int p);
 template <typename T> void gpuArraySetValue(T *y, T a, int n);
 template <typename T> void gpuArraySetValueAtIndex(T *y, T a, int n);
+template <typename T> T gpuArrayGetValueAtIndex(T *y, int n);
 template <typename T> void gpuArrayAddScalar(T *y, T a, int n);
 template <typename T> void gpuArrayMultiplyScalar(T *y, T a, int n);
 
@@ -78,11 +79,50 @@ template <typename T> void gpuEuler2Rotm(T *R11, T *R12, T *R13, T *R21,
                 T *R22, T *R23, T *R31, T *R32, T *R33, T *alpha, T *beta, T *gamma, int N);
 template <typename T> void gpuRotc(T *X, T *Y, T *Z, T *R, T *x, T *y, T *z, int N);
 
+// neighbor list
+template <typename T> void gpuGhostAtoms(int *glistnum, T *x, T *pimages, T *wc, T *B2C, int n, int m, int dim);
+template <typename T> void gpuCreateAtomList(int *ilist, int *glistnumsum, int *glistnum, int *atomtype, T *x, T *pimages, T *wc, T *B2C, int n, int m, int dim);
+template <typename T> void gpuCellList(int *clist, int *c2anum, T *x, T *eta1, T *eta2, T *eta3, T *B2C, int *nc, int inum, int gnum, int dim);
+void gpuCell2AtomList(int *c2alist, int *c2anumsum, int *c2anum, int *clist, int *nc, int inum, int gnum, int dim);
+template <typename T> void gpuVerletAtoms(int *verletnum, T *x, T *ellipsoid, int *ilist, 
+        int *clist, int *c2alist, int *c2anum, int *c2anumsum, int *nc, int inum, int dim);
+template <typename T> void gpuCreateVerletList(int *verletlist, T *x, T *ellipsoid, int *verletnum, int *verletnumsum, 
+     int *ilist, int *clist, int *c2alist, int *c2anum, int *c2anumsum, int *nc, int inum, int dim);
+template <typename T> void gpuFullNeighNum(int *neighnum, T *x, T* ellipsoid, int *ilist, 
+        int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim);
+template <typename T> void gpuFullNeighList(int *neighlist, T *x, T* ellipsoid, int *neighnum, int *neighnumsum,
+        int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim);
+template <typename T> void gpuHalfNeighNum(int *neighnum, T *x, T* ellipsoid, 
+        int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim);
+template <typename T> void gpuHalfNeighList(int *neighlist, T *x, T* ellipsoid, int *neighnum, int *neighnumsum,
+        int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int inum, int dim);
+template <typename T> void gpuGetNeighPairs(T *xij, T *x, int *ti, int *tj, int *ilist, int *neighlist,  
+        int *neighnum, int *neighnumsum, int *atomtype, int ntype, int inum, int dim);
+template <typename T> void gpuGetNeighPairs(T *xi, T *xj, T *x, int *ti, int *tj, int *ilist, int *neighlist,  
+        int *neighnum, int *neighnumsum, int *atomtype, int ntype, int inum, int dim);
+template <typename T> void gpuVerletAtoms(int *verletnum, T *x, T *ellipsoid, int *atomtype, int *ilist, 
+        int *clist, int *c2alist, int *c2anum, int *c2anumsum, int *nc, int ntype, int inum, int dim);
+template <typename T> void gpuCreateVerletList(int *verletlist, T *x, T *ellipsoid, int *verletnum,  int *verletnumsum, 
+     int *atomtype, int *ilist, int *clist, int *c2alist, int *c2anum, int *c2anumsum, int *nc, int ntype, int inum, int dim);
+template <typename T> void gpuFullNeighNum(int *neighnum, T *x, T* ellipsoid, int *atomtype, 
+        int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim);
+template <typename T> void gpuFullNeighList(int *neighlist, T *x, T* ellipsoid, int *neighnum, int *neighnumsum,
+        int *atomtype, int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim);
+template <typename T> void gpuHalfNeighNum(int *neighnum, T *x, T* ellipsoid, int *atomtype, 
+        int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim);
+template <typename T> void gpuHalfNeighList(int *neighlist, T *x, T* ellipsoid, int *neighnum, int *neighnumsum,
+        int *atomtype, int *ilist, int *verletlist, int *verletnum, int *verletnumsum, int ntype, int inum, int dim);
+
+// spherical harmonic potential
 template <typename T> void gpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
+template <typename T> void gpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
 template <typename T> void gpuSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, 
       T *x, T *y, T *z, T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
 template <typename T> void gpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
+                T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *xij, 
                 T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
 template <typename T> void gpuRadialSphericalHarmonicsSum(T *ar, T *ai, T *Sr, T *Si, 
         int *Nnb, int Na, int L, int K);

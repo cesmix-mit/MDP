@@ -83,7 +83,6 @@ template <typename T> void cpuSmallMatrixInverse(T *invA, T *A, int dim);
 template <typename T> void cpuMakeReferenceGrid(T *eta, T smin, T smax, T ds, int nc);
 void cpuCell2AtomList(int *c2alist, int *c2anumsum, int *c2anum, int *clist, int natom, int ncell);
 
-void cpuGridColoring2D(int *cellcolor, int *nc, int *bsize, int dim);
 template <typename T> void cpuBoundingBox2D(T *vc, T*wc, T *v, T *w, T *a, T *b, T *r, int *pbc);
 template <typename T> int cpuPeriodicImages2D(T *pimages, T *a, T *b, int *pbc);
 template <typename T> void cpuAtomList2D(int *alist, int *inside, int *glistnumsum, int *glistnum, 
@@ -99,20 +98,19 @@ template <typename T> void cpuHalfNeighborList2D(int *neighborlist, int *neighbo
 template <typename T> void cpuHalfNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim);        
 
-void cpuGridColoring3D(int *cellcolor, int *nc, int *bsize, int dim);
-template <typename T> void cpuBoundingBox3D(T *vc, T *wc, T *v, T *w, T *a, T *b, T *c, T *r, int *pbc);
-template <typename T> int cpuPeriodicImages3D(T *pimages, T *a, T *b, T *c, int *pbc);
-template <typename T> void cpuAtomList3D(int *alist, int *inside, int *glistnumsum, int *glistnum, 
+template <typename T> void cpuBoundingBox3D(T *vc, T*wc, T *v, T *w, T *a, T *b, T *r, int *pbc);
+template <typename T> int cpuPeriodicImages3D(T *pimages, T *a, T *b, int *pbc);
+template <typename T> void cpuAtomList2D(int *alist, int *inside, int *glistnumsum, int *glistnum, 
         T *x, T *pimages, T *wc, T *s2rmap, int inum, int pnum, int dim);
-template <typename T> void cpuCellList3D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
+template <typename T> void cpuCellList2D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
         int *nc, int natom, int dim);
-template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
+template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
-template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
+template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim);
-template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
+template <typename T> void cpuHalfNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
-template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
+template <typename T> void cpuHalfNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim);        
 
 template <typename T> void cpuGetNeighPairs(T *xij, T *qi, T *qj, T *x, T *q, int *ai, int *aj,  
@@ -133,17 +131,6 @@ template <typename T> void cpuGetNeighTriplets(T *xij, T *xik, T *qi, T *qj, T *
 template <typename T> void cpuGetNeighTriplets(T *xij, T *xik, T *qi, T *qj, T *qk, T *x, T *q, int *ai, int *aj,  
       int *ak, int *ti, int *tj, int *tk, int *anum, int *anumsum, int *ilist, int *alist, int *neighlist, int *neighnum, 
       int *atomtype, int inum, int jnum, int ncq, int dim);
-
-template <typename T> void cpuHalfForceDecomposition2D(T *fi, T *fij, int *ai, int *aj, int ijnum);
-template <typename T> void cpuFullForceDecomposition2D(T *fi, T *fij, int *ai, int *aj, int ijnum);
-template <typename T> void cpuFullAtomDecomposition2D(T *fi, T *fij, int *ilist, int *anumsum, int inum);
-template <typename T> void cpuHalfAtomDecomposition2D(T *fi, T *fij, int *ilist, int *anumsum, 
-        int *bnumsum, int *index, int inum);
-template <typename T> void cpuHalfForceDecomposition3D(T *fi, T *fij, int *ai, int *aj, int ijnum);
-template <typename T> void cpuFullForceDecomposition3D(T *fi, T *fij, int *ai, int *aj, int ijnum);
-template <typename T> void cpuFullAtomDecomposition3D(T *fi, T *fij, int *ilist, int *anumsum, int inum);
-template <typename T> void cpuHalfAtomDecomposition3D(T *fi, T *fij, int *ilist, int *anumsum, 
-        int *bnumsum, int *index, int inum);
 
 template <typename T> void cpuMakeReferenceGrid(T *eta, T smin, T smax, int nc, int pbc);
 template <typename T> void cpuGhostAtoms(int *glistnum, T *x, T *pimages, T *wc, T *B2C, int n, int m, int dim);

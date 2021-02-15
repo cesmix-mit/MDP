@@ -296,61 +296,116 @@ struct commonstruct {
     string fileout;      // Name of binary file to write the solution    
             
     Int backend=1;   // 1: CPU; 2: CUDA GPU  
-    Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
-    Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     Int mpiRank;  // MPI rank      
     Int mpiProcs; // number of MPI ranks
-
-    Int Natype;  // number of atom types
-    Int Nmtype;  // number of molecule types 
-    Int Za[MAX_ATOM_TYPES];  // a list of atomic numbers for all atom types
-    Int Zm[MAX_MOLECULE_TYPES][MAX_MOLECULE_SIZE];  // a list of atomic numbers for all molecule types        
-        
-    Int Natomglobal; // number of global atoms in the configuration
-    Int Nmoleglobal; // number of global molecules in the global configuration
     
-    Int Natomlocal;  // number of local atoms in processor mpiRank
-    Int Nmolelocal;  // number of local molecules in processor mpiRank
-    Int Natomghost;  // number of ghost atoms in processor mpiRank 
-    Int Nmoleghost;  // number of ghost molecules in processor mpiRank 
-    Int inum;        // number of local atoms in the neighbor list
-    Int gnum;        // number of ghost atoms in the neighbor list
-        
     Int dim;     // physical dimensions
-    Int Nbf;     // number of basis functions per atom type
+    Int nconfigs; // number of configurations        
+    Int natomtypes;     // number of atom types        
     Int K;       // order of radial basis functions
-    Int L;       // order of spherical harmonics                      
-    Int nflags;  // number of flags
-    Int nphysicsparam; // number of physical parameters
-    Int nsolverparam;  // number of solver parameters
-                
-    Int newton_pair; // turns Newton’s third law on or off for pairwise interactions.    
-    Int eflag;       // turns energy calculation on or off
-    Int vflag;       // turns virial calculation on or off
-    Int pairflag;    // 0 -> Nbf basis functions per atom type -> Nbf*Natype basis functions
-                     // 1 -> Nbf basis functions per pair of two atom types -> Nbf*Natype*Natype basis functions 
-    
-    dstype lattice[6]; // lattice structure parameters
-    dstype boxmin[3];  // minimum coordinates of the simulation box  
-    dstype boxmax[3];  // maximum coordinates of the simulation box    
-    dstype boxang[3];  // three angles of the simulation box
-    dstype boxtensor[3*3];   // principal vectors of the simulation box    
-    dstype boxvertices[3*8]; // vertices of the simulation box
-    Int    boxfaces[4*6];    // faces of the simulation box: bottom, top, left, right, front, end 
-    dstype boxvolume; // volume of the simulation box
-    bool periodic[3]; // 1 -> periodic faces, 0-> non periodic faces         
-    
-    dstype localenergy;  // potential energy from local atoms in processor mpiRank
-    dstype globalenergy; // potential energy from global atoms in the configuration
-    dstype time; // current simulation time    
+    Int L;       // order of spherical harmonics              
+    Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
+    Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
+    Int training;     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
+    Int runMD;        // 0 no MD simulation, 1 -> run MD simulation
+    Int potential;    // 0 -> empirical potential, 1 -> empirical + LR, 2 -> empirical + GP, 3 -> empirical + NN
+    Int cutofftype=0; // 0 -> single cut-off raidus for all atoms, 1 -> multiple cut-off radii for atom pairs  
+    Int neightype=0;  // 0 -> full neighbor list, 1 -> half neighbor list
+    Int pairtype=0;   // 0 -> neighbor pairs, 1 -> neighbor pairs based on type of atom i, 
+                      // 2 -> neighbor pairs based on type of atom i and type of atom j
+    Int pairsymmetry;  // 1 -> V(r_ij) equal V(r_ji), 0 -> V(r_ij) not equal V(r_ji) 
+    Int tripletsymmetry; // 1 -> V(r_ij, r_ik) equal V(r_ik, r_ij)
+                         // 0 -> V(r_ij, r_ik) not equal V(r_ik, r_ij)
+    Int energycal;    // turns energy calculation on or off
+    Int forcecal;     // turns force calculation on or off
+    Int stresscal;     // turns stress calculation on or off
+        
+    Int nflags;
+    Int nbcs ;
+    Int npbc;    
+    Int nphysicsparam;       
+    Int nsolversparam;   
+    Int nsimulaparam;   
+    Int nsingleparam;       
+    Int npairparam;   
+    Int ntripletparam;   
+    Int ncoeff;   
+    Int ncutoffellipsoid;   
+    Int natomellipsoid;   
+    Int nrcutsq;   
+        
+    Int pnum;  // number of periodic images
+    Int inum;  // number of atoms in the simulation box
+    Int jnum;  // maximum number of neighbors
+    Int inummax;  // maximum number of atoms in the simulation box
+    Int gnum;  // number of ghost atoms
+    Int anum;  // total number of atoms 
+    Int cnum;  // number of cells
+    Int nxij; //  number of xij = xj - xi  
+    Int ns; 
+    Int nt; 
+    Int nx; 
+    Int nv;
+    Int nf;
+    Int nq;
+    Int ncq;
+        
+    Int ntimesteps; // number of time steps
     dstype dt;   // timestep size     
-    dstype Trange[2];  // temperature range
-    dstype Prange[2];  // pressure range
+    dstype time; // current simulation time    
     
-    dstype rmincut;  // min cutoff for all atom types
-    dstype rmaxcut;  // max cutoff for all atom types
-    dstype pi = M_PI; // Pi  number
+    dstype boxoffset[3];
+    Int pbc[3];
     
+//     Int nmoletypes;     // number of molecule types        
+//     Int Za[MAX_ATOM_TYPES];  // a list of atomic numbers for all atom types
+//     Int Zm[MAX_MOLECULE_TYPES][MAX_MOLECULE_SIZE];  // a list of atomic numbers for all molecule types        
+//         
+//     Int nimax;       // upper bound of niatoms
+//     Int njmax=100;   // maximum number of neighbors
+//     Int Natomglobal; // number of global atoms in the configuration
+//     Int Nmoleglobal; // number of global molecules in the global configuration
+//     
+//     Int Natomlocal;  // number of local atoms in processor mpiRank
+//     Int Nmolelocal;  // number of local molecules in processor mpiRank
+//     Int Natomghost;  // number of ghost atoms in processor mpiRank 
+//     Int Nmoleghost;  // number of ghost molecules in processor mpiRank 
+//     Int inum;        // number of local atoms in the neighbor list
+//     Int gnum;        // number of ghost atoms in the neighbor list
+//         
+//     Int dim;     // physical dimensions
+//     Int Nbf;     // number of basis functions per atom type
+//     Int nflags;  // number of flags
+//     Int nphysicsparam; // number of physical parameters
+//     Int nsolverparam;  // number of solver parameters
+//                 
+//     Int newton_pair; // turns Newton’s third law on or off for pairwise interactions.    
+//     Int eflag;       // turns energy calculation on or off
+//     Int vflag;       // turns virial calculation on or off
+//     Int pairflag;    // 0 -> Nbf basis functions per atom type -> Nbf*Natype basis functions
+//                      // 1 -> Nbf basis functions per pair of two atom types -> Nbf*Natype*Natype basis functions 
+//     
+//     dstype lattice[6]; // lattice structure parameters
+//     dstype boxmin[3];  // minimum coordinates of the simulation box  
+//     dstype boxmax[3];  // maximum coordinates of the simulation box    
+//     dstype boxang[3];  // three angles of the simulation box
+//     dstype boxtensor[3*3];   // principal vectors of the simulation box    
+//     dstype boxvertices[3*8]; // vertices of the simulation box
+//     Int    boxfaces[4*6];    // faces of the simulation box: bottom, top, left, right, front, end 
+//     dstype boxvolume; // volume of the simulation box
+//     bool periodic[3]; // 1 -> periodic faces, 0-> non periodic faces         
+//     
+//     dstype localenergy;  // potential energy from local atoms in processor mpiRank
+//     dstype globalenergy; // potential energy from global atoms in the configuration
+//     dstype time; // current simulation time    
+//     dstype dt;   // timestep size     
+//     dstype Trange[2];  // temperature range
+//     dstype Prange[2];  // pressure range
+//     
+//     dstype rmincut;  // min cutoff for all atom types
+//     dstype rmaxcut;  // max cutoff for all atom types
+//     dstype pi = M_PI; // Pi  number
+//     
     cudaEvent_t eventHandle;
     cublasHandle_t cublasHandle;
     
@@ -365,98 +420,194 @@ struct commonstruct {
 };
 
 struct appstruct {              
-    Int *flags=NULL;        // flag parameters    
-    dstype *fac=NULL;       // factorial    
-    dstype *bzeros=NULL;    // zeros of spherical Bessel functions
-    dstype *physicsparam=NULL; // physical parameters
-    dstype *solversparam=NULL; // solvers parameters
+    Int *lsize=NULL;
+    Int *nsize=NULL;  // input data size    
+    Int *ndims=NULL;  // dimensions
+    Int *flags=NULL;        // flag parameters            
+    Int *bcs=NULL;           // boundary conditions
+    Int *pbc=NULL;           // periodic boundary conditions        
+    //Int *cellnum=NULL;
     
-    dstype *rminsq=NULL;  // square of the minimum cutoff radii between two different types of atom
-    dstype *rmaxsq=NULL;  // square of the maximum cutoff radii between two different types of atom
-    dstype *atomweights=NULL; // weight per atom type
-    dstype *interatomweights=NULL; // weight for the interaction between two different types of atom
-    dstype *moleculeweights=NULL; // weight per molecule type
-    dstype *intermoleculeweights=NULL; // weight for the interaction between two different types of molecules
+    Int *atomnumber=NULL;   // a list of atomic numbers for every atom type
+    dstype *atommass=NULL; //  a list of atomic mass for every atom type
+    dstype *atomcharge=NULL; //  a list of atomic charge for every atom type
+        
+    dstype *physicsparam=NULL; // general physical parameters
+    dstype *solversparam=NULL; // solvers parameters    
+    dstype *simulaparam=NULL; // simulation parameters        
+    dstype *singleparam=NULL; // single parameters        
+    dstype *pairparam=NULL; // pair parameters        
+    dstype *tripletparam=NULL; // triplet parameters        
+    dstype *coeff=NULL; // coeffcients of the descriptors
+    dstype *atomellipsoid=NULL;  // square of the minimum cutoff radii between two different types of atom
+    dstype *cutoffellipsoid=NULL;  // cut-off ellipsoid
+    dstype *rcutsq=NULL;  // verlet ellipsoid
+    dstype *boxoffset=NULL;
             
     // custom destructor
     void freememory(Int backend)
     {
        if (backend<=1) {
+            CPUFREE(lsize);
+            CPUFREE(nsize);
+            CPUFREE(ndims);   
             CPUFREE(flags);    
-            CPUFREE(fac);            
-            CPUFREE(bzeros);            
+            CPUFREE(bcs);    
+            CPUFREE(pbc);    
+            CPUFREE(atomnumber);    
+            CPUFREE(atommass);    
+            CPUFREE(atomcharge);                           
             CPUFREE(physicsparam);
             CPUFREE(solversparam);
-            CPUFREE(rminsq);
-            CPUFREE(rmaxsq);
-            CPUFREE(atomweights);
-            CPUFREE(interatomweights);
-            CPUFREE(moleculeweights);
-            CPUFREE(intermoleculeweights);
+            CPUFREE(simulaparam);
+            CPUFREE(singleparam);
+            CPUFREE(pairparam);
+            CPUFREE(tripletparam);
+            CPUFREE(coeff);
+            CPUFREE(atomellipsoid);
+            CPUFREE(cutoffellipsoid);
+            CPUFREE(rcutsq);
+            CPUFREE(boxoffset);
+            //CPUFREE(cellnum);
         }            
 #ifdef HAVE_CUDA      
        else {
+            GPUFREE(lsize);
+            GPUFREE(nsize);
+            GPUFREE(ndims);   
             GPUFREE(flags);    
-            GPUFREE(fac);         
-            CPUFREE(bzeros);            
+            GPUFREE(bcs);    
+            GPUFREE(pbc);    
+            GPUFREE(atomnumber);    
+            GPUFREE(atommass);    
+            GPUFREE(atomcharge);                           
             GPUFREE(physicsparam);
             GPUFREE(solversparam);
-            GPUFREE(rminsq);
-            GPUFREE(rmaxsq);
-            GPUFREE(atomweights);
-            GPUFREE(interatomweights);
-            GPUFREE(moleculeweights);
-            GPUFREE(intermoleculeweights);
+            GPUFREE(simulaparam);
+            GPUFREE(singleparam);
+            GPUFREE(pairparam);
+            GPUFREE(tripletparam);
+            GPUFREE(coeff);
+            GPUFREE(atomellipsoid);
+            GPUFREE(cutoffellipsoid);
+            GPUFREE(rcutsq);     
+            GPUFREE(boxoffset);
+            //GPUFREE(cellnum);
        }
 #endif       
     }
 };
 
-struct configstruct {
-    string filename;    // name of a file for reading configurations
-    Int nconfigs;       // number of configurations        
-    Int natoms;         // the number of atoms for all configurations    
-    Int natomtypes;     // number of atom types    
-    Int *numatoms;      // a list containing the number of atoms in each configuration   
-    Int **t;            // atomic types of atoms for all configurations 
-    dstype **x;         // positions of atoms for all configurations        
-    dstype **f;         // forces acting on atoms for all configurations                           
-    dstype simbox[3*3]; // 3 principal vectors of the simulation box    
-    dstype bcs[6];      // boundary conditions
+struct configstruct {    
+    Int *lsize=NULL;
+    Int *nsize=NULL;  // data size
+    Int *ndims=NULL;  // dimensions    
+    Int *natoms=NULL; // a list containing the number of atoms in each configuration 
+    Int *natomssum=NULL; // a list containing the number of atoms in each configuration 
+    Int *t=NULL;      // atomic types of atoms for all configurations 
+    dstype *x=NULL;   // positions of atoms for all configurations        
+    dstype *v=NULL;   // velocities of atoms for all configurations        
+    dstype *f=NULL;   // forces acting on atoms for all configurations    
+    dstype *q=NULL;   // charges acting on atoms for all configurations    
+    dstype *simbox=NULL;   // principal vectors of the simulation box for all configurations       
+    
     void freememory()
     {        
-        CPUFREE(numatoms);
-        CPUFREE(x);
-        CPUFREE(f);
+        CPUFREE(lsize);
+        CPUFREE(nsize);
+        CPUFREE(ndims);   
+        CPUFREE(natoms);
+        CPUFREE(natomssum);
         CPUFREE(t);
+        CPUFREE(x);
+        CPUFREE(v);
+        CPUFREE(f);
+        CPUFREE(q);           
+        CPUFREE(simbox);           
     }                         
 };
 
-struct neighborstruct {  
-    Int *simbox;         // 3 principal vectors of the simulation box    
-    Int *numneigh;       // numbers of neighbors for each atom i 
-    Int *neighlist;      // indices of neighbors for each atom i     
-    Int *atomtype;       // type of each atom i  
-    dstype *bcs;         // boundary conditions
-    dstype *xij;         // xij = xi - xj, where xj positions of neighbor j of atom i  
+struct neighborstruct {      
+    //Int *simbox;         // principal vectors of the simulation box    
+    Int *cellnum;
+    dstype *a;
+    dstype *b;
+    dstype *c;    
+    dstype *cellsize;
+    dstype *eta1;
+    dstype *eta2;
+    dstype *eta3;        
+    dstype *ellipsoid;                
+    dstype *boxvertices;// vertices of the simulation box    
+    dstype *bbvertices; // vertices of the bounding box    
+    dstype *refvertices;// vertices of the reference box    
+    dstype *rbvertices; // vertices of the reference bounding box  
+    dstype *s2rmap;     // map simulation domain to reference domain 
+    dstype *pimages;    // coordinates of periodic images     
+            
+    //Int *atomtype;       // type of each atom i      
+    //dstype *x;
+    dstype *xij;         // xij = xj - xi, where xj positions of neighbor j of atom i  
+    dstype *qi;      
+    dstype *qj;      
+    Int *ti;
+    Int *tj;
+    Int *ai;
+    Int *aj;
+    
+    Int *alist;
+    Int *neighnum;  // numbers of neighbors for each atom i 
+    Int *neighnumsum;  // numbers of neighbors for each atom i 
+    Int *neighlist;    
+    
+//     Int dim;
+//     Int pnum;
+//     Int inum;
+//     Int gnum;    
+//     Int cnum;
+//     Int nxij;
+//     Int cutofftype=0;
+//     Int neightype=0;
+//     Int pairtype=0;
+//     Int ntype;
+//     Int *ilist;
+//     Int *glistnum;
+//     Int *glistnumsum;
+//     Int *clist;
+//     Int *c2alist;
+//     Int *c2anum;
+//     Int *c2anumsum;
+//     Int *verletnum;
+//     Int *verletnumsum;
+//     Int *verletlist;    
+//     Int *neighnumsum;    
+//     Int *anum;
+//     Int *anumsum;
+//     Int *tlist;
+//     Int *inside;
+        
     void freememory(Int backend)
     {
         if (backend<=1) {
-            CPUFREE(simbox); 
-            CPUFREE(bcs); 
-            CPUFREE(numneigh); 
-            CPUFREE(neighlist); 
-            CPUFREE(atomtype); 
-            CPUFREE(xij); 
+            //CPUFREE(simbox); 
+            //CPUFREE(bcs); 
+            CPUFREE(neighnum); 
+            CPUFREE(neighnumsum); 
+            CPUFREE(neighlist);
+            CPUFREE(alist);
+            //CPUFREE(atomtype); 
+            //CPUFREE(xij); 
         }
 #ifdef HAVE_CUDA                 
         else {         
-            GPUFREE(simbox); 
-            GPUFREE(bcs); 
-            GPUFREE(numneigh); 
+            //GPUFREE(simbox); 
+            //GPUFREE(bcs); 
+            GPUFREE(neighnum); 
+            GPUFREE(neighnumsum); 
             GPUFREE(neighlist); 
-            GPUFREE(atomtype); 
-            GPUFREE(xij);             
+            GPUFREE(alist); 
+            //GPUFREE(atomtype); 
+            //GPUFREE(xij);             
         }
 #endif               
     }
@@ -501,20 +652,23 @@ struct sysstruct {
 
   
 struct tempstruct {
-    dstype *tempmem=NULL;     
+    Int *intmem=NULL;     
+    dstype *tmpmem=NULL;     
     dstype *buffrecv=NULL;
     dstype *buffsend=NULL;
     
     void freememory(Int backend)
     {
        if (backend<=1) {
-            CPUFREE(tempmem); 
+            CPUFREE(intmem); 
+            CPUFREE(tmpmem); 
             CPUFREE(buffrecv); 
             CPUFREE(buffsend); 
         }            
 #ifdef HAVE_CUDA      
        else {
-            GPUFREE(tempmem);
+            GPUFREE(intmem); 
+            GPUFREE(tmpmem);
             GPUFREE(buffrecv); 
             GPUFREE(buffsend); 
        }
@@ -523,6 +677,14 @@ struct tempstruct {
 };
 
 struct shstruct {  
+    Int L;  // the maximum degree of spherical harmonics 
+    Int K;  // the number of zeros of spherical Bessel functions
+    Int Nub;// number of non-zero unqiue bispectrum compoments of spherical harmonics 
+    Int Ncg;// the total number of non-zero Clebsch-Gordan coefficients 
+    Int npower;
+    Int nbispectrum;
+    Int nbasis;
+    
     Int *indk=NULL;
     Int *indl=NULL;        
     Int *indm=NULL;       

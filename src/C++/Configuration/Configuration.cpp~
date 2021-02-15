@@ -37,9 +37,10 @@ void CConfiguration::SetSysStruct()
     
 }
 
-void CConfiguration::NeighborList(dstype* x, Int *atomtype, Int inum)
+void NeighborList(dstype* x, Int *atomtype, Int inum)
 {
-    implNeighborList(nb, common, app, tmp, x, atomtype, inum);    
+    implNeighborList(nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, Int *atomtype, Int inum)    
 }
 
 void CConfiguration::Init(string filein, string fileout, Int mpiprocs, Int mpirank, Int backend)

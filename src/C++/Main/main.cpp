@@ -11,7 +11,7 @@
 #ifdef _CUDA
 #define HAVE_CUDA
 #endif
-
+        
 #ifdef _MPI
 #define HAVE_MPI
 #endif
@@ -33,12 +33,14 @@
 using namespace std;
 
 #include "../Common/common.h"     // declaration of variables and structs
-#include "../Common/core.h"       // interface to core library
+#include "../Common/core.h"       // interface to core libraries
 #include "../Common/pblas.h"      // wrappers for blas libaries and MPI     
 
-#include "../Configuration/Configuration.cpp"     // Configuration class
-#include "../Descriptors/Descriptors.cpp"  // Descriptiors class
-#include "../Regression/Regression.cpp"  // Descriptiors class
+#include "../Configuration/Configuration.cpp" // Read configurations and preprocess data 
+#include "../Descriptors/Descriptors.cpp"   // describe atomistic forces for nonparameteric potentials 
+#include "../Calculation/Calculation.cpp"  // Calculate energy and forces
+#include "../Regression/Regression.cpp"  // perform linear/gaussian/dnn regressions to train nonparameteric potentials  
+#include "../Integration/Integration.cpp"  // perform velocity Verlet algorithm and sample output 
 
 int main(int argc, char** argv) 
 {   
