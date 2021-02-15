@@ -1,4 +1,4 @@
-#module MDP
+module MDP
 
 using StaticArrays
 using SpecialFunctions
@@ -31,7 +31,7 @@ end
     compute(): main function
     
 """
-#function compute()
+function compute()
     # Load input ###############################################################
     J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, c, w, Δ = load_input()
 
@@ -43,6 +43,6 @@ end
 
     # Call LAMMPS ##############################################################
     # TODO
-#end
+end
 
-#end # module
+end # module
