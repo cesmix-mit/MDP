@@ -1,3 +1,14 @@
+################################################################################
+#
+#    Module MDP.jl
+#
+#    How to use it:
+#        julia> include("MDP.jl")
+#        julia> using .MDP
+#        julia> MDP.compute()
+#
+################################################################################
+
 module MDP
 
 using StaticArrays
@@ -5,9 +16,11 @@ using SpecialFunctions
 using GalacticOptim, Optim
 using LinearAlgebra
 
-include("coordinatetransform.jl")
-include("forcecalculation.jl")
-include("inputloading.jl")
+include("coordinate-transform.jl")
+include("input-loading.jl")
+include("force-calculation.jl")
+
+export compute
 
 
 """
@@ -33,14 +46,21 @@ end
 """
 function compute()
     # Load input ###############################################################
+    println("Loading input data..."); flush(stdout)
     J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, c, w, Δ = load_input()
 
+    # Force calculation ########################################################
+    println("Calculating force..."); flush(stdout)
+    f = calc_force(NZ, Ω, Ω′, Ω′′, K, L,  Δ)
+
     # Optimize coeffiecients ###################################################
+    println("Optimizing coefficients..."); flush(stdout)
     c_opt = optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J)
 
     # Print/plot/save results ##################################################
-    println("Coefficients:", c_opt)
-
+    println("Finished!"); flush(stdout)
+    println("Optimized coefficients:", c_opt); flush(stdout)
+    
     # Call LAMMPS ##############################################################
     # TODO
 end

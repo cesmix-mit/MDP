@@ -29,6 +29,9 @@ function P(l, m, x)
     return res
 end
 
+
+function calc_force(NZ, Ω, Ω′, Ω′′, K, L,  Δ)
+
 """
     `Y(l, m, θ, ϕ)`: spherical harmonics of degree l and order m.
     Eq. 7 in summary. Eq. 12 in original manuscript.
@@ -89,4 +92,8 @@ deriv_d(t, k, k′, l, r, i, j) =
 """
 f(i, j, c, r, m = 0) = Cartesian((sum([c[m+=1] * deriv_d(t, k, k′, l, r, i, j)
                          for t = 1:NZ for k = 1:K for k′ = k:K for l = 0:L ]))...)
+
+return f
+
+end
 
