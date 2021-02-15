@@ -1,4 +1,4 @@
-module MDP
+#module MDP
 
 using StaticArrays
 using SpecialFunctions
@@ -7,7 +7,7 @@ using LinearAlgebra
 
 include("coordinatetransform.jl")
 include("forcecalculation.jl")
-include("loadinput.jl")
+include("inputloading.jl")
 
 
 """
@@ -31,8 +31,8 @@ end
     compute(): main function
     
 """
-function compute()
-    # Input variables ##########################################################
+#function compute()
+    # Load input ###############################################################
     J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, c, w, Δ = load_input()
 
     # Optimize coeffiecients ###################################################
@@ -43,6 +43,6 @@ function compute()
 
     # Call LAMMPS ##############################################################
     # TODO
-end
+#end
 
-end # module
+#end # module
