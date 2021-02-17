@@ -73,8 +73,7 @@
 \begin{document}
 
 
-\title{GOLFF.jl: Generation and Optimization of Machine
-Learning Force Field - Summary of the Implemented Equations - Draft}
+\title{MDP.jl: Summary of the Implemented Equations - Draft}
 
 \date{\today}
 
@@ -82,8 +81,8 @@ Learning Force Field - Summary of the Implemented Equations - Draft}
 \maketitle
 
 \begin{abstract}
-This draft presents a summary of the equations that are currently implemented in GOLFF.jl (and its auxiliary files). It is based on the file GOLFF.pdf. 
-Some of the terminology was slightly redefined in order to smooth the transition between the original equations and their computational implementation. This draft was not yet validated.
+This draft presents a summary of the equations that are currently implemented in MDP.jl (and its auxiliary files). It is based on the file GOLFF.pdf (project name changed from GOLFF.jl to MDP.jl). 
+Some of the terminology was slightly redefined in order to smooth the transition between the original equations and their computational implementation.
 \end{abstract}
 
 \section{Input Variables/Parameters}
@@ -125,7 +124,7 @@ The goal is to find an optimal coefficient vector $\bm c^*$ to match a set of in
 \label{eq:min1}
 \end{equation}
 
-where $w_j$ are the user-defined weights in configuration $j$, $1 \le j \le J$, the default value of $w_j$ is 1. $\bm f_{ji}$  depicts a (complex) atomic force, the definition of which can be found below. The value of this force depends on the configuration $j$, the atom $i$ in the $j$-th configuration, the position of all atoms in the $j$-th configuration $\bm {r}^{N_j}$, and the variable for which the minimization is performed $\bm c \in \mathbb{R}^M$. An analogous description is associated to the input QM forces $\bm f^{\rm qm}_{ji}$, with the exception of the dependence of variable $\bm c$.
+where $w_j$ are the user-defined weights in configuration $j$, $1 \le j \le J$, the default value of $w_j$ is 1. $\bm f_{ji}$  depicts a (complex) atomic force, the definition of which can be found below. The value of this force depends on the configuration $j$, the atom $i$ in the $j$-th configuration, the position of all atoms in the $j$-th configuration $\bm {r}^{N_j}$, and the variable for which the minimization is performed $c$. An analogous description is associated to the input QM forces $\bm f^{\rm qm}_{ji}$, with the exception of the dependence of variable $c$.
 
 Each atomic force $\bm f_{ji}$ is calculated through a set of basis functions, namely $d_{tkk'l}(\bm r^{N_j})$. In the original manuscript this force is defined in Equations 4 and 5. Here, the atomic force is formulated as follows:
 
@@ -142,7 +141,7 @@ Each atomic force $\bm f_{ji}$ is calculated through a set of basis functions, n
 
 Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j})}{\partial \bm r_i}$ is the gradient vector of $d_{tkk'l}$ with respect to the position of the $i$-th atom in the $j$-configuration, i.e., $f$ is a vector quantity.
 
-Current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$.
+Current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$. Therefore,  $c \in \mathbb{R}^M$.
 
 In future versions, neural networks will be used to perform the optimization.
 
@@ -196,7 +195,7 @@ Note that $\bm r$ is expressed in cartesian coordinates $(x,y,z)$, but spherical
     \phi = \text{atan}(y,x) \footnote{Use the Julia atan function with two arguments ($y$,$x$) that returns the angle in radians between the positive $x$-axis and the point $(x, y)$ in the interval $[-\pi, \pi]$.}
 \end{equation*}
 
-In Equation \ref{eq:us}, $g_{lk}$ is a radial basis functions. Currently, the Julia spherical Bessel function "sphericalbessely(l, r)" is used. Other function should be implemented in the future, including polynomials and Gaussian functions.
+In Equation \ref{eq:us}, $g_{lk}$ is a radial basis functions. Currently, the Julia spherical Bessel function "sphericalbessely(l, r)" is used. Other functions should be implemented in the future, including polynomials and Gaussian functions.
 
 Returning to Equation \ref{eq:us}, the spherical harmonics of degree $l$ and order $m$ ($Y_{lm}$) is presented in Equation 12 in the original manuscript. Here, it is formulated as
 \begin{equation}
