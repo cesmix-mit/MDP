@@ -1,3 +1,4 @@
+
 """
     P(l, m, x) Associated Legendre Polynomials
     Eq. 8-11 in summary. It is not present in the original manuscript.
@@ -29,9 +30,6 @@ function P(l, m, x)
     return res
 end
 
-
-function calc_force(NZ, Ω, Ω′, Ω′′, K, L,  Δ)
-
 """
     `Y(l, m, θ, ϕ)`: spherical harmonics of degree l and order m.
     Eq. 7 in summary. Eq. 12 in original manuscript.
@@ -60,7 +58,7 @@ u(k, l, m, r) = g(l, k, norm(r)) * Y(l, m, convert(Spherical, r).θ, convert(Sph
     Eq. 5 in summary. It is not present in the original manuscript.
     
 """
-deriv_u(k, l, m, r) = 
+deriv_u(k, l, m, r, Δ) = 
      [ u(k, l, m, r + Δ['x']) - u(k, l, m, r - Δ['x']) / (2.0 * norm(Δ['x'])),
        u(k, l, m, r + Δ['y']) - u(k, l, m, r - Δ['y']) / (2.0 * norm(Δ['y'])),
        u(k, l, m, r + Δ['z']) - u(k, l, m, r - Δ['z']) / (2.0 * norm(Δ['z']))]
@@ -70,11 +68,11 @@ deriv_u(k, l, m, r) =
     Eq. 4 in summary. Eq. 23 and 24 in original manuscript.
     
 """
-p(i0, i1, k, k′, l, r, j) = 
-     (  sum([( deriv_u(k, l, m, r[i0] - r[i1])
+p(i0, i1, k, k′, l, r, j, Ω, Δ) = 
+     (  sum([( deriv_u(k, l, m, r[i0] - r[i1], Δ)
              * sum([u(k′, l, m, r[s] - r[i1]) for s in Ω[j][i1]]))
              for m = -l:l])
-      + sum([( deriv_u(k′, l, m, r[i0] - r[i1])
+      + sum([( deriv_u(k′, l, m, r[i0] - r[i1], Δ)
              * sum([u(k, l, m, r[s] - r[i1]) for s in Ω[j][i1]]))
              for m = -l:l]))
 
@@ -82,18 +80,17 @@ p(i0, i1, k, k′, l, r, j) =
     `deriv_d(t, k, k′, l, r, i, j)`: partial derivatives of the basis function.
     Eq. 3 in summary. Eq. 23 and 24 in original manuscript.
 """
-deriv_d(t, k, k′, l, r, i, j) =
-    (  sum([ p(i, s, k, k′, l, r, j) for s in Ω′[j][i][t]])
-     - sum([ p(s, i, k, k′, l, r, j) for s in Ω′′[j][i][t]]))
+deriv_d(t, k, k′, l, r, i, j, Ω, Ω′, Ω′′, Δ) =
+    (  sum([ p(i, s, k, k′, l, r, j, Ω, Δ) for s in Ω′[j][i][t]])
+     - sum([ p(s, i, k, k′, l, r, j, Ω, Δ) for s in Ω′′[j][i][t]]))
 
 """
-    `f(i, j, c, r)`: atomic forces. The `c` vector will be optimized.
-    Eq. 2 in summary. Eq. 4 and 5 in original manuscript.
+    `f(i, j, c, r, NZ, K, L, Ω, Ω′, Ω′′, m = 0)`:
+            Atomic force. The `c` vector will be optimized.
+            Eq. 2 in summary. Eq. 4 and 5 in original manuscript.
 """
-f(i, j, c, r, m = 0) = Cartesian((sum([c[m+=1] * deriv_d(t, k, k′, l, r, i, j)
-                         for t = 1:NZ for k = 1:K for k′ = k:K for l = 0:L ]))...)
+f(i, j, c, r, NZ, K, L, Ω, Ω′, Ω′′, Δ, m = 0) =
+     Cartesian((sum([c[m+=1] * deriv_d(t, k, k′, l, r, i, j, Ω, Ω′, Ω′′, Δ)
+                     for t = 1:NZ for k = 1:K for k′ = k:K for l = 0:L]))...)
 
-return f
-
-end
 
