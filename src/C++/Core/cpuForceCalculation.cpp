@@ -280,6 +280,7 @@ template <typename T> void cpuHalfAtomDecomposition2D(T *fi, T *fij, int *ilist,
 template void cpuHalfAtomDecomposition2D(double*, double*, int*, int*, int*, int*, int);
 template void cpuHalfAtomDecomposition2D(float*, float*, int*, int*, int*, int*, int);
 
+// force calculation for half neighbor list
 template <typename T> void cpuHalfForceDecomposition3D(T *fi, T *fij, int *ai, int *aj, int ijnum)
 {    
     for (int ii=0; ii<ijnum; ii++) {  // for each atom pair ij in the simulation box     
@@ -297,6 +298,7 @@ template <typename T> void cpuHalfForceDecomposition3D(T *fi, T *fij, int *ai, i
 template void cpuHalfForceDecomposition3D(double*, double*, int*, int*, int);
 template void cpuHalfForceDecomposition3D(float*, float*, int*, int*, int);
 
+// force calculation for full neighbor list
 template <typename T> void cpuFullForceDecomposition3D(T *fi, T *fij, int *ai, int *aj, int ijnum)
 {    
     for (int ii=0; ii<ijnum; ii++) {  // for each atom pair ij in the simulation box     
@@ -332,6 +334,7 @@ template <typename T> void cpuFullAtomDecomposition3D(T *fi, T *fij, int *neighn
 template void cpuFullAtomDecomposition3D(double*, double*, int*, int, int);
 template void cpuFullAtomDecomposition3D(float*, float*, int*, int, int);
 
+// force calculation for half neighbor list
 template <typename T> void cpuHalfAtomDecomposition3D(T *fi, T *fij, int *neighnumsum, 
         int *bnumsum, int *index, int istart, int iend)
 {    
@@ -341,6 +344,7 @@ template <typename T> void cpuHalfAtomDecomposition3D(T *fi, T *fij, int *neighn
         T f1 = 0.0;
         T f2 = 0.0;        
         T f3 = 0.0;        
+        // i is self and j is neighbor
         for (int l=0; l<m ; l++) {   // loop over each atom around j atom i -> pair ij 
             int k = start + l;             
             f1 +=  -fij[3*k+0];
@@ -352,6 +356,7 @@ template <typename T> void cpuHalfAtomDecomposition3D(T *fi, T *fij, int *neighn
         int ii = i - istart;
         start = bnumsum[ii];   
         m = bnumsum[ii+1]-start;   // number of neighbors j around i  (j < i)           
+        // j is self and i is neighbor
         for (int l=0; l<m ; l++) { // loop over each atom around j atom i -> pair ji 
             int k = index[start + l];     
             f1 +=  fij[3*k+0];
@@ -399,15 +404,18 @@ template <typename T> void cpuHalfAtomDecomposition3D(T *fi, T *fij, int *ilist,
         T f3 = 0.0;        
         int start = anumsum[ii];   
         int m = anumsum[ii+1]-start; // number of neighbors j around i  (j > i)             
+        // i is self and j is neighbor
         for (int l=0; l<m ; l++) {   // loop over each atom around j atom i -> pair ij 
             int k = start + l;                     
             f1 +=  -fij[3*k+0];
             f2 +=  -fij[3*k+1];
             f3 +=  -fij[3*k+2];             
         }                
+        
         // need to determine bnumsum and index
         start = bnumsum[ii];   
         m = bnumsum[ii+1]-start;   // number of neighbors j around i  (j < i)           
+        // j is self and i is neighbor
         for (int l=0; l<m ; l++) { // loop over each atom around j atom i -> pair ji 
             int k = index[start + l];                     
             f1 +=  fij[3*k+0];

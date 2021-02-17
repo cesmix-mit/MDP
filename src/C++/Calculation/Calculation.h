@@ -21,7 +21,7 @@ public:
         
     void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);      
     void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int typek, Int istart, Int iend);              
-    
+    void NeighFullTriplets(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int typek, Int istart, Int iend);              
     
 };
 
