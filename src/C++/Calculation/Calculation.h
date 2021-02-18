@@ -19,10 +19,18 @@ public:
     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int typei, Int istart, Int iend);   
     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int istart, Int iend);   
         
-    void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);      
+    void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);     
+    void NeighFullTriplets(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);     
     void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int typek, Int istart, Int iend);              
     void NeighFullTriplets(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int typek, Int istart, Int iend);              
-    
+  
+//     void HalfForceDecomposition(T *fi, T *fij, int *ai, int *aj, int ijnum);
+//     void FullForceDecomposition(T *fi, T *fij, int *ai, int *aj, int ijnum);
+//     void FullAtomDecomposition(T *fi, T *fij, int *ilist, int *anumsum, int inum);
+//     void HalfAtomDecomposition(T *fi, T *fij, int *ilist, int *anumsum, int *bnumsum, int *index, int inum);
+//     
+//     void ForceDecompositionTriplet(T *fi, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum);
+//     void AtomDecompositionTriplet(T *fi, T *fij, T *fik, int *ilist, int *aj, int *ak, int *anumsum, int inum);    
 };
 
 
