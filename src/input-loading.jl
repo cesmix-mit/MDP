@@ -4,7 +4,7 @@
 """
 function load_input()
     #TODO: open input files with actual input information
-    
+
     # Input parameters #
 
     # Configuration 1: H, H
@@ -99,7 +99,7 @@ function load_input()
     Δ['y'] = Cartesian(0.0, h, 0.0)
     Δ['z'] = Cartesian(0.0, 0.0, h)
     
-    return  J, N, Z, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, c, w, Δ
+    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, w, Δ
     
 end
 
