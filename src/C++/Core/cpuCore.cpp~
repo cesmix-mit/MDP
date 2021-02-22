@@ -14,7 +14,7 @@
 #include "cpuNeighborList.cpp"
 #include "cpuNeighborList2D.cpp"
 #include "cpuNeighborList3D.cpp"
-#include "cpuNeighCount.cpp"
+#include "cpuForceCalculation.cpp"
 #include "cpuForceCalculation.cpp"
 #include "cpuSphericalHarmonics.cpp"
 

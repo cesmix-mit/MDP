@@ -15,7 +15,7 @@ public:
     // destructor        
     ~CCalculation();    
     
-    void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);   
+        void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);   
     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int typei, Int istart, Int iend);   
     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int istart, Int iend);   
         

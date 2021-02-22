@@ -313,6 +313,9 @@ struct commonstruct {
     Int neightype=0;  // 0 -> full neighbor list, 1 -> half neighbor list
     Int pairtype=0;   // 0 -> neighbor pairs, 1 -> neighbor pairs based on type of atom i, 
                       // 2 -> neighbor pairs based on type of atom i and type of atom j
+    Int pairsymmetry;  // 1 -> V(r_ij) equal V(r_ji), 0 -> V(r_ij) not equal V(r_ji) 
+    Int tripletsymmetry; // 1 -> V(r_ij, r_ik) equal V(r_ik, r_ij)
+                         // 0 -> V(r_ij, r_ik) not equal V(r_ik, r_ij)
     Int energycal;    // turns energy calculation on or off
     Int forcecal;     // turns force calculation on or off
     Int stresscal;     // turns stress calculation on or off
@@ -329,7 +332,7 @@ struct commonstruct {
     Int ncoeff;   
     Int ncutoffellipsoid;   
     Int natomellipsoid;   
-    Int ncuts;   
+    Int nrcutsq;   
         
     Int pnum;  // number of periodic images
     Int inum;  // number of atoms in the simulation box
@@ -346,6 +349,8 @@ struct commonstruct {
     Int nf;
     Int nq;
     Int ncq;
+    Int nba; // number of blocks of atoms
+    int n
         
     Int ntimesteps; // number of time steps
     dstype dt;   // timestep size     
@@ -438,7 +443,7 @@ struct appstruct {
     dstype *coeff=NULL; // coeffcients of the descriptors
     dstype *atomellipsoid=NULL;  // square of the minimum cutoff radii between two different types of atom
     dstype *cutoffellipsoid=NULL;  // cut-off ellipsoid
-    dstype *verletellipsoid=NULL;  // verlet ellipsoid
+    dstype *rcutsq=NULL;  // verlet ellipsoid
     dstype *boxoffset=NULL;
             
     // custom destructor
@@ -463,7 +468,7 @@ struct appstruct {
             CPUFREE(coeff);
             CPUFREE(atomellipsoid);
             CPUFREE(cutoffellipsoid);
-            CPUFREE(verletellipsoid);
+            CPUFREE(rcutsq);
             CPUFREE(boxoffset);
             //CPUFREE(cellnum);
         }            
@@ -487,7 +492,7 @@ struct appstruct {
             GPUFREE(coeff);
             GPUFREE(atomellipsoid);
             GPUFREE(cutoffellipsoid);
-            GPUFREE(verletellipsoid);     
+            GPUFREE(rcutsq);     
             GPUFREE(boxoffset);
             //GPUFREE(cellnum);
        }
@@ -526,63 +531,62 @@ struct configstruct {
 
 struct neighborstruct {      
     //Int *simbox;         // principal vectors of the simulation box    
+    Int *cellnum;
     dstype *a;
     dstype *b;
-    dstype *c;
-    Int *numneigh;       // numbers of neighbors for each atom i 
-    //Int *atomtype;       // type of each atom i      
-    //dstype *xi;
-    dstype *xij;         // xij = xj - xi, where xj positions of neighbor j of atom i  
-    dstype *xi;      
-    dstype *xj;      
-    Int *ti;
-    Int *tj;
-    Int *ai;
-    Int *aj;
-    
-    Int dim;
-    Int pnum;
-    Int inum;
-    Int gnum;    
-    Int cnum;
-    Int nxij;
-    Int cutofftype=0;
-    Int neightype=0;
-    Int pairtype=0;
-    Int ntype;
-    Int *ilist;
-    Int *glistnum;
-    Int *glistnumsum;
-    Int *clist;
-    Int *c2alist;
-    Int *c2anum;
-    Int *c2anumsum;
-    Int *verletnum;
-    Int *verletnumsum;
-    Int *verletlist;
-    Int *neighnum;
-    Int *neighnumsum;
-    Int *neighlist;
-    Int *alist;
-    Int *anum;
-    Int *anumsum;
-    Int *tlist;
-    Int *inside;
-    
-    Int *cellnum;
+    dstype *c;    
     dstype *cellsize;
     dstype *eta1;
     dstype *eta2;
     dstype *eta3;        
     dstype *ellipsoid;                
-    //dstype *bcs;         // boundary conditions
-    //Int *pbc;           // periodic boundary conditions        
     dstype *boxvertices;// vertices of the simulation box    
     dstype *bbvertices; // vertices of the bounding box    
     dstype *refvertices;// vertices of the reference box    
     dstype *rbvertices; // vertices of the reference bounding box  
     dstype *s2rmap;     // map simulation domain to reference domain 
     dstype *pimages;    // coordinates of periodic images     
+            
+    //Int *atomtype;       // type of each atom i      
+    //dstype *x;
+    dstype *xij;         // xij = xj - xi, where xj positions of neighbor j of atom i  
+    dstype *qi;      
+    dstype *qj;      
+    Int *ti;
+    Int *tj;
+    Int *ai;
+    Int *aj;
+    
+    Int *alist;
+    Int *neighnum;  // numbers of neighbors for each atom i 
+    Int *neighnumsum;  // numbers of neighbors for each atom i 
+    Int *neighlist;    
+    
+//     Int dim;
+//     Int pnum;
+//     Int inum;
+//     Int gnum;    
+//     Int cnum;
+//     Int nxij;
+//     Int cutofftype=0;
+//     Int neightype=0;
+//     Int pairtype=0;
+//     Int ntype;
+//     Int *ilist;
+//     Int *glistnum;
+//     Int *glistnumsum;
+//     Int *clist;
+//     Int *c2alist;
+//     Int *c2anum;
+//     Int *c2anumsum;
+//     Int *verletnum;
+//     Int *verletnumsum;
+//     Int *verletlist;    
+//     Int *neighnumsum;    
+//     Int *anum;
+//     Int *anumsum;
+//     Int *tlist;
+//     Int *inside;
         
     void freememory(Int backend)
     {
@@ -590,20 +594,22 @@ struct neighborstruct {
             //CPUFREE(simbox); 
             //CPUFREE(bcs); 
             CPUFREE(neighnum); 
+            CPUFREE(neighnumsum); 
             CPUFREE(neighlist);
             CPUFREE(alist);
             //CPUFREE(atomtype); 
-            CPUFREE(xij); 
+            //CPUFREE(xij); 
         }
 #ifdef HAVE_CUDA                 
         else {         
             //GPUFREE(simbox); 
             //GPUFREE(bcs); 
             GPUFREE(neighnum); 
+            GPUFREE(neighnumsum); 
             GPUFREE(neighlist); 
             GPUFREE(alist); 
             //GPUFREE(atomtype); 
-            GPUFREE(xij);             
+            //GPUFREE(xij);             
         }
 #endif               
     }

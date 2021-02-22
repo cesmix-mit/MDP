@@ -158,6 +158,7 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.K = app.ndims[1];  // order of radial basis functions
     common.L = app.ndims[2];  // order of spherical harmonics          
     common.ntimesteps = app.ndims[3]; // number of time steps
+    common.nab = app.ndims[4]; // number of atoms per block
 
     common.descriptor = app.flags[0];   // descriptor flag: 0 -> Spherical Harmonics Bessel
     common.spectrum = app.flags[1];     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
@@ -314,43 +315,163 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     }           
 }
 
-void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, dstype* x, Int inum)
+    
+void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, Int *atomtype, Int inum)
 {
     common.inum = inum;
+//     ns = min(ns,ne);
+//     nb = floor(ne/ns);  % number of blocks
+//     na = round(ne/nb); % number of elements per block
+    Int ns = min(inum, common.nab);
+    Int nb = floor(inum/ns); // number of blocks
+    Int na = round(inum/nb); // number of atoms per block
+    
+    for (int i=0; i<nb; i++)
+        common.ablks[i]
+    
     Int dim = common.dim;
+    Int cnum = common.cnum;
+    Int pnum = common.pnum;
+    Int jnum = common.jnum;    
+    Int ntype = common.natomtypes;
+    Int gnum, anum;
+
+    Int *inside = &tmp.intmem[0]; // inum*pnum
+    Int *glistnum = &tmp.intmem[inum*common.pnum]; // inum
+    Int *glistnumsum = &tmp.intmem[inum*common.pnum + inum]; // inum+1
     
     if (dim==2) {
-        cpuAtomList2D(nb.alist, nb.inside, nb.glistnumsum, nb.glistnum,  x, nb.pimages, nb.rbvertices, 
-            nb.s2rmap, inum, common.pnum, dim);
+        cpuAtomList2D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
+            nb.s2rmap, inum, pnum, dim);
         
-        common.gnum = IntArrayGetValueAtIndex(nb.glistnumsum, nb.inum, common.backend);        
-        common.anum = inum + common.gnum;
+        gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+        anum = inum + common.gnum;
+        common.gnum = gnum;
+        common.anum = anum;
                 
-        cpuCellList2D(nb.clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, common.anum, dim);        
-        
-        cpuCell2AtomList(nb.c2alist, nb.c2anumsum, nb.c2anum, nb.clist, common.anum, common.cnum);
-        
-        if (common.neightype)
-            cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, nb.clist, 
-                    nb.c2alist, nb.c2anumsum, nb.cellnum, inum, common.jnum, dim);        
-        else
-            cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, nb.clist, 
-                    nb.c2alist, nb.c2anumsum, nb.cellnum, inum, common.jnum, dim);        
-        
-        
-// template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
-//         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
-// template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
-//         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim);
-// template <typename T> void cpuHalfNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
-//         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
-// template <typename T> void cpuHalfNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
-//         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim);        
-        
+        Int *clist = &tmp.intmem[0]; //anum
+        Int *c2alist = &tmp.intmem[anum]; // anum
+        Int *c2anum = &tmp.intmem[2*anum]; // cnum
+        Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
+        cpuCellList2D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, anum, dim);                
+        cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);
+                
+        if (common.cutofftype) {
+            if (common.neightype)
+                cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+                        c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+            else
+                cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+                        c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                                                            
+        }
+        else {
+            if (common.neightype)
+                cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+                        c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                
+            else
+                cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+                        c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                            
+        }               
     }
+    else {
+        cpuAtomList3D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
+            nb.s2rmap, inum, pnum, dim);
         
+        gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+        anum = inum + common.gnum;
+        common.gnum = gnum;
+        common.anum = anum;
+                
+        Int *clist = &tmp.intmem[0]; //anum
+        Int *c2alist = &tmp.intmem[anum]; // anum
+        Int *c2anum = &tmp.intmem[2*anum]; // cnum
+        Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
+        cpuCellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, anum, dim);                
+        cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);
+        
+        if (common.cutofftype) {
+            if (common.neightype)
+                cpuHalfNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+                        c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+            else
+                cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+                        c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                                                            
+        }
+        else {
+            if (common.neightype)
+                cpuHalfNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+                        c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                
+            else
+                cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+                        c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                            
+        }        
+    }
+    
+    cpuCumsum(nb.neighnumsum, nb.neighnum, inum+1);    
 }
 
+
+// void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, dstype* x, Int inum)
+// {
+//     common.inum = inum;
+//     Int dim = common.dim;
+//     Int cnum = common.cnum;
+//     Int pnum = common.pnum;
+//     Int jnum = common.jnum;    
+//     Int gnum, anum;
+// 
+//     Int *inside = &tmp.intmem[0]; // inum*pnum
+//     Int *glistnum = &tmp.intmem[inum*common.pnum]; // inum
+//     Int *glistnumsum = &tmp.intmem[inum*common.pnum + inum]; // inum+1
+//     
+//     if (dim==2) {
+//         cpuAtomList2D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
+//             nb.s2rmap, inum, pnum, dim);
+//         
+//         gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+//         anum = inum + common.gnum;
+//         common.gnum = gnum;
+//         common.anum = anum;
+//                 
+//         Int *clist = &tmp.intmem[0]; //anum
+//         Int *c2alist = &tmp.intmem[anum]; // anum
+//         Int *c2anum = &tmp.intmem[2*anum]; // cnum
+//         Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
+//         cpuCellList2D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, anum, dim);                
+//         cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);
+//         
+//         if (common.neightype)
+//             cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+//         else
+//             cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                            
+//     }
+//     else {
+//         cpuAtomList3D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
+//             nb.s2rmap, inum, pnum, dim);
+//         
+//         gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+//         anum = inum + common.gnum;
+//         common.gnum = gnum;
+//         common.anum = anum;
+//                 
+//         Int *clist = &tmp.intmem[0]; //anum
+//         Int *c2alist = &tmp.intmem[anum]; // anum
+//         Int *c2anum = &tmp.intmem[2*anum]; // cnum
+//         Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
+//         cpuCellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, anum, dim);                
+//         cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);
+//         
+//         if (common.neightype)
+//             cpuHalfNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+//         else
+//             cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                                    
+//     }
+// }        
     
 
 #endif

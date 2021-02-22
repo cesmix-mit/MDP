@@ -35,7 +35,9 @@ for L = 1:8
     fprintf("Maximum power spectrum error: %g\n", max(abs((p(:)-p2(:))./p(:))));
     fprintf("Maximum bispectrum error: %g\n", max(abs((b(:)-b2(:))./b(:))));        
     fprintf("Power spectrum range: [%g %g]\n", [min(abs(p(:))) max(abs(p(:)))]);      
-    fprintf("Bipectrum range: [%g %g]\n", [min(abs(b(:))) max(abs(b(:)))]);             
+    fprintf("Bipectrum range: [%g %g]\n", [min(abs(b(:))) max(abs(b(:)))]);            
+    
+    pause
 end
 
 K = 8; L = 8;

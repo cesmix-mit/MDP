@@ -23,9 +23,9 @@ for k = 1:K2
         n = l + (k-1)*L;
         for m = 1:(2*l-1)
             p(n) = p(n) + ar{l}(i,m)*ar{l}(j,m)+ai{l}(i,m)*ai{l}(j,m);
-            px(:,n) = px(:,n) + 2*(ar{l}(i,m)*arx{l}(:,j,m)+ai{l}(i,m)*aix{l}(:,j,m));
-            py(:,n) = py(:,n) + 2*(ar{l}(i,m)*ary{l}(:,j,m)+ai{l}(i,m)*aiy{l}(:,j,m));
-            pz(:,n) = pz(:,n) + 2*(ar{l}(i,m)*arz{l}(:,j,m)+ai{l}(i,m)*aiz{l}(:,j,m));
+            px(:,n) = px(:,n) + ar{l}(i,m)*arx{l}(:,j,m)+arx{l}(:,i,m)*ar{l}(j,m)+ai{l}(i,m)*aix{l}(:,j,m)+aix{l}(:,i,m)*ai{l}(j,m);
+            py(:,n) = py(:,n) + ar{l}(i,m)*ary{l}(:,j,m)+ary{l}(:,i,m)*ar{l}(j,m)+ai{l}(i,m)*aiy{l}(:,j,m)+aiy{l}(:,i,m)*ai{l}(j,m);
+            pz(:,n) = pz(:,n) + ar{l}(i,m)*arz{l}(:,j,m)+arz{l}(:,i,m)*ar{l}(j,m)+ai{l}(i,m)*aiz{l}(:,j,m)+aiz{l}(:,i,m)*ai{l}(j,m);            
         end
     end    
 end

@@ -8,7 +8,7 @@ void cpuCumsum(int* output, int* input, int length)
 		output[j] = input[j - 1] + output[j - 1];	
 }
 
-void cpuArrayFill(int* output, int start, int length) 
+void cpArrayFill(int* output, int start, int length) 
 {	
 	for (int j = 0; j < length; ++j)	
 		output[j] = start + j;

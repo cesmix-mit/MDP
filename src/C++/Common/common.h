@@ -349,6 +349,9 @@ struct commonstruct {
     Int nf;
     Int nq;
     Int ncq;
+    Int nba; // number of blocks of atoms
+    Int nab; // number of atoms per block
+    Int ablks[17];
         
     Int ntimesteps; // number of time steps
     dstype dt;   // timestep size     

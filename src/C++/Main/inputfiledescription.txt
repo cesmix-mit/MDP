@@ -1,0 +1,90 @@
+# MDP Input File Description       
+
+N atoms                (# of atoms)
+
+# Spherical Harmonic Bessel (SHB) Potential
+K     # number of zeros for spherical Bessel functions  
+L     # degree of spherical haromonic Bessel functions
+rcut  # cut-off radius
+
+# Simulation box
+a = (a1 0  0)
+b = (b1 b1 0)
+c = (c1 c2 c3)
+
+# periodic boundary conditions
+pbc = (1, 1, 1)
+
+# Atom type Coeffs
+
+  1 mass coeff1 coeff2 ...
+  ...
+  N mass coeff1 coeff2 ...              (N = # of atom types)
+
+# Molecular formulas
+
+  1 atom-1 atom-2 ... atom-m
+  ...
+  N atom-1 atom-2 ... atom-m    (N = # of molecules/compounds)
+
+# Nonbonded Single Potential Coeffs
+
+  1 coeff1 coeff2 ...   (nonbonded single potential)
+
+# Bonded Single Potential Coeffs
+
+  1 atom-1 coeff1 coeff2 ...
+  ...
+  N atom-1 coeff1 coeff2 ...              (N = # of bonded single potentials )
+
+# Nonbonded Pair Potential Coeffs
+
+  1 rcut coeff1 coeff2 ...
+  ...
+  N rcut coeff1 coeff2 ...                (N = # of nonbonded pair potentials)
+
+# Bonded Pair Potential Coeffs
+
+  1 atom-1 atom-2 rcut coeff1 coeff2 ...
+  ...
+  N atom-1 atom-2 rcut coeff1 coeff2 ...   (N = # of bonded pair potentials )
+
+# Bonded Triplet Potential Coeffs
+
+  1 atom-1 atom-2 atom-3 rcut coeff1 coeff2 ...  (atom-1 is the center atom in the triplet interaction)
+  ...
+  N atom-1 atom-2 atom-3 rcut coeff1 coeff2 ...  (N = # of bonded triplet potentials )
+
+# Bonded Quadruplet Potential Coeffs
+
+  1 atom-1 atom-2 atom-3 atom-4 rcut coeff1 coeff2 ...  (atom-1 is the center atom in the quadruplet interaction)
+  ...
+  N atom-1 atom-2 atom-3 atom-4 rcut coeff1 coeff2 ...   (N = # of bonded quadruplet potentials )
+
+# EAM Bond Order Potential Coeffs
+
+  1 atom-1 atom-2 rcut coeff1 coeff2 ...  (atom-1 is the center atom)
+  ...
+  N atom-1 atom-2 rcut coeff1 coeff2 ...   (N = # of two-body bond order potentials )
+
+# Three-Body Bond Order Potential Coeffs
+
+  1 atom-1 atom-2 atom-3 rcut coeff1 coeff2 ...  (atom-1 is the center atom, atom-2 is bonded to atom-1)
+  ...
+  N atom-1 atom-2 atom-3 rcut coeff1 coeff2 ...  (N = # of three-body bond order potentials  )
+
+# Four-Body Bond Order Potential Coeffs
+
+  1 atom-1 atom-2 atom-3 atom-4 rcut coeff1 coeff2 ...  (atom-1 is the center atom, atom-2 is bonded to atom-1)
+  ...
+  N atom-1 atom-2 atom-3 atom-4 rcut coeff1 coeff2 ...  (N = # of four-body bond order potentials  )
+  
+# Atoms
+
+  1 molecule-id atom-type x y z vx vy vz fx fy fz q1 q2 ... qk
+  ...                             
+  ...                
+  N molecule-id atom-type x y z vx vy vz fx fy fz q1 q2 ... qk  (N = # of atoms)
+
+              
+

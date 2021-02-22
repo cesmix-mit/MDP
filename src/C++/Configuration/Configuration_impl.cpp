@@ -158,6 +158,7 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.K = app.ndims[1];  // order of radial basis functions
     common.L = app.ndims[2];  // order of spherical harmonics          
     common.ntimesteps = app.ndims[3]; // number of time steps
+    common.nab = app.ndims[4]; // number of atoms per block
 
     common.descriptor = app.flags[0];   // descriptor flag: 0 -> Spherical Harmonics Bessel
     common.spectrum = app.flags[1];     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
@@ -319,6 +320,13 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         dstype* x, Int *atomtype, Int inum)
 {
     common.inum = inum;
+    Int ns = min(inum, common.nab);
+    common.nba = max((Int) floor(inum/ns), 16); // number of blocks
+    Int na = round(inum/common.nba); // number of atoms per block    
+    for (int i=0; i<=common.nba; i++)
+        common.ablks[i] = i*na;
+    common.ablks[common.nba] = min(common.ablks[common.nba], inum);
+            
     Int dim = common.dim;
     Int cnum = common.cnum;
     Int pnum = common.pnum;

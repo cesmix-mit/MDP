@@ -1,15 +1,16 @@
+rmax=1;
 nx = 1000;
-x = linspace(0.02,1,nx);
+x = linspace(0.02,rmax,nx);
 x = x(:);
 N = 4;
-K = 10;
-g = sphericalbessel2(x,N,K);
+K = 6;
+g = sphericalbessel2(x/rmax,N,K);
 for n = 1:(N+1)
-    figure(n);clf;plot(x,g(:,:,n),'LineWidth',1); axis([0 1 -0.4 2]);
+    figure(n);clf;plot(x,g(:,:,n),'LineWidth',1); axis([0 rmax -0.4 2]);
     set(gca,'FontSize',16);
     xlabel('$r/r_{\max}$', 'interpreter', 'latex', 'FontSize', 22);
-    ylabel('$y_{\ell}(r)$', 'interpreter', 'latex', 'FontSize', 22);
-    legend('$k=1$','$k=2$','$k=3$','$k=4$','$k=5$','interpreter', 'latex', 'FontSize', 18);
+    ylabel('$y_{\ell k}(r/r_{\max})$', 'interpreter', 'latex', 'FontSize', 22);
+    legend({'$k=1$','$k=2$','$k=3$','$k=4$','$k=5$','$k=6$'},'interpreter', 'latex', 'FontSize', 18);
 end
 
 x = rand;
