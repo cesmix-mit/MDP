@@ -27,8 +27,7 @@ function normsq(f::Cartesian)
     return (abs(f.x)^2 + abs(f.y)^2 + abs(f.z)^2)
 end
 
-
-function convert(::Type{Spherical}, coord)
+function convert(::Type{Spherical}, coord::Cartesian)
     x, y, z = coord.x, coord.y, coord.z
     r = √(x^2 + y^2 + z^2)
     θ = acos(z / r)
@@ -36,30 +35,13 @@ function convert(::Type{Spherical}, coord)
     return Spherical(r, θ, ϕ)
 end
 
-function convert(::Type{Cartesian}, coord)
+function convert(::Type{Cartesian}, coord::Spherical)
     r, θ, ϕ = coord.r, coord.θ, coord.ϕ
     x = r * sin(θ) * cos(ϕ)
     y = r * sin(θ) * sin(ϕ)
     z = r * cos(θ)
     return Cartesian(x, y, z)
 end
-
-
-#function convert(::Type{Spherical}, coord::Cartesian)
-#    x, y, z = coord.x, coord.y, coord.z
-#    r = √(x^2 + y^2 + z^2)
-#    θ = acos(z / r)
-#    ϕ = atan(y, x)
-#    return Spherical(r, θ, ϕ)
-#end
-
-#function convert(::Type{Cartesian}, coord::Spherical)
-#    r, θ, ϕ = coord.r, coord.θ, coord.ϕ
-#    x = r * sin(θ) * cos(ϕ)
-#    y = r * sin(θ) * sin(ϕ)
-#    z = r * cos(θ)
-#    return Cartesian(x, y, z)
-#end
 
 function rotc(coord::Cartesian{T}, m::SMatrix{3, 3, T}) where T
     c = @SArray [coord.x, coord.y, coord.z]
