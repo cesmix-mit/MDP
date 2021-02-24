@@ -72,25 +72,6 @@ template <typename T> void cpuFullForceDecomposition2D(T *f, T *fij, int *ai, in
 template void cpuFullForceDecomposition2D(double*, double*, int*, int*, int);
 template void cpuFullForceDecomposition2D(float*, float*, int*, int*, int);
 
-template <typename T> void cpuForceDecompositionTriplet2D(T *f, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum)
-{    
-    for (int ii=0; ii<ijknum; ii++) {  // for each atom pair ij in the simulation box     
-        int i = 2*ai[ii];       // atom i
-        int j = 2*aj[ii];       // atom j
-        int k = 2*ak[ii];       // atom k
-        int l = 2*ii;
-        // use atomicAdd on gpu
-        f[i+0] +=  -(fij[l+0]+fik[l+0]);
-        f[i+1] +=  -(fij[l+1]+fik[l+1]);
-        f[j+0] +=  fij[l+0];
-        f[j+1] +=  fij[l+1];
-        f[k+0] +=  fik[l+0];
-        f[k+1] +=  fik[l+1];
-    }
-}
-template void cpuForceDecompositionTriplet2D(double*, double*, double*, int*, int*, int*, int);
-template void cpuForceDecompositionTriplet2D(float*, float*, float*, int*, int*, int*, int);
-
 template <typename T> void cpuIAtomDecomposition2D(T *f, T *fij, int *ilist, int *anumsum, int inum)
 {    
     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
@@ -132,6 +113,26 @@ template <typename T> void cpuJAtomDecomposition2D(T *f, T *fij, int *jlist, int
 template void cpuJAtomDecomposition2D(double*, double*, int*, int*, int*, int);
 template void cpuJAtomDecomposition2D(float*, float*, int*, int*, int*, int);
 
+
+template <typename T> void cpuForceDecompositionTriplet2D(T *f, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum)
+{    
+    for (int ii=0; ii<ijknum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = 2*ai[ii];       // atom i
+        int j = 2*aj[ii];       // atom j
+        int k = 2*ak[ii];       // atom k
+        int l = 2*ii;
+        // use atomicAdd on gpu
+        f[i+0] +=  -(fij[l+0]+fik[l+0]);
+        f[i+1] +=  -(fij[l+1]+fik[l+1]);
+        f[j+0] +=  fij[l+0];
+        f[j+1] +=  fij[l+1];
+        f[k+0] +=  fik[l+0];
+        f[k+1] +=  fik[l+1];
+    }
+}
+template void cpuForceDecompositionTriplet2D(double*, double*, double*, int*, int*, int*, int);
+template void cpuForceDecompositionTriplet2D(float*, float*, float*, int*, int*, int*, int);
+
 template <typename T> void cpuAtomDecompositionTriplet2D(T *f, T *fij, T *fik, int *ilist, int *anumsum, int inum)
 {    
     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
@@ -159,6 +160,49 @@ template <typename T> void cpuAtomDecompositionTriplet2D(T *f, T *fij, T *fik, i
 }
 template void cpuAtomDecompositionTriplet2D(double*, double*, double*, int*, int*, int);
 template void cpuAtomDecompositionTriplet2D(float*, float*, float*, int*, int*, int);
+
+template <typename T> void cpuForceDecompositionQuadruplet2D(T *f, T *fij, T *fik,  T *fil, int *ai, int *aj, int *ak, int *al, int ijklnum)
+{    
+    for (int ii=0; ii<ijklnum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = 2*ai[ii];       // atom i
+        int j = 2*aj[ii];       // atom j
+        int k = 2*ak[ii];       // atom k
+        int l = 2*al[ii];       // atom l
+        int n = 2*ii;
+        // use atomicAdd on gpu
+        f[i+0] +=  -(fij[n+0]+fik[n+0]+fil[n+0]);
+        f[i+1] +=  -(fij[n+1]+fik[n+1]+fil[n+1]);
+        f[j+0] +=  fij[n+0];
+        f[j+1] +=  fij[n+1];
+        f[k+0] +=  fik[n+0];
+        f[k+1] +=  fik[n+1];
+        f[l+0] +=  fil[n+0];
+        f[l+1] +=  fil[n+1];
+    }
+}
+template void cpuForceDecompositionQuadruplet2D(double*, double*, double*, double*, int*, int*,  int*, int*, int);
+template void cpuForceDecompositionQuadruplet2D(float*, float*, float*, float*, int*, int*, int*, int*, int);
+
+template <typename T> void cpuAtomDecompositionQuadruplet2D(T *f, T *fij, T *fik, T *fil, int *ilist, int *anumsum, int inum)
+{    
+    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
+        int i = 2*ilist[ii];       // atom i        
+        int start = anumsum[ii];   
+        int m = anumsum[ii+1]-start;        // number of neighbors around i             
+        T f1 = 0.0;
+        T f2 = 0.0;
+        for (int l=0; l<m ; l++) {   // loop over each atom pair jk around atom i
+            int s = start + l;
+            int n = 2*s;                     
+            f1 +=  -(fij[n+0] + fik[n+0] + fil[n+0]);
+            f2 +=  -(fij[n+1] + fik[n+1] + fil[n+1]);
+        }
+        f[i+0] = f1;
+        f[i+1] = f2;                        
+    }
+}
+template void cpuAtomDecompositionQuadruplet2D(double*, double*, double*, double*, int*, int*, int);
+template void cpuAtomDecompositionQuadruplet2D(float*, float*, float*, float*, int*, int*, int);
 
 template <typename T> void cpuHalfForceDecomposition3D(T *f, T *fij, int *ai, int *aj, int ijnum)
 {    
@@ -191,28 +235,6 @@ template <typename T> void cpuFullForceDecomposition3D(T *f, T *fij, int *ai, in
 }
 template void cpuFullForceDecomposition3D(double*, double*, int*, int*, int);
 template void cpuFullForceDecomposition3D(float*, float*, int*, int*, int);
-
-template <typename T> void cpuForceDecompositionTriplet3D(T *f, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum)
-{    
-    for (int ii=0; ii<ijknum; ii++) {  // for each atom pair ij in the simulation box     
-        int i = 3*ai[ii];       // atom i
-        int j = 3*aj[ii];       // atom j
-        int k = 3*ak[ii];       // atom k
-        int l = 3*ii;
-        // use atomicAdd on gpu
-        f[i+0] +=  -(fij[l+0]+fik[l+0]);
-        f[i+1] +=  -(fij[l+1]+fik[l+1]);
-        f[i+2] +=  -(fij[l+2]+fik[l+2]);
-        f[j+0] +=  fij[l+0];
-        f[j+1] +=  fij[l+1];
-        f[j+2] +=  fij[l+2];
-        f[k+0] +=  fik[l+0];
-        f[k+1] +=  fik[l+1];
-        f[k+2] +=  fik[l+2];
-    }
-}
-template void cpuForceDecompositionTriplet3D(double*, double*, double*, int*, int*, int*, int);
-template void cpuForceDecompositionTriplet3D(float*, float*, float*, int*, int*, int*, int);
 
 template <typename T> void cpuIAtomDecomposition3D(T *f, T *fij, int *ilist, int *anumsum, int inum)
 {    
@@ -261,6 +283,28 @@ template <typename T> void cpuJAtomDecomposition3D(T *f, T *fij, int *jlist, int
 template void cpuJAtomDecomposition3D(double*, double*, int*, int*, int*, int);
 template void cpuJAtomDecomposition3D(float*, float*, int*, int*, int*, int);
 
+template <typename T> void cpuForceDecompositionTriplet3D(T *f, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum)
+{    
+    for (int ii=0; ii<ijknum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = 3*ai[ii];       // atom i
+        int j = 3*aj[ii];       // atom j
+        int k = 3*ak[ii];       // atom k
+        int l = 3*ii;
+        // use atomicAdd on gpu
+        f[i+0] +=  -(fij[l+0]+fik[l+0]);
+        f[i+1] +=  -(fij[l+1]+fik[l+1]);
+        f[i+2] +=  -(fij[l+2]+fik[l+2]);
+        f[j+0] +=  fij[l+0];
+        f[j+1] +=  fij[l+1];
+        f[j+2] +=  fij[l+2];
+        f[k+0] +=  fik[l+0];
+        f[k+1] +=  fik[l+1];
+        f[k+2] +=  fik[l+2];
+    }
+}
+template void cpuForceDecompositionTriplet3D(double*, double*, double*, int*, int*, int*, int);
+template void cpuForceDecompositionTriplet3D(float*, float*, float*, int*, int*, int*, int);
+
 template <typename T> void cpuAtomDecompositionTriplet3D(T *f, T *fij, T *fik, int *ilist, int *anumsum, int inum)
 {    
     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
@@ -276,23 +320,64 @@ template <typename T> void cpuAtomDecompositionTriplet3D(T *f, T *fij, T *fik, i
             f1 +=  -(fij[n+0] + fik[n+0]);
             f2 +=  -(fij[n+1] + fik[n+1]);
             f3 +=  -(fij[n+2] + fik[n+2]);
-//             // use atomicAdd on gpu
-//             int j = 3*aj[s];
-//             int k = 3*ak[s];            
-//             f[j+0] +=  fij[n+0];
-//             f[j+1] +=  fij[n+1];
-//             f[j+2] +=  fij[n+2];
-//             f[k+0] +=  fik[n+0];
-//             f[k+1] +=  fik[n+1];            
-//             f[k+2] +=  fik[n+2];            
         }
         f[i+0] = f1;
         f[i+1] = f2;                        
-        f[i+2] = f2;                        
+        f[i+2] = f3;                        
     }
 }
 template void cpuAtomDecompositionTriplet3D(double*, double*, double*, int*, int*, int);
 template void cpuAtomDecompositionTriplet3D(float*, float*, float*, int*, int*, int);
+
+template <typename T> void cpuForceDecompositionQuadruplet3D(T *f, T *fij, T *fik,  T *fil, int *ai, int *aj, int *ak, int *al, int ijklnum)
+{    
+    for (int ii=0; ii<ijklnum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = 3*ai[ii];       // atom i
+        int j = 3*aj[ii];       // atom j
+        int k = 3*ak[ii];       // atom k
+        int l = 3*al[ii];       // atom l
+        int n = 3*ii;
+        // use atomicAdd on gpu
+        f[i+0] +=  -(fij[n+0]+fik[n+0]+fil[n+0]);
+        f[i+1] +=  -(fij[n+1]+fik[n+1]+fil[n+1]);
+        f[i+2] +=  -(fij[n+2]+fik[n+2]+fil[n+2]);
+        f[j+0] +=  fij[n+0];
+        f[j+1] +=  fij[n+1];
+        f[j+2] +=  fij[n+2];
+        f[k+0] +=  fik[n+0];
+        f[k+1] +=  fik[n+1];
+        f[k+2] +=  fik[n+2];
+        f[l+0] +=  fil[n+0];
+        f[l+1] +=  fil[n+1];
+        f[l+2] +=  fil[n+2];
+    }
+}
+template void cpuForceDecompositionQuadruplet3D(double*, double*, double*, double*, int*, int*,  int*, int*, int);
+template void cpuForceDecompositionQuadruplet3D(float*, float*, float*, float*, int*, int*, int*, int*, int);
+
+template <typename T> void cpuAtomDecompositionQuadruplet3D(T *f, T *fij, T *fik, T *fil, int *ilist, int *anumsum, int inum)
+{    
+    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
+        int i = 3*ilist[ii];       // atom i        
+        int start = anumsum[ii];   
+        int m = anumsum[ii+1]-start;        // number of neighbors around i             
+        T f1 = 0.0;
+        T f2 = 0.0;
+        T f3 = 0.0;
+        for (int l=0; l<m ; l++) {   // loop over each atom pair jk around atom i
+            int s = start + l;
+            int n = 3*s;                     
+            f1 +=  -(fij[n+0] + fik[n+0] + fil[n+0]);
+            f2 +=  -(fij[n+1] + fik[n+1] + fil[n+1]);
+            f3 +=  -(fij[n+2] + fik[n+2] + fil[n+2]);
+        }
+        f[i+0] = f1;
+        f[i+1] = f2;                        
+        f[i+2] = f3;                        
+    }
+}
+template void cpuAtomDecompositionQuadruplet3D(double*, double*, double*, double*, int*, int*, int);
+template void cpuAtomDecompositionQuadruplet3D(float*, float*, float*, float*, int*, int*, int);
 
 //********************************************************************************************//
 
