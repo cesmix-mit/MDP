@@ -1,4 +1,34 @@
 """
+   calc_neighbors()
+  `Ω[j][i]`: Neighbors of the atom i in conf. j.
+  `Ω′[j][i][t]`: Neighbors of the atom i in conf. j, whose atomic number type is t.
+  `Ω′′[j][i][t]`: if the atomic number type is t, 
+                     it returns the neighbors of the atom i in conf. j,
+                 else it returns empty
+   
+"""
+function calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
+    Ω   = [[ [] for i=1:N[j]] for j=1:J]
+    Ω′  = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
+    Ω′′ = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
+    for j = 1:J
+        for i0 = 1:N[j]
+            for i1 = 1:N[j]
+                # TODO: add periodic boundaries
+                if i0 != i1 && norm(r_N[j][i0] - r_N[j][i1]) < r_cut
+                    push!(Ω[j][i0], i1)
+                    t = T[Z[j][i1]]
+                    push!(Ω′[j][i0][t], i1)
+                    t = T[Z[j][i1]]
+                    push!(Ω′′[j][i0][t], i1)
+                end
+            end
+        end
+    end
+    return Ω, Ω′, Ω′′
+end
+
+"""
    load_input()
    
 """
@@ -52,28 +82,8 @@ function load_input()
     # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
     r_cut = rand()
 
-    # `Ω[j][i]`: Neighbors of the atom i in conf. j.
-    # `Ω′[j][i][t]`: Neighbors of the atom i in conf. j, whose atomic number type is t.
-    # `Ω′′[j][i][t]`: if the atomic number type is t, 
-    #                     it returns the neighbors of the atom i in conf. j,
-    #                else it returns empty
-    Ω   = [[ [] for i=1:N[j]] for j=1:J]
-    Ω′  = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
-    Ω′′ = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
-    for j = 1:J
-        for i0 = 1:N[j]
-            for i1 = 1:N[j]
-                # TODO: add periodic boundaries
-                if i0 != i1 && norm(r_N[j][i0] - r_N[j][i1]) < r_cut
-                    push!(Ω[j][i0], i1)
-                    t = T[Z[j][i1]]
-                    push!(Ω′[j][i0][t], i1)
-                    t = T[Z[j][i1]]
-                    push!(Ω′′[j][i0][t], i1)
-                end
-            end
-        end
-    end
+    # Calc. neighbors
+    Ω, Ω′, Ω′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
     
     # `K`: ?
     K = 3
