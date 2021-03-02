@@ -15,6 +15,226 @@
 #ifndef __CPUFORCECALCULATION
 #define __CPUFORCECALCULATION
 
+template <typename T> void cpuSingleDecomposition(T *e, T *f, T *ei, T *fi, int *ai, int inum, int dim)
+{    
+    for (int ii=0; ii<inum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = ai[ii];       // atom i        
+        int l = dim*ii;                
+        e[i] += ei[ii];
+        i = dim*i;
+        for (int d=0; d<dim; d++) 
+            f[i+d] +=  fi[l+d];        
+    }
+}
+template void cpuSingleDecomposition(double*, double*, double*, double*, int*, int, int);
+template void cpuSingleDecomposition(float*, float*, float*, float*, int*, int, int);
+
+template <typename T> void cpuCenterAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *ilist, int *anumsum, int inum, int dim)
+{    
+    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
+        int i = ilist[ii];       // atom i        
+        int start = anumsum[ii];   
+        int m = anumsum[ii+1]-start;        // number of neighbors around i             
+        int idim = dim*i;        
+        for (int l=0; l<m ; l++) {   // loop over each atom around atom i
+            int n = start + l;
+            int ndim = dim*n;
+            e[i] += 0.5*eij[n];                        
+            for (int d=0; d<dim; d++) 
+                f[idim+d] +=  -fij[ndim+d];        
+        }        
+    }
+}
+template void cpuCenterAtomPairDecomposition(double*, double*, double*, double*, int*, int*, int, int);
+template void cpuCenterAtomPairDecomposition(float*, float*, float*, float*, int*, int*, int, int);
+
+template <typename T> void cpuNeighborAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim)
+{        
+    for (int ii=0; ii<jnum; ii++) {  // for each atom j in the simulation box     
+        int j = jlist[ii];       // atom j        
+        int start = bnumsum[ii];   
+        int m = bnumsum[ii+1]-start;        // number of neighbors around i             
+        int jdim = dim*j;        
+        for (int l=0; l<m ; l++) {   // loop over each atom around atom i
+            int n = index[start + l];
+            int ndim = dim*n;
+            e[j] += 0.5*eij[n];                        
+            for (int d=0; d<dim; d++) 
+                f[jdim+d] +=  fij[ndim+d];        
+        }        
+    }    
+}
+template void cpuNeighborAtomPairDecomposition(double*, double*, double*, double*, int*, int*, int*, int, int);
+template void cpuNeighborAtomPairDecomposition(float*, float*, float*, float*, int*, int*, int*, int, int);
+
+template <typename T> void cpuFullNeighPairDecomposition(T *e, T *f, T *eij, T *fij, int *ai, int ijnum, int dim)
+{    
+    for (int ii=0; ii<ijnum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = ai[ii];       // atom i
+        int l = dim*ii;
+        // use atomicAdd on gpu
+        e[i] += 0.5*eij[ii];
+        i = dim*i;
+        for (int d=0; d<dim; d++) 
+            f[i+d] +=  -fij[l+d];        
+    }
+}
+template void cpuFullNeighPairDecomposition(double*, double*, double*, double*, int*, int, int);
+template void cpuFullNeighPairDecomposition(float*, float*, float*, float*, int*, int, int);
+
+template <typename T> void cpuHalfNeighPairDecomposition(T *e, T *f, T *eij, T *fij, int *ai, int *aj, int ijnum, int dim)
+{    
+    for (int ii=0; ii<ijnum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = ai[ii];       // atom i
+        int j = aj[ii];       // atom j
+        int l = dim*ii;        
+        // use atomicAdd on gpu
+        e[i] += 0.5*eij[ii];
+        e[j] += 0.5*eij[ii];
+        i = dim*i;
+        j = dim*j;
+        for (int d=0; d<dim; d++) {
+            f[i+d] += -fij[l+d]; 
+            f[j+d] +=  fij[l+d]; 
+        }        
+    }
+}
+template void cpuHalfNeighPairDecomposition(double*, double*, double*, double*, int*, int*, int, int);
+template void cpuHalfNeighPairDecomposition(float*, float*, float*, float*, int*, int*, int, int);
+
+template <typename T> void cpuTripletDecomposition(T *e, T *f, T *eijk, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum, int dim)
+{    
+    for (int ii=0; ii<ijknum; ii++) {  // for each atom pair ij in the simulation box     
+        int i = ai[ii];       // atom i
+        int j = aj[ii];       // atom j
+        int k = ak[ii];       // atom k
+        int n = dim*ii;        
+        // use atomicAdd on gpu
+        T ee = eijk[ii]/3.0;
+        e[i] += ee;
+        e[j] += ee;
+        e[k] += ee;
+        i = dim*i;
+        j = dim*j;
+        k = dim*k;
+        for (int d=0; d<dim; d++) {
+            f[i+d] += -(fij[n+d] + fik[n+d]); 
+            f[j+d] +=  fij[n+d]; 
+            f[k+d] +=  fik[n+d]; 
+        }        
+    }
+}
+template void cpuTripletDecomposition(double*, double*, double*, double*, double*, int*, int*, int*, int, int);
+template void cpuTripletDecomposition(float*, float*, float*, float*, float*, int*, int*, int*, int, int);
+
+template <typename T> void cpuCenterAtomTripletDecomposition(T *e, T *f, T *eijk, T *fij, T *fik, int *ilist, int *anumsum, int inum, int dim)
+{    
+    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
+        int i = ilist[ii];       // atom i        
+        int start = anumsum[ii];   
+        int m = anumsum[ii+1]-start;        // number of neighbors around i             
+        int idim = dim*i;        
+        for (int l=0; l<m ; l++) {   // loop over each atom around atom i
+            int n = start + l;
+            int ndim = dim*n;
+            e[i] += eijk[n]/3.0;                        
+            for (int d=0; d<dim; d++) 
+                f[idim+d] +=  -(fij[ndim+d]+fik[ndim+d]);        
+        }        
+    }
+}
+template void cpuCenterAtomTripletDecomposition(double*, double*, double*, double*, double*, int*, int*, int, int);
+template void cpuCenterAtomTripletDecomposition(float*, float*, float*, float*, float*, int*, int*, int, int);
+
+template <typename T> void cpuNeighborAtomTripletDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim)
+{        
+    for (int ii=0; ii<jnum; ii++) {  // for each atom j in the simulation box     
+        int j = jlist[ii];       // atom j        
+        int start = bnumsum[ii];   
+        int m = bnumsum[ii+1]-start;        // number of neighbors around i             
+        int jdim = dim*j;        
+        for (int l=0; l<m ; l++) {   // loop over each atom around atom i
+            int n = index[start + l];
+            int ndim = dim*n;
+            e[j] += eij[n]/3.0;                        
+            for (int d=0; d<dim; d++) 
+                f[jdim+d] +=  fij[ndim+d];        
+        }        
+    }    
+}
+template void cpuNeighborAtomTripletDecomposition(double*, double*, double*, double*, int*, int*, int*, int, int);
+template void cpuNeighborAtomTripletDecomposition(float*, float*, float*, float*, int*, int*, int*, int, int);
+
+template <typename T> void cpuQuadrupletDecomposition(T *e, T *f, T *eijkl, T *fij, T *fik, T *fil, 
+        int *ai, int *aj, int *ak, int *al, int ijklnum, int dim)
+{    
+    for (int ii=0; ii<ijklnum; ii++) {  // for each atom quadruplet ijkl in the simulation box     
+        int i = ai[ii];       // atom i
+        int j = aj[ii];       // atom j
+        int k = ak[ii];       // atom k
+        int l = al[ii];       // atom l
+        int n = dim*ii;        
+        // use atomicAdd on gpu
+        T ee = eijkl[ii]/4.0;
+        e[i] += ee;
+        e[j] += ee;
+        e[k] += ee;
+        e[l] += ee;
+        i = dim*i;
+        j = dim*j;
+        k = dim*k;
+        l = dim*l;
+        for (int d=0; d<dim; d++) {
+            f[i+d] += -(fij[n+d] + fik[n+d] + fil[n+d]); 
+            f[j+d] +=  fij[n+d]; 
+            f[k+d] +=  fik[n+d]; 
+            f[l+d] +=  fil[n+d]; 
+        }        
+    }
+}
+template void cpuQuadrupletDecomposition(double*, double*, double*, double*, double*, double*, int*, int*, int*, int*, int, int);
+template void cpuQuadrupletDecomposition(float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, int, int);
+
+template <typename T> void cpuCenterAtomQuadrupletDecomposition(T *e, T *f, T *eijkl, T *fij, T *fik, T *fil, 
+        int *ilist, int *anumsum, int inum, int dim)
+{    
+    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
+        int i = ilist[ii];       // atom i        
+        int start = anumsum[ii];   
+        int m = anumsum[ii+1]-start;        // number of neighbors around i             
+        int idim = dim*i;        
+        for (int l=0; l<m ; l++) {   // loop over each atom around atom i
+            int n = start + l;
+            int ndim = dim*n;
+            e[i] += eijkl[n]/4.0;                        
+            for (int d=0; d<dim; d++) 
+                f[idim+d] +=  -(fij[ndim+d]+fik[ndim+d]+fil[ndim+d]);        
+        }        
+    }
+}
+template void cpuCenterAtomQuadrupletDecomposition(double*, double*, double*, double*, double*, double*, int*, int*, int, int);
+template void cpuCenterAtomQuadrupletDecomposition(float*, float*, float*, float*, float*, float*, int*, int*, int, int);
+
+template <typename T> void cpuNeighborAtomQuadrupletDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim)
+{        
+    for (int ii=0; ii<jnum; ii++) {  // for each atom j in the simulation box     
+        int j = jlist[ii];       // atom j        
+        int start = bnumsum[ii];   
+        int m = bnumsum[ii+1]-start;        // number of neighbors around i             
+        int jdim = dim*j;        
+        for (int l=0; l<m ; l++) {   // loop over each atom around atom i
+            int n = index[start + l];
+            int ndim = dim*n;
+            e[j] += eij[n]/4.0;                        
+            for (int d=0; d<dim; d++) 
+                f[jdim+d] +=  fij[ndim+d];        
+        }        
+    }    
+}
+template void cpuNeighborAtomQuadrupletDecomposition(double*, double*, double*, double*, int*, int*, int*, int, int);
+template void cpuNeighborAtomQuadrupletDecomposition(float*, float*, float*, float*, int*, int*, int*, int, int);
+
+
 template <typename T> void cpuSingleDecomposition2D(T *f, T *fi, int *ai, int inum)
 {    
     for (int ii=0; ii<inum; ii++) {  // for each atom pair ij in the simulation box     
@@ -112,7 +332,6 @@ template <typename T> void cpuJAtomDecomposition2D(T *f, T *fij, int *jlist, int
 }
 template void cpuJAtomDecomposition2D(double*, double*, int*, int*, int*, int);
 template void cpuJAtomDecomposition2D(float*, float*, int*, int*, int*, int);
-
 
 template <typename T> void cpuForceDecompositionTriplet2D(T *f, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum)
 {    

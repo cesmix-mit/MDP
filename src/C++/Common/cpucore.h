@@ -195,6 +195,20 @@ template <typename T> void cpuNeighTriplets(T *xij, T *xik, T *qi, T *qj, T *qk,
       int *ti, int *tj, int *tk, int *tripletnum, int *tripletlist, int *tripletnumsum, int *alist,  
       int *atomtype, int jnum, int ijnum, int ncq, int dim);
 
+template <typename T> void cpuSingleDecomposition(T *e, T *f, T *ei, T *fi, int *ai, int inum, int dim);
+template <typename T> void cpuCenterAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *ilist, int *anumsum, int inum, int dim);
+template <typename T> void cpuNeighborAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
+template <typename T> void cpuFullNeighPairDecomposition(T *e, T *f, T *eij, T *fij, int *ai, int ijnum, int dim);
+template <typename T> void cpuHalfNeighPairDecomposition(T *e, T *f, T *eij, T *fij, int *ai, int *aj, int ijnum, int dim);
+template <typename T> void cpuTripletDecomposition(T *e, T *f, T *eijk, T *fij, T *fik, int *ai, int *aj, int *ak, int ijknum, int dim);
+template <typename T> void cpuCenterAtomTripletDecomposition(T *e, T *f, T *eijk, T *fij, T *fik, int *ilist, int *anumsum, int inum, int dim);
+template <typename T> void cpuNeighborAtomTripletDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
+template <typename T> void cpuQuadrupletDecomposition(T *e, T *f, T *eijkl, T *fij, T *fik, T *fil, 
+        int *ai, int *aj, int *ak, int *al, int ijklnum, int dim);
+template <typename T> void cpuCenterAtomQuadrupletDecomposition(T *e, T *f, T *eijkl, T *fij, T *fik, T *fil, 
+        int *ilist, int *anumsum, int inum, int dim);
+template <typename T> void cpuNeighborAtomQuadrupletDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
+
 template <typename T> void cpuSingleDecomposition2D(T *f, T *fi, int *ai, int inum);
 template <typename T> void cpuHalfForceDecomposition2D(T *fi, T *fij, int *ai, int *aj, int ijnum);
 template <typename T> void cpuFullForceDecomposition2D(T *fi, T *fij, int *ai, int *aj, int ijnum);

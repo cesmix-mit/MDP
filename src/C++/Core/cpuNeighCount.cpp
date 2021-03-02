@@ -421,11 +421,14 @@ template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist
                 int k = alist[gk];  // atom k                    
                 if ((atomtype[k] == typek) && (j != k)) {        
                     T dik = 0.0;
+                    T djk = 0.0;
                     for (int d=0; d<dim; d++) {
-                        T xik = (x[gk*dim+d] - x[i*dim+d]);  // xj - xi                        
+                        T xik = (x[gk*dim+d] - x[i*dim+d]);  // xk - xi                        
                         dik += dik + xik*xik;
+                        xik = (x[gk*dim+d] - x[gj*dim+d]);  // xk - xj                        
+                        djk += djk + xik*xik;
                     }
-                    if (dik <= rcutsq) {
+                    if ((dik <= rcutsq) || (djk <= rcutsq))  {
                         int nn = 3*(count + (lj + s)*jnum); // count < jnum
                         tripletlist[0 + nn] = i;
                         tripletlist[1 + nn] = gj;
