@@ -120,38 +120,57 @@ The following table shows all the relevant input variables or parameters needed 
 The goal is to find an optimal coefficient vector $\bm c^*$ to match a set of input quantum mechanical (QM) forces. The optimization problem is formulated in the Equation 4 of the original manuscript. Here, the problem is formulated as follows:
 
 \begin{equation}
-\bm c^* = \arg \min_{\bm c \in \mathbb{R}^M } \sum_{j=1}^J w_j \sum_{i=1}^{N_j}  \left|\bm f_{ji}(\bm {r}^{N_j}, \bm c) - \bm f^{\rm qm}_{ji}(\bm r^{N_j}) \right|^2.
+\bm c^* = \arg \min_{\bm c \in \mathbb{R}^M } \sum_{j=1}^J w_j \sum_{i=1}^{N_j}  \left|\bm f(\bm {r}^{N_j}, \bm c, j, i) - \bm f^{\rm qm}(\bm r^{N_j}, j, i) \right|^2.
 \label{eq:min1}
 \end{equation}
 
-where $w_j$ are the user-defined weights in configuration $j$, $1 \le j \le J$, the default value of $w_j$ is 1. $\bm f_{ji}$  depicts a (complex) atomic force, the definition of which can be found below. The value of this force depends on the configuration $j$, the atom $i$ in the $j$-th configuration, the position of all atoms in the $j$-th configuration $\bm {r}^{N_j}$, and the variable for which the minimization is performed $c$. An analogous description is associated to the input QM forces $\bm f^{\rm qm}_{ji}$, with the exception of the dependence of variable $c$.
+where $w_j$ are the user-defined weights in configuration $j$, $1 \le j \le J$, the default value of $w_j$ is 1. $\bm f$  depicts a (complex) atomic force, the definition of which can be found below. The value of this force depends on the configuration $j$, the atom $i$ in the $j$-th configuration, the position of all atoms in the $j$-th configuration $\bm {r}^{N_j}$, and the variable for which the minimization is performed $c$. An analogous description is associated to the input QM forces $\bm f^{\rm qm}$, with the exception of the dependence of variable $c$.
 
-Each atomic force $\bm f_{ji}$ is calculated through a set of basis functions, namely $d_{tkk'l}(\bm r^{N_j})$. In the original manuscript this force is defined in Equations 4 and 5. Here, the atomic force is formulated as follows:
+The atomic force $\bm f$ is defined in the original manuscript in Equations 4 and 5. This atomic force is calculated through a set of basis functions. In particular, the power spectrum  and bispectrum basis functions are considered.
+
+The atomic force calculated through the power basis functions $d_{tkk'l}(\bm r^{N_j}, j, i)$ is formulated as follows:
 
 \begin{equation}
-    \bm f_{ji}(\bm {r}^{N_j}; \bm c) = 
+    \bm f(\bm {r}^{N_j}, \bm c, j, i) = 
     \sum_{t=1}^{N_z}
     \sum_{k=1}^K
     \sum_{k'=k}^{K}
     \sum_{l=0}^L
     c_{tkk'l}
-    \frac{\partial d_{tkk'l}(\bm r^{N_j})}{\partial \bm r^{N_j}_i}
+    \frac{\partial d_{tkk'l}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i}
     \label{eq:force}
 \end{equation}
 
-Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j})}{\partial \bm r_i}$ is the gradient vector of $d_{tkk'l}$ with respect to the position of the $i$-th atom in the $j$-configuration, i.e., $f$ is a vector quantity.
 
-Current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$. Therefore,  $c \in \mathbb{R}^M$.
+On the other hand, the atomic force calculated through the bispectrum basis functions $d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)$ is formulated as follows:
+
+\begin{equation}
+    \bm f_{ji}(\bm {r}^{N_j}, \bm c, j, i) = 
+    \sum_{k=1}^K
+    \sum_{k'=k}^{K}
+    \sum_{l=0}^L
+    \sum_{l_1=0}^L
+    \sum_{l_2=0}^L
+    c_{jkk'l{l_1}{l_2}}
+    \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i}
+    \label{eq:force}
+\end{equation}
+
+Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$ and $ \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$
+ are the gradient vectors of $d_{tkk'l}$ and $d_{jkk'l{l_1}{l_2}}$, respectively, varying with respect to the position of the $i$-th atom in the $j$-configuration, i.e. $f$ is a vector quantity.
+
+
+Returning to equation \ref{eq:min1}, current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ and $c_{jkk'l{l_1}{l_2}}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$, or $j$,$k$,$k'$,$l$,$l_1$,$l_2$. Therefore, $c \in \mathbb{R}^M$.
 
 In future versions, neural networks will be used to perform the optimization.
 
-\subsection{Basis functions}
+\subsection{Power basis functions}
 
-The derivatives of the basis functions are defined in Equations 23 and 24 in the original manuscript. Here, it is formulated as:
+The following functions are based on the quantum theory of angular momentum. The derivatives of the power basis functions are defined in Equations 23 and 24 in the original manuscript. Here, it is formulated as:
 
 \begin{equation}
     \label{eq:derd}
-    \frac{\partial d_{tkk'l}(\bm r^{N_j})}{\partial \bm r^{N_j}_i} = \sum_{s \in \Omega'_{jit}} p_{iskk'l}^{\partial}(\bm r^{N_j}, j) - \sum_{s \in \Omega''_{jit}} p_{sikk'l}^{\partial} ( \bm r^{N_j}, j),
+    \frac{\partial d_{tkk'l}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i} = \sum_{s \in \Omega'_{jit}} p_{iskk'l}^{\partial}(\bm r^{N_j}, j) - \sum_{s \in \Omega''_{jit}} p_{sikk'l}^{\partial} ( \bm r^{N_j}, j),
 \end{equation}
 where 
 \begin{equation}
@@ -228,14 +247,45 @@ By combining Equations \ref{eq:leg} and \ref{eq:leg3}, we obtain the following e
 \end{equation} 
 In Equation \ref{eq:leg4}, $\lceil . \rceil$ denotes the ceiling function.
 
+\subsection{Bispectrum basis functions}
 
-%The basis functions $\{d_m(\bm r^N), \ 1 \le m \le M \}$ are given by\footnote{The arguments of the basis functions in Equation \ref{eq:min2} are referred to the atoms in the $j$-th configuration.}:
-%\begin{equation*}
-%    d_{tkk'l}(\bm r^{N_j}) =  \sum_{s, Z_s=t} \sum_{m=-l}^l \left( \left(\sum_{q \in \Omega_{js}} u_{klm}(\bm r_{qs}) \right) \left( \sum_{s \in \Omega_{js}} u_{k'lm} \left(\bm r_{qs} \right)  \right) \right),  \quad t=1, \ldots, NZ,
-%\end{equation*}
-%where $\bm r_{qs} = \bm r_q^{N_j}- \bm r_s^{N_j}$ (note that $s$ and $q$ are the $s$-th and $q$-th atoms in the configuration $j$). Hereafter, we drop the superscript $N_j$. We remark that there are $M=(NZ (L+1) K (K+1))/2$ basis functions.
-%\textbf{Por el momento no sé si s tiene que ser de la confugiración j, entiendo que sí para que tenga sentido hacer la resta teniendo $r^{N_j}$. Tal vez se pueda quitar esta definición.} 
+The derivatives of the bispectrum basis functions are not presented in the original mansucript. Here, we use the finite difference method:
 
+\begin{equation}
+\begin{split}
+     \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i} =  
+ \bigg( \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta X_i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta X_i) } {2 |\bm \Delta X_i|}, \\
+          \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i) } {2 |\bm \Delta Y_i|},\\
+          \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Z_i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Z_i) } {2 |\bm \Delta Z_i|} \bigg)
+\end{split}
+\end{equation}
+
+where $\bm \Delta X_i$, $\bm \Delta Y_i$, and $\bm \Delta Z_i$ are vectors of the same size as $r^{N_j}$, containing $(0,0,0)$ in all their components except for the $i$-$th$ component, which is equal to $\bm \Delta x$, $\bm \Delta y$, and $\bm \Delta z$, respectively. E.g. if the size of $r^{N_j}$ is $3$ and $i = 2$, then $\bm \Delta X_2 = ( (0,0,0), \bm \Delta x, (0,0,0))$.
+
+The bispectrum basis functions are defined in Equations 29 and 30 in the original manuscript. Here, it is formulated as:
+
+\begin{equation}
+    \label{eq:derd}
+    d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j) = \sum_{s \in \Omega'''_{jt}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j)
+\end{equation}
+
+where 
+\begin{equation}
+    b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j) = \sum_{m=-{l_1}}^l
+     \sum_{m_1=-{l_1}}^{l_1}
+     \sum_{m_2=-l_2}^{l_2}
+     \bar{a}_{sklm}(\bm r^{N_j}, j)
+     C_{{m_1}{m_2}m}^{{l_1}{l_2}l}
+     a_{sk'{l_1}{m_1}}(\bm r^{N_j}, j)
+     a_{sk'{l_2}{m_2}}(\bm r^{N_j}, j)
+\end{equation}
+
+\begin{equation}
+    a_{iklm}(\bm r^{N_j}, j) = \sum_{s \in \Omega_{ji}} u_{klm}(\bm r^{N_j}_s -\bm r^{N_j}_i)
+\end{equation}
+
+
+In the computer code, the Clebsch–Gordan coefficients, $C_{{m_1}{m_2}m}^{{l_1}{l_2}l}$, are computed through the library ``PartialWaveFunctions.jl''.
 
 
 \begin{appendix}
