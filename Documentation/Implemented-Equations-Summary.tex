@@ -99,9 +99,9 @@ The following table shows all the relevant input variables or parameters needed 
     
     $Z_{ji}$ & Atomic number of atom $i$ in configuration $j$. & $\Omega''_{jit}$ & If the atomic number type of $i$ is $t$, returns the neighbors of the atom $i$ in configuration $j$, else it returns empty. \\ \hline
     
-    $T_z$ & Type of the atomic number z. Each atomic number z is indexed in T. & $K$ & ? \\ \hline
+    $T_z$ & Type of the atomic number z. Each atomic number z is indexed in T. & $\Omega'''_{jt}$ & Atoms in configuration $j$, whose atomic number type is $t$ \\ \hline
     
-    $N_z$ & Number of the different atomic numbers (or atomic number types) present in all configurations. &  L & Degree \\ \hline
+    $N_z$ & Number of the different atomic numbers (or atomic number types) present in all configurations. &  L, K & Parameters of Degree \\ \hline
     
     $\bm {r}^{N_j}_{i}$ & Position of atom $i$ in the configuration $j$. & M & Number of basis functions.\\ \hline
     
@@ -145,7 +145,7 @@ The atomic force calculated through the power basis functions $d_{tkk'l}(\bm r^{
 On the other hand, the atomic force calculated through the bispectrum basis functions $d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)$ is formulated as follows:
 
 \begin{equation}
-    \bm f_{ji}(\bm {r}^{N_j}, \bm c, j, i) = 
+    \bm f(\bm {r}^{N_j}, \bm c, j, i) = 
     \sum_{k=1}^K
     \sum_{k'=k}^{K}
     \sum_{l=0}^L
@@ -214,7 +214,7 @@ Note that $\bm r$ is expressed in cartesian coordinates $(x,y,z)$, but spherical
     \phi = \text{atan}(y,x) \footnote{Use the Julia atan function with two arguments ($y$,$x$) that returns the angle in radians between the positive $x$-axis and the point $(x, y)$ in the interval $[-\pi, \pi]$.}
 \end{equation*}
 
-In Equation \ref{eq:us}, $g_{lk}$ is a radial basis functions. Currently, the Julia spherical Bessel function "sphericalbessely(l, r)" is used. Other functions should be implemented in the future, including polynomials and Gaussian functions.
+In Equation \ref{eq:us}, $g_{lk}$ is a radial basis functions. Currently, the Julia spherical Bessel function ``sphericalbessely'' is used. Other functions should be implemented in the future, including polynomials and Gaussian functions.
 
 Returning to Equation \ref{eq:us}, the spherical harmonics of degree $l$ and order $m$ ($Y_{lm}$) is presented in Equation 12 in the original manuscript. Here, it is formulated as
 \begin{equation}
@@ -254,9 +254,9 @@ The derivatives of the bispectrum basis functions are not presented in the origi
 \begin{equation}
 \begin{split}
      \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i} =  
- \bigg( \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta X_i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta X_i) } {2 |\bm \Delta X_i|}, \\
-          \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i) } {2 |\bm \Delta Y_i|},\\
-          \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Z_i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Z_i) } {2 |\bm \Delta Z_i|} \bigg)
+ \bigg( \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta X_i, j, i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta X_i, j, i) } {2 |\bm \Delta X_i|}, \\
+          \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i, j, i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i, j, i) } {2 |\bm \Delta Y_i|},\\
+          \frac{ d_{jkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} + \bm \Delta Z_i, j, i) - d_{jkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} - \bm \Delta Z_i, j, i) } {2 |\bm \Delta Z_i|} \bigg)
 \end{split}
 \end{equation}
 
@@ -266,12 +266,13 @@ The bispectrum basis functions are defined in Equations 29 and 30 in the origina
 
 \begin{equation}
     \label{eq:derd}
-    d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j) = \sum_{s \in \Omega'''_{jt}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j)
+    d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega'''_{jt}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)
 \end{equation}
 
 where 
+
 \begin{equation}
-    b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j) = \sum_{m=-{l_1}}^l
+    b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{m=-{l_1}}^l
      \sum_{m_1=-{l_1}}^{l_1}
      \sum_{m_2=-l_2}^{l_2}
      \bar{a}_{sklm}(\bm r^{N_j}, j)
@@ -281,7 +282,7 @@ where
 \end{equation}
 
 \begin{equation}
-    a_{iklm}(\bm r^{N_j}, j) = \sum_{s \in \Omega_{ji}} u_{klm}(\bm r^{N_j}_s -\bm r^{N_j}_i)
+    a_{iklm}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega_{ji}} u_{klm}(\bm r^{N_j}_s -\bm r^{N_j}_i)
 \end{equation}
 
 
