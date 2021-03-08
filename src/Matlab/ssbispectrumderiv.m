@@ -14,7 +14,7 @@ K = size(ar{1},1);
 indk = getindk(K);
 
 K2 = K*(K+1)/2;
-nx = size(arx{1},1);
+nx = size(arx{1},1); % number of neighbors
 
 b = zeros(I*K2,1);
 bx = zeros(nx,K2*I);
@@ -24,13 +24,13 @@ for k = 1:K2
     k2 = indk(k,1);
     k1 = indk(k,2);    
     for i = 1:I
-        n = i+(k-1)*I;
+        n = i+(k-1)*I; % index for the nth basis function
         l2 = indl(i,1);
         l1 = indl(i,2);
         l = indl(i,3);     
         tmp = 0;
         nm = rowm(i+1)-rowm(i);
-        for j = 1:nm
+        for j = 1:nm % perform summations over (m,m1,m2) tuple indices
             c = cg(rowm(i)+j);
             m2 = indm(rowm(i)+j,1);
             m1 = indm(rowm(i)+j,2);

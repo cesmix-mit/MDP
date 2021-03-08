@@ -1,0 +1,20 @@
+
+app.nd = 3;
+app.ncq = 2;
+app.ncmu1a = 1;
+app.ncmu1b = 1;
+app.ncmu2a = 2;
+app.ncmu2b = 2;
+app.ncmu2c = 2;
+app.ncmu3a = 3;
+app.ncmu3b = 3;
+app.ncmu3c = 3;
+app.ncmu4a = 4;
+app.ncmu4b = 4;
+app.ncmu4c = 4;
+
+[xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ...
+   ai, aj, ak, al, mu1a, mu1b, mu2a, mu2b, mu2c, mu3a, mu3b, mu3c, mu4a, mu4b, mu4c] = syminit(app);
+
+u = sin(xi(1))*cos(xi(2) 
+gensingle("single", u, xi, qi, ti, ai, mu1a, 1);

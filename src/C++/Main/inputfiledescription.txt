@@ -7,37 +7,38 @@ K     # number of zeros for spherical Bessel functions
 L     # degree of spherical haromonic Bessel functions
 rcut  # cut-off radius
 
-# Simulation box
+# Simulation box app.simbox
 a = (a1 0  0)
 b = (b1 b1 0)
 c = (c1 c2 c3)
 
-# periodic boundary conditions
+# app.bcs (boundary conditions)
+# periodic boundary conditions app.pbc
 pbc = (1, 1, 1)
 
-# Atom type Coeffs
+# Atom type Coeffs (app.atomtypes)
 
   1 mass coeff1 coeff2 ...
   ...
   N mass coeff1 coeff2 ...              (N = # of atom types)
 
-# Molecular formulas
+# Molecular formulas (app.moletypes)
 
   1 atom-1 atom-2 ... atom-m
   ...
   N atom-1 atom-2 ... atom-m    (N = # of molecules/compounds)
 
-# Nonbonded Single Potential Coeffs
+# Nonbonded Single Potential Coeffs (app.pot1a, app.mu1a)
 
   1 coeff1 coeff2 ...   (nonbonded single potential)
 
-# Bonded Single Potential Coeffs
+# Bonded Single Potential Coeffs  (app.pot1b, app.atom1b, app.mu1b)
 
   1 atom-1 coeff1 coeff2 ...
   ...
   N atom-1 coeff1 coeff2 ...              (N = # of bonded single potentials )
 
-# Nonbonded Pair Potential Coeffs
+# Nonbonded Pair Potential Coeffs  (app.pot2a, app.mu2a)
 
   1 rcut coeff1 coeff2 ...
   ...

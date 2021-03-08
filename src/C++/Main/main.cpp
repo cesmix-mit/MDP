@@ -36,6 +36,7 @@ using namespace std;
 #include "../Common/core.h"       // interface to core libraries
 #include "../Common/pblas.h"      // wrappers for blas libaries and MPI     
 
+#include "../Potentials/opuApp.cpp" // Read configurations and preprocess data 
 #include "../Configuration/Configuration.cpp" // Read configurations and preprocess data 
 #include "../Descriptors/Descriptors.cpp"   // describe atomistic forces for nonparameteric potentials 
 #include "../Calculation/Calculation.cpp"  // Calculate energy and forces

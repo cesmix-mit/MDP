@@ -1,0 +1,110 @@
+function gentriplet(filename, u, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, gen)
+
+foldername = "app";
+opufile = "opu" + filename;
+cpufile = "cpu" + filename;
+gpufile = "gpu" + filename;
+
+sp0 = "(T *u, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, int dim, int ncq, int nmu, int ng)\n";
+sp1 = "(double *, double *, double *, double *, double *, double *, int *, int *, int *, int *, int *, int *, double *, int, int, int, int);\n";
+sp2 = "(float *, float *, float *, float *, float *, float *, int *, int *, int *, int *, int *, int *, float *, int, int, int, int);\n";
+sp3 = "(u, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, dim, ncq, nmu, ng)";
+
+if gen==0
+    stropu = "template <typename T> void " + opufile;
+
+    tmp = sp0;
+
+    stropu = stropu + tmp + "{\n";
+    stropu = stropu + "}\n\n";
+
+    tmp = "template void " + opufile;
+    tmp = tmp + sp1;
+    tmp = tmp + "template void " + opufile;
+    tmp = tmp + sp2;
+
+    stropu = stropu + tmp;
+    strcpu = strrep(stropu, "opu", "cpu");
+    strgpu = strrep(stropu, "opu", "gpu");
+
+    fid = fopen(foldername + "/" + opufile + ".cpp", 'w');
+    fprintf(fid, char(stropu));
+    fclose(fid);
+
+    fid = fopen(foldername + "/" + gpufile + ".cu", 'w');
+    fprintf(fid, char(strgpu));
+    fclose(fid);
+
+    iocpu = fopen(foldername + "/" + cpufile + ".cpp", 'w');
+    fprintf(fid, char(strcpu));
+    fclose(iocpu);    
+else
+    stropu = "template <typename T> void " + opufile;
+    strgpu = "template <typename T>  __global__  void kernel" + gpufile;
+
+    tmp = sp0;
+
+    stropu = stropu + tmp + "{\n";
+    stropu = stropu + "\tfor (int i = 0; i <ng; i++) {\n";
+
+    strgpu = strgpu + tmp + "{\n";
+    strgpu = strgpu + "\tint i = threadIdx.x + blockIdx.x * blockDim.x;\n";
+    strgpu = strgpu + "\twhile (i<ng) {\n";
+        
+    ustr =string(char(u));
+    
+    str = "";
+    str = varsassign(str, "mu", length(mu), 0);
+    str = varsassign(str, "xij", length(xij), 2);
+    str = varsassign(str, "xik", length(xik), 2);
+    str = varsassign(str, "qi", length(qi), 2);
+    str = varsassign(str, "qj", length(qj), 2);
+    str = varsassign(str, "qk", length(qk), 2);
+    str = varsassign(str, "ti", length(ti), 3);
+    str = varsassign(str, "tj", length(tj), 3);
+    str = varsassign(str, "tk", length(tk), 3);
+    str = varsassign(str, "ai", length(ai), 3);
+    str = varsassign(str, "aj", length(aj), 3);
+    str = varsassign(str, "ak", length(ak), 3);
+    str = symsassign(str, u);
+
+    stropu = stropu + str + "\t}\n" + "}\n\n";
+    tmp = "template void " + opufile;
+    tmp = tmp + sp1;
+    tmp = tmp + "template void " + opufile;
+    tmp = tmp + sp2;
+    stropu = stropu + tmp;
+
+    fid = fopen(foldername + "/" + opufile + ".cpp", 'w');
+    fprintf(fid, char(stropu));
+    fclose(fid);
+
+    strgpu = strgpu + str + "\t\ti += blockDim.x * gridDim.x;\n";
+    strgpu = strgpu + "\t}\n" + "}\n\n";
+    tmp = "template <typename T> void " + gpufile;
+    tmp = tmp + sp0;
+    tmp = tmp + "{\n";
+    tmp = tmp + "\tint blockDim = 256;\n";
+    tmp = tmp + "\tint gridDim = (ng + blockDim - 1) / blockDim;\n";
+    tmp = tmp + "\tgridDim = (gridDim>1024)? 1024 : gridDim;\n";
+    tmp = tmp + "\tkernel" + gpufile + "<<<gridDim, blockDim>>>" + sp3 + ";\n";
+    tmp = tmp + "}\n\n";
+    tmp = tmp + "template void " + gpufile;
+    tmp = tmp + sp1;
+    tmp = tmp + "template void " + gpufile;
+    tmp = tmp + sp2;
+    strgpu = strgpu + tmp;
+
+    fid = fopen(foldername + "/" + gpufile + ".cu", 'w');
+    fprintf(fid, char(strgpu));
+    fclose(fid);
+
+    strcpu = strrep(stropu, 'opu', "cpu");
+    strcpu = strrep(strcpu, "for (int i = 0; i <ng; i++) {", "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");
+
+    iocpu = fopen(foldername + "/" + cpufile + ".cpp", 'w');
+    fprintf(fid, char(strcpu));
+    fclose(iocpu);
+end
+
+end
