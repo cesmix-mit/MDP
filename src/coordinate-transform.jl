@@ -1,4 +1,4 @@
-struct Cartesian{T}
+mutable struct Cartesian{T}
     x::T
     y::T
     z::T

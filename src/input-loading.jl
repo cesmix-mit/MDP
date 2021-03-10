@@ -5,12 +5,14 @@
   `Ω′′[j][i][t]`: if the atomic number type is t, 
                      it returns the neighbors of the atom i in conf. j,
                  else it returns empty
+  `Ω′′′[j][t]`: Atoms of the configuration j whose atomic number types is t.
    
 """
 function calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
     Ω   = [[ [] for i=1:N[j]] for j=1:J]
     Ω′  = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
     Ω′′ = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
+    Ω′′′ = [[ [] for t=1:NZ] for j=1:J]
     for j = 1:J
         for i0 = 1:N[j]
             for i1 = 1:N[j]
@@ -25,7 +27,15 @@ function calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
             end
         end
     end
-    return Ω, Ω′, Ω′′
+    
+    for j = 1:J
+        for i = 1:N[j]
+            t = T[Z[j][i]]
+            push!(Ω′′′[j][t], i)
+        end
+    end
+    
+    return Ω, Ω′, Ω′′, Ω′′′
 end
 
 """
@@ -83,7 +93,7 @@ function load_input()
     r_cut = rand()
 
     # Calc. neighbors
-    Ω, Ω′, Ω′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
+    Ω, Ω′, Ω′′, Ω′′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
     
     # `K`: ?
     K = 3
@@ -109,7 +119,7 @@ function load_input()
     Δ['y'] = Cartesian(0.0, h, 0.0)
     Δ['z'] = Cartesian(0.0, 0.0, h)
     
-    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, w, Δ
+    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, Ω′′′, f_qm, K, L, M, w, Δ
     
 end
 
