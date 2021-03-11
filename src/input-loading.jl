@@ -90,7 +90,7 @@ function load_input()
     end
 
     # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
-    r_cut = rand()
+    r_cut = 10.0
 
     # Calc. neighbors
     Ω, Ω′, Ω′′, Ω′′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
@@ -101,13 +101,11 @@ function load_input()
     # `L`: Degree.
     L = 3
     
-    # `M`: Number of basis functions.
-    M = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1))
-
-    # `c[m]`: Coefficient needed to calculate the potential/force.
-    #         Linearized version of c[t][k][k′][l].
-    #         Linear version needed in optimization.
-    c = [rand() for m = 1:M]
+    # `M`: Number of power spectrum basis functions.
+    M_ps = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1))
+    
+    # `M`: Number of power spectrum basis functions.
+    M_bs = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1)^3)
     
     # `w[j]`: Weight associated to the configuration j.
     w = @SArray [1.0, 1.0, 1.0]
@@ -119,7 +117,7 @@ function load_input()
     Δ['y'] = Cartesian(0.0, h, 0.0)
     Δ['z'] = Cartesian(0.0, 0.0, h)
     
-    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, Ω′′′, f_qm, K, L, M, w, Δ
+    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, Ω′′′, f_qm, K, L, M_ps, M_bs, w, Δ
     
 end
 
