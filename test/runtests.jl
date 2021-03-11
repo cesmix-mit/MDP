@@ -71,20 +71,13 @@ using Test
         for k = 1:K
             for k′ = k:K
                 for l = 0:L
-                    d1 = MDP.deriv_d(t, k, k′, l, r_N[j], i, j, Ω, Ω′, Ω′′, Δ)
-                    d2 = MDP.deriv_d(t, k, k′, l, r_N_rot[j], i, j, Ω, Ω′, Ω′′, Δ)
+                    d1 = MDP.deriv_d_ps(t, k, k′, l, r_N[j], i, j, Ω, Ω′, Ω′′, Δ)
+                    d2 = MDP.deriv_d_ps(t, k, k′, l, r_N_rot[j], i, j, Ω, Ω′, Ω′′, Δ)
                     @test d1 == d2
                 end
             end
         end
         
-#        println("Euler's angles: ", euler_angles)
-#        println("Minium radius: %g\n", min(abs(r(:))));
-#        println("Maximum power spectrum error: %g\n", max(abs((p(:)-p2(:))./p(:))));
-#        println("Maximum bispectrum error: %g\n", max(abs((b(:)-b2(:))./b(:))));
-#        println("Power spectrum range: [%g %g]\n", [min(abs(p(:))) max(abs(p(:)))]);
-#        println("Bipectrum range: [%g %g]\n", [min(abs(b(:))) max(abs(b(:)))]);
-
     end
 
 end

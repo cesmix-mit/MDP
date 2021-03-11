@@ -13,11 +13,12 @@ end
 Base.:*(c::Float64, f::Cartesian) = Cartesian(c * f.x, c * f.y, c * f.z)
 Base.:+(f::Cartesian, g::Cartesian) = Cartesian(f.x + g.x, f.y + g.y, f.z + g.z)
 Base.:-(f::Cartesian, g::Cartesian) = Cartesian(f.x - g.x, f.y - g.y, f.z - g.z)
+Base.:(==)(f::Cartesian, g::Cartesian) = (f.x == g.x) && (f.y == g.y) && (f.z == g.z)
 LinearAlgebra.:norm(f::Cartesian) = √(abs(f.x)^2 + abs(f.y)^2 + abs(f.z)^2)
 
 Base.sum(::Type{Cartesian{Float64}}) = 0.0
 Base.zero(::Type{Cartesian{Float64}}) = Cartesian(0.0, 0.0, 0.0)
-Base.zero(::Type{Any}) = 0.0+0.0im # [0.0+0.0im, 0.0+0.0im, 0.0+0.0im]
+Base.zero(::Type{Any}) = [0.0+0.0im, 0.0+0.0im, 0.0+0.0im] #0.0+0.0im 
 
 function Cartesian(x)
     return Cartesian(x, x, x)

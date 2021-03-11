@@ -51,15 +51,15 @@ function compute()
     J, N, NZ, r_N, Ω, Ω′, Ω′′, Ω′′′, f_qm, K, L, M_ps, M_bs, w, Δ = load_input()
 
     # Optimize coeffiecients ###################################################
-#    println("Power spectrum functions case. Optimizing coefficients..."); flush(stdout)
-#    c_opt_ps = optimize_coefficients(w, f_ps, f_qm, r_N, NZ, K, L, M_ps, N, J, Ω, Ω′, Ω′′, Ω′′′, Δ)
-#    println("Finished!"); flush(stdout)
-#    println("Optimized coefficients:", c_opt_ps); flush(stdout)
-
-    println("Bispectrum functions case. Optimizing coefficients..."); flush(stdout)
-    c_opt_bs = optimize_coefficients(w, f_bs, f_qm, r_N, NZ, K, L, M_bs, N, J, Ω, Ω′, Ω′′, Ω′′′, Δ)
+    println("Power spectrum functions case. Optimizing coefficients..."); flush(stdout)
+    c_opt_ps = optimize_coefficients(w, f_ps, f_qm, r_N, NZ, K, L, M_ps, N, J, Ω, Ω′, Ω′′, Ω′′′, Δ)
     println("Finished!"); flush(stdout)
-    println("Optimized coefficients:", c_opt_bs); flush(stdout)
+    println("Optimized coefficients:", c_opt_ps); flush(stdout)
+
+#    println("Bispectrum functions case. Optimizing coefficients..."); flush(stdout)
+#    c_opt_bs = optimize_coefficients(w, f_bs, f_qm, r_N, NZ, K, L, M_bs, N, J, Ω, Ω′, Ω′′, Ω′′′, Δ)
+#    println("Finished!"); flush(stdout)
+#    println("Optimized coefficients:", c_opt_bs); flush(stdout)
 
     # Call LAMMPS ##############################################################
     # TODO
