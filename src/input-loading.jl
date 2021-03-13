@@ -95,11 +95,11 @@ function load_input()
     # Calc. neighbors
     Ω, Ω′, Ω′′, Ω′′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
     
-    # `K`: ?
-    K = 3
-    
     # `L`: Degree.
-    L = 3
+    L = 1
+    
+    # `K`: ?
+    K = L + 1
     
     # `M`: Number of power spectrum basis functions.
     M_ps = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1))

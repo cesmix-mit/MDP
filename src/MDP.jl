@@ -35,6 +35,7 @@ function optimize_coefficients(w, f, f_qm, r_N, NZ, K, L, M, N, J, Ω, Ω′, Ω
     c0 = zeros(M)
     prob = OptimizationProblem(cost_function, c0)
     sol = solve(prob, NelderMead())
+    
     return sol.minimizer
 end
 
@@ -56,10 +57,10 @@ function compute()
     println("Finished!"); flush(stdout)
     println("Optimized coefficients:", c_opt_ps); flush(stdout)
 
-#    println("Bispectrum functions case. Optimizing coefficients..."); flush(stdout)
-#    c_opt_bs = optimize_coefficients(w, f_bs, f_qm, r_N, NZ, K, L, M_bs, N, J, Ω, Ω′, Ω′′, Ω′′′, Δ)
-#    println("Finished!"); flush(stdout)
-#    println("Optimized coefficients:", c_opt_bs); flush(stdout)
+    println("Bispectrum functions case. Optimizing coefficients..."); flush(stdout)
+    c_opt_bs = optimize_coefficients(w, f_bs, f_qm, r_N, NZ, K, L, M_bs, N, J, Ω, Ω′, Ω′′, Ω′′′, Δ)
+    println("Finished!"); flush(stdout)
+    println("Optimized coefficients:", c_opt_bs); flush(stdout)
 
     # Call LAMMPS ##############################################################
     # TODO
