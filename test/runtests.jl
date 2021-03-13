@@ -5,7 +5,7 @@ using LinearAlgebra
 using Test
 
 
-@testset "1-Atom-Power-Spectrum-Basis-Function" begin
+@testset "1-Atom-Basis-Function" begin
 
     # Configuration 1: 101 H atoms
 
@@ -62,9 +62,10 @@ using Test
         r_cut = rand()
         
         # Calc. neighbors
-        Ω, Ω′, Ω′′ = MDP.calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
+        Ω, Ω′, Ω′′, Ω′′′ = MDP.calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
         
-        # Calc. of the power spectrum basis function
+        # Verify power spectrum and bispectrum basis function invariance regarding
+        # neighbors position rotations 
         j = 1
         i = N[j]
         t = 1
@@ -74,6 +75,14 @@ using Test
                     d1 = MDP.deriv_d_ps(t, k, k′, l, r_N[j], i, j, Ω, Ω′, Ω′′, Δ)
                     d2 = MDP.deriv_d_ps(t, k, k′, l, r_N_rot[j], i, j, Ω, Ω′, Ω′′, Δ)
                     @test d1 == d2
+                    
+                    for l1 = 0:L
+                        for l2 = 0:L
+                            d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′′′, Δ)
+                            d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′′′, Δ)
+                            @test d1 == d2
+                        end
+                    end
                 end
             end
         end

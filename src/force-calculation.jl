@@ -110,7 +110,6 @@ a_bs(i, k, l, m, r, j, Ω) =
     sum([u(k, l, m, r[s] - r[i]) for s in Ω[j][i]])
     
 
-
 """
     `b(t, k, k′, l, r, i, j)`
     Eq. 16 in summary. Eq. 29 in original manuscript.
