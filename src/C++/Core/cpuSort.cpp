@@ -1,6 +1,21 @@
 #ifndef __CPUSORT
 #define __CPUSORT
-        
+
+// #include <fstream>
+// #include <sstream>
+// #include <iostream>
+// 
+// void print2d(int* a, int m, int n)
+// {
+//     for (int i=0; i<m; i++) {
+//         for (int j=0; j<n; j++)
+//             std::cout << a[j*m+i] << "   ";
+//         std::cout << std::endl;
+//     }
+//     std::cout << std::endl;
+// }
+
+
 void merge(int *output, int *index, int *input, int lo, int mid, int hi) 
 {
     int i = lo, j = mid + 1;
@@ -34,6 +49,9 @@ void mergeSort(int *output, int *index, int *input, int lo, int hi)
 
 void cpuMergeSort(int *output, int *index, int *input, int length) 
 {
+    for (int i = 0; i<length; i++)
+        index[i] = i;
+    
     mergeSort(output, index, input, 0, length-1);
     for (int i=0; i<length; i++)
         output[i] = input[index[i]];
@@ -80,19 +98,24 @@ int cpuUniqueElements(int *b, int *c, int *e, int *t, int *p, int *q, int n)
             p[i] = 1;
         }        
     }
-        
+            
     // parallel prefix sum on p
     cpuCumsum(q, p, n+1);
-    
+        
     // remove zeros for the array t to obtain c
     for (int i=0; i<n; i++) {
         if (t[i] > 0) {
             int j = q[i+1];
             int k = t[i];
             c[j] = k;
-            b[j-1] = e[k];
+            b[j-1] = e[k-1];
         }            
     }
+    
+//     print2d(t, 1, 200);
+//     print2d(p, 1, 200);
+//     print2d(q, 1, 200);
+//     print2d(b, 1, 200);
     
     return q[n];    
 }
@@ -114,9 +137,9 @@ int cpuUniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, int *q
     
     // sort array a
     cpuMergeSort(e, d, a, n);
-    
+            
     // make a new array of unique elements and their counts
-    return cpuUniqueElements(b, c, e, p, t, q, n);          
+    return cpuUniqueElements(b, c, e, p, t, q, n);                          
 }
 
 

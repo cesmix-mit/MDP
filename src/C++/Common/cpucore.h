@@ -81,6 +81,7 @@ void cpuCumsum(int* output, int* input, int length);
 template <typename T> void cpuSmallMatrixInverse(T *invA, T *A, int dim);
 int cpuUniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, int *q, int n);
 int cpuFindAtomType(int *tlist, int* ilist, int *atomtype, int *p, int *q, int typei, int inum);
+void cpuMergeSort(int *output, int *index, int *input, int length);
 
 // neighbor list
 template <typename T> void cpuMakeReferenceGrid(T *eta, T smin, T smax, T ds, int nc);
@@ -92,7 +93,7 @@ template <typename T> int cpuPeriodicImages2D(T *pimages, T *a, T *b, int *pbc);
 template <typename T> void cpuAtomList2D(int *alist, int *inside, int *glistnumsum, int *glistnum, 
         T *x, T *pimages, T *wc, T *s2rmap, int inum, int pnum, int dim);
 template <typename T> void cpuCellList2D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
-        int *nc, int natom, int dim);
+        int *nc, int inum, int natom, int dim);
 template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
 template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
@@ -108,7 +109,7 @@ template <typename T> int cpuPeriodicImages3D(T *pimages, T *a, T *b, T *c, int 
 template <typename T> void cpuAtomList3D(int *alist, int *inside, int *glistnumsum, int *glistnum, 
         T *x, T *pimages, T *wc, T *s2rmap, int inum, int pnum, int dim);
 template <typename T> void cpuCellList3D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
-        int *nc, int natom, int dim);
+        int *nc, int inum, int natom, int dim);
 template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
 template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
@@ -117,6 +118,11 @@ template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbo
         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim);
 template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim);        
+
+template <typename T> void cpuFullNeighborList2D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, 
+        int anum, int inum, int jnum, int dim);
+template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, 
+        int anum, int inum, int jnum, int dim);
 
 // template <typename T> void cpuGetNeighPairs(T *xij, T *qi, T *qj, T *x, T *q, int *ai, int *aj,  
 //       int *ti, int *tj, int *anum, int *anumsum, int *ilist, int *alist, int *neighlist, int *neighnum, 
@@ -152,17 +158,17 @@ template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbo
 
 template <typename T> void cpuNeighSingles(T *xi, T *qi, T *x, T *q, int *ai, 
       int *ti, int *ilist, int *atomtype, int inum, int ncq, int dim);
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim);
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq,  int *atomtype, int *ilist, int *alist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq,  int *atomtype, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int typej, int dim);
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq,  int *atomtype, int *ilist, int *alist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq,  int *atomtype, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int typej, int typek, int dim);
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq,  int *atomtype, int *ilist, int *alist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq,  int *atomtype, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int typej, int typek, int typel, int dim);
-template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *alist, 
+template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int dim);
-template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *atomtype, int *ilist, 
+template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *atomtype, int *ilist, 
         int *alist, int *neighlist, int *neighnum, int inum, int jnum, int typej, int dim);
 template <typename T> void cpuNeighPairs(T *xij, T *qi, T *qj, T *x, T *q, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, int *alist,  
@@ -188,7 +194,7 @@ template <typename T> void cpuNeighQuadruplets(T *xij, T *xik, T *xil, T *qi, T 
       int *ai, int *aj, int *ak, int *al, int *ti, int *tj, int *tk, int *tl, int *quadrupletnum, int *quadrupletlist, 
       int *quadrupletnumsum, int *ilist, int *alist,  int *atomtype, int inum, int ncq, int dim);
 
-template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist, T *x, T rcutsq, int *pairnum, int *pairnumsum, 
+template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist, T *x, T *rcutsq, int *pairnum, int *pairnumsum, 
         int *pairlist, int *atomtype, int *ilist, int *alist, int *neighlist, int *neighnum, int inum, 
         int jnum, int typek, int dim);
 template <typename T> void cpuNeighTriplets(T *xij, T *xik, T *qi, T *qj, T *qk, T *x, T *q, int *ai, int *aj, int *ak,  

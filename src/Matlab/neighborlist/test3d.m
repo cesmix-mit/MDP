@@ -1,28 +1,86 @@
-a = [1 0 0];
-b = [0.2 1 0];
-c = [0.2 0.2 1];
-r = 0.2;
+% a = [1 0 0];
+% b = [0 1 0];
+% c = [0 0 1];
+% r = 0.1;
+a = config.a(:,1);
+b = config.b(:,1);
+c = config.c(:,1);
+r = 8.5;
 pbc = [1 1 1];
-n = 100;
+n = 256;
 dim = length(a);
-xx = rand(3,n);
+%xx = rand(3,n);
+x = config.x(:,n+1:2*n);
 
 [B2C, C2B] = cubemapping(a, b, c);
-[v, w] = boundingbox(r, a, b, c);
+[v, w] = boundingbox(r, pbc, a, b, c);
 ximages = boxperiodicimages(pbc, a, b, c);
 vc = B2C*v;
 wc = B2C*w;
-x = C2B*xx;
+x = checkconfig(x, ximages, B2C, C2B);
+
+% xx = B2C*x;
+% pp = B2C*ximages;
+% for i = 1:n
+%     xt = xx(:,i);
+%     if (0<=xt(1)) && (xt(1)<=1) && (0<=xt(2)) && (xt(2)<=1) && (0<=xt(3)) && (xt(3)<=1)
+%     else        
+%         xp = xt + pp;        
+%         for j = 1:27
+%             xq = xp(:,j);
+%             if (0<=xq(1)) && (xq(1)<=1) && (0<=xq(2)) && (xq(2)<=1) && (0<=xq(3)) && (xq(3)<=1)
+%                 xx(:,i) = xq;                
+%                 break;
+%             end
+%         end
+%     end
+% end
+% x = C2B*xx;
 
 [xi, ilist, inum, gnum] = createilist(x, ximages, wc, B2C);
 jlist = createjlist(xi, ilist, r, inum);
-[clist, c2ilist, c2inum] = cellist(xi, wc, B2C, inum, gnum);
+[clist, c2ilist, c2inum, cellnum] = cellist(xi, wc, B2C, inum, gnum);
 jlist2 = createjlist3d(xi, ilist, clist, c2ilist, c2inum, r, inum);
 for i = 1:inum  
-    if max(abs(jlist2{i}-jlist{i})) > 0
+    if max(abs(sort(jlist2{i})-sort(jlist{i}))) > 0
+        a = sort(jlist2{i})
+        b = sort(jlist{i})        
         error("jlist is wrong");
     end
 end
+
+epsilon = 0.01029849;
+sigma = 3.4;
+A = 4*epsilon*sigma^12;
+B = 4*epsilon*sigma^6;
+u = zeros(1,inum);
+ux = zeros(3,inum);
+rc2 = r*r;
+rc6 = rc2*rc2*rc2;
+rc8 = rc6*rc2;
+rc12 = rc6*rc6;
+rc14 = rc12*rc2;
+for i = 1:inum
+    ja = jlist{i};    
+    xij = xi(:,ja) - xi(:,i);      
+    r2 = sum(xij.^2,1);
+    r6 = r2.*r2.*r2; 
+    r8 = r6.*r2;
+    r12 = r6.*r6;
+    r14 = r12.*r2;    
+    u(i) = 0.5*sum(A./r12 - B./r6);
+    xij1 = xij(1,:);
+    xij2 = xij(2,:);
+    xij3 = xij(3,:);
+    ux(1,i) = sum((6*B*xij1)./r8 - (12*A*xij1)./r14);
+    ux(2,i) = sum((6*B*xij2)./r8 - (12*A*xij2)./r14);
+    ux(3,i) = sum((6*B*xij3)./r8 - (12*A*xij3)./r14);
+    % (6*B*x1)/(x1^2 + x2^2 + x3^2)^4 - (12*A*x1)/(x1^2 + x2^2 + x3^2)^7
+%     for j = 1:length(ja)        
+%         ux(:,i) = ux(:,i) + (6*B*xij(:,j)/r8(j) - 12*A*xij(:,j)/r14(j));       
+%     end
+end
+utot = sum(u);
 
 
 % a = [1 0.2];

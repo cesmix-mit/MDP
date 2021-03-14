@@ -1,10 +1,11 @@
-a = [1 0.0];
-b = [0.5 1]*2;
-r = [0.1 0.1]*2.0;
+a = [1 0];
+b = [0 1];
+r = [0.1 0.1];
 pbc = [1 1];
 n = 100;
 dim = length(a);
-xx = rand(2,n);
+%xx = rand(2,n);
+xx = config.x(:,1:n);
 
 [P2S, S2P] = cubemapping(a, b);
 x = S2P*xx;
@@ -25,26 +26,33 @@ counts = [0 cumsum(c2inum)];
 tm = counts-cellcounts;
 max(abs(tm(:)))
 
+c2ilist = reshape(c2ilist,[numel(c2ilist)/prod(cellnum) cellnum]);
+c2inum = reshape(c2inum,cellnum);
+jlist = createjlist2(xi, clist, c2ilist, c2inum, r(1)^2, inum, dim);
+
 figure(1); clf;
 hold on; axis equal;
 plotboundingbox(v);
 plotboundingbox(w);
-nc = size(cellcolor);
-for i = 1:nc(1)    
-    for j = 1:nc(2)
-        xy = S2P*[eta1(i) eta1(i+1); eta2(j) eta2(j+1)];
-        txtpars={'fontname','times','fontsize',20,'horizontala','center','BackgroundColor',[1,1,1]};
-        text(mean(xy(1,:)),mean(xy(2,:)),num2str(cellcolor(i,j)),txtpars{:});
-    end
-end
-for i = 1:size(atomcolor,1)
-    for j = 1:size(atomcolor,2)
-        if atomcolor(i,j)==1
-            txtpars={'fontname','times','fontsize',18,'horizontala','center','BackgroundColor',[1,1,1]};
-            cell = clist(:,j);
-            text(xi(1,j),xi(2,j),num2str(cellcolor(cell(1),cell(2))),txtpars{:});
-        end
-    end
+% nc = size(cellcolor);
+% for i = 1:nc(1)    
+%     for j = 1:nc(2)
+%         xy = S2P*[eta1(i) eta1(i+1); eta2(j) eta2(j+1)];
+%         txtpars={'fontname','times','fontsize',20,'horizontala','center','BackgroundColor',[1,1,1]};
+%         text(mean(xy(1,:)),mean(xy(2,:)),num2str(cellcolor(i,j)),txtpars{:});
+%     end
+% end
+% for i = 1:size(atomcolor,1)
+%     for j = 1:size(atomcolor,2)
+%         if atomcolor(i,j)==1
+%             txtpars={'fontname','times','fontsize',18,'horizontala','center','BackgroundColor',[1,1,1]};
+%             cell = clist(:,j);
+%             text(xi(1,j),xi(2,j),num2str(cellcolor(cell(1),cell(2))),txtpars{:});
+%         end
+%     end
+% end
+for i = 1:n
+    text(xi(1,i),xi(2,i),num2str(i),txtpars{:});
 end
 plot(xi(1,1:n),xi(2,1:n),'ob','LineWidth',1);
 plot(xi(1,n+1:end),xi(2,n+1:end),'or','LineWidth',1);
@@ -55,6 +63,11 @@ end
 for i = 1:length(eta2)        
     xy = S2P*[eta1(1) eta1(end); eta2(i) eta2(i)];
     plot(xy(1,:),xy(2,:),'-k');
+end
+for i = 1:10
+    x1 = xi(1,i) + r(1)*cos(linspace(0,2*pi,200));
+    x2 = xi(2,i) + r(1)*sin(linspace(0,2*pi,200));
+    plot(x1,x2);
 end
 
 return;

@@ -39,7 +39,7 @@ using namespace std;
 #include "../Potentials/opuApp.cpp" // Read configurations and preprocess data 
 #include "../Configuration/Configuration.cpp" // Read configurations and preprocess data 
 #include "../Descriptors/Descriptors.cpp"   // describe atomistic forces for nonparameteric potentials 
-#include "../Calculation/Calculation.cpp"  // Calculate energy and forces
+//#include "../Calculation/Calculation.cpp"  // Calculate energy and forces
 #include "../Regression/Regression.cpp"  // perform linear/gaussian/dnn regressions to train nonparameteric potentials  
 #include "../Integration/Integration.cpp"  // perform velocity Verlet algorithm and sample output 
 
@@ -116,69 +116,172 @@ int main(int argc, char** argv)
     cudaGetDevice( &device );
     size_t available, total;
     cudaMemGetInfo(&available, &total);
-    //cout<<"Available GPU Memory: "<<available<<" Total GPU Memory: "<<total<<endl;
+    cout<<"Available GPU Memory: "<<available<<" Total GPU Memory: "<<total<<endl;
 #endif                           
     
     Int ngpus = 0;
     Int gpuid = 0;        
     if (backend==2)
         ngpus = 1;
-       
-    // Open file to read
-    ifstream in(filein.c_str(), ios::in | ios::binary);    
-    if (!in) 
-        error("Unable to open file " + filein);
-           
-    dstype *sph;
-    int n = 100;
-    int dim = 3;
-    readarray(in, &sph, n*dim);
-    in.close();
+    
+    Int ci = 0;            
+    dstype *x, *e, *f, *q, *param;
+    
+    CConfiguration CConfig(filein, fileout, mpiprocs, mpirank, backend);       
+    CConfig.SetConfiguration(ci);
+    
+    x = &CConfig.sys.x[0];
+    e = &CConfig.sys.e[0];
+    f = &CConfig.sys.f[0];
+    q = &CConfig.sys.q[0];
+    param = &CConfig.app.mu2a[0];
+    Int nparam = CConfig.common.nmu2a;
+    
+    for (ci=0; ci<CConfig.common.nconfigs; ci++) {        
+        ArraySetValue(e, 0.0, CConfig.common.inum, CConfig.common.backend);  
+        ArraySetValue(f, 0.0, CConfig.common.dim*CConfig.common.inum, CConfig.common.backend);  
         
-    dstype *the = &sph[0];
-    dstype *phi = &sph[n];
-    dstype *r = &sph[2*n];
+        CConfig.GetPositions(x, ci);   
+        CConfig.GetAtomtypes(CConfig.nb.atomtype, ci);           
+        CConfig.NeighborList(x);
+        CConfig.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
+
+        dstype energy = cpuArraySum(e, CConfig.common.inum);
+        cout<<"Configuration #: "<<ci+1<<endl;
+        cout<<"Potential energy: "<<energy<<endl;
+        //cout<<"Per-atom energies: "<<endl;
+        //printArray2D(e, 1, CConfig.common.inum, backend);
+        cout<<"Atom forces: "<<endl;
+        printArray2D(f, CConfig.common.dim, CConfig.common.inum, backend);
+    }
     
-    dstype xcoord[n*dim];
-    dstype *x = &xcoord[0];
-    dstype *y = &xcoord[n];
-    dstype *z = &xcoord[2*n];
-        
-    cpuSphere2Cart(x, y, z, the, phi, r, n);
     
-    int K = 5, L = 3;
-    int L2 = (L+1)*(L+1); 
-    int numneigh[2];
-    numneigh[1] = n;
-    numneigh[0] = 0;
-        
-    CSphericalHarmonics shobj(K, L, backend);
     
-    dstype sr[n*K*L2], si[n*K*L2];
-    dstype ar[K*L2], ai[K*L2];    
-    dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
-    dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
-    shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
-    shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
-    shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
     
-    dstype p[(L+1)*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
     
-    dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
-        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
-    
-    int Nub = shobj.Nub;
-    dstype b[Nub*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
+//     appstruct app;
+//     configstruct config;    
+//     commonstruct common;    
+//     neighborstruct nb;       
+//     tempstruct tmp;
+//     sysstruct sys;
+//         
+//     implReadInputFiles(app, config, common, filename, fileout, mpiprocs, mpirank, backend);    
+//     
+//     common.decomposition = 1;
+//     common.neighpair = 1;
+//             
+//     implSetConfiguration(nb, tmp, sys, app, config, common, ci);           
+//     implNeighborList(nb, common, app, tmp, sys.x, common.inum);
+//     
+// //     cout<<app.rcutsq[0]<<endl;
+// //     printArray2D(app.mu2a, 1, common.nmu2a, backend);    
+// //     printArray2D(nb.neighnum, 1, common.inum, common.backend);  
+// //     printArray2D(nb.neighlist, common.jnum, common.inum, common.backend);  
+// 
+//     ArraySetValue(sys.e, 0.0, common.inum, common.backend);  
+//     ArraySetValue(sys.f, 0.0, common.dim*common.inum, common.backend);  
+//     
+//     if (common.neighpair == 0) {
+//         implFullNeighPairEnergyForce(sys.e, sys.f, nb, common, app, tmp, sys.x, sys.q, app.mu2a, app.rcutsq, 
+//                 nb.atomtype, common.nmu2a, 0, 0, common.decomposition, 1);          
+//     }
+//     else {
+//         implHalfNeighPairEnergyForce(sys.e, sys.f, nb, common, app, tmp, sys.x, sys.q, app.mu2a, app.rcutsq, 
+//             nb.atomtype, common.nmu2a, 0, 0, common.decomposition, 1);          
+//     }
+//         
+//     printArray2D(sys.e, 1, common.inum, backend);
+//     printArray2D(sys.f, common.dim, common.inum, backend);
             
-    dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
-    shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
-        arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+// void implFullNeighNonbondedPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+//         dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int decomp, Int potnum)
     
-           
-    
+//     implReadAppStruct(app, filename, mpiprocs, mpirank, backend);
+//     //cout<<app.rcutsq[0]<<"  "<<app.rcutsqml[0]<<endl;
+//     
+// 
+//     implReadConfigStruct(config, filename, mpiprocs, mpirank, backend);
+//     //print1iarray(config.nsize, 20);
+//         
+//     implSetCommonStruct(common, app, config, filename,  fileout, mpiprocs, mpirank, backend);
+//                 
+//     implSetNeighborStruct(nb, common, config, ci);            
+//     implGetConfiguration(nb.atomtype, nb.x, common, config, ci);                
+//     implSetAtomBlocks(common);
+//     
+// //     print1iarray(nb.cellnum, common.dim);
+// //     printArray2D(nb.a, 1, common.dim, backend);
+// //     printArray2D(nb.b, 1, common.dim, backend);
+// //     printArray2D(common.boxoffset, 1, common.dim, backend);
+// //     printArray2D(nb.refvertices, common.dim, 2*common.dim, backend);
+// //     printArray2D(nb.rbvertices, common.dim, 2*common.dim, backend);
+// //     printArray2D(nb.pimages, common.dim, 9, backend);
+// //     printArray2D(nb.eta1, 1, nb.cellnum[0]+1, backend);
+// //     printArray2D(nb.eta2, 1, nb.cellnum[1]+1, backend);
+//         
+// //     printArray2D(config.natomssum, 1, common.nconfigs+1, backend);    
+// //     printArray2D(nb.x, common.dim, common.inum, backend);      
+// //     printArray2D(nb.atomtype, 1, common.inum, backend);      
+//         
+//      
+//     implSetTempStruct(tmp, common);    
+//     implNeighborList(nb, common, app, tmp, nb.x, nb.atomtype, common.inum);
+                
+//     // Open file to read
+//     ifstream in(filein.c_str(), ios::in | ios::binary);    
+//     if (!in) 
+//         error("Unable to open file " + filein);
+//            
+//     dstype *sph;
+//     int n = 100;
+//     int dim = 3;
+//     readarray(in, &sph, n*dim);
+//     in.close();
+//         
+//     dstype *the = &sph[0];
+//     dstype *phi = &sph[n];
+//     dstype *r = &sph[2*n];
+//     
+//     dstype xcoord[n*dim];
+//     dstype *x = &xcoord[0];
+//     dstype *y = &xcoord[n];
+//     dstype *z = &xcoord[2*n];
+//         
+//     cpuSphere2Cart(x, y, z, the, phi, r, n);
+//     
+//     int K = 5, L = 3;
+//     int L2 = (L+1)*(L+1); 
+//     int numneigh[2];
+//     numneigh[1] = n;
+//     numneigh[0] = 0;
+//         
+//     CSphericalHarmonics shobj(K, L, backend);
+//     
+//     dstype sr[n*K*L2], si[n*K*L2];
+//     dstype ar[K*L2], ai[K*L2];    
+//     dstype arx[n*K*L2], ary[n*K*L2], arz[n*K*L2];
+//     dstype aix[n*K*L2], aiy[n*K*L2], aiz[n*K*L2];    
+//     shobj.SphericalHarmonicsBessel(sr, si, x, y, z, n);       
+//     shobj.SphericalHarmonicsBesselDeriv(arx, aix, ary, aiy, arz, aiz, x, y, z, n);                    
+//     shobj.RadialSphericalHarmonicsSum(ar, ai, sr, si, numneigh, 1);      
+//     
+//     dstype p[(L+1)*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsPower(p, ar, ai, 1);    
+//     
+//     dstype px[n*(L+1)*K*(K+1)/2], py[n*(L+1)*K*(K+1)/2], pz[n*(L+1)*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsPowerDeriv(px, py, pz, ar, ai, 
+//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+//     
+//     int Nub = shobj.Nub;
+//     dstype b[Nub*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsBispectrum(b, ar, ai, 1);        
+//             
+//     dstype bx[n*Nub*K*(K+1)/2], by[n*Nub*K*(K+1)/2], bz[n*Nub*K*(K+1)/2];
+//     shobj.RadialSphericalHarmonicsBispectrumDeriv(bx, by, bz, ar, ai, 
+//         arx, aix, ary, aiy, arz, aiz, numneigh, 1);        
+//     
+               
 //     string filename = "besselzeros.bin";
 //     ifstream fin(filename.c_str(), ios::in | ios::binary);    
 //     if (!fin) 

@@ -1,121 +1,12 @@
-template <typename T>  __global__  void kernelgpuPairc1(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
-{
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
-	while (i<ng) {
-		T mu1 = mu[0];
-		T mu2 = mu[1];
-		T mu3 = mu[2];
-		T mu4 = mu[3];
-		T xij1 = xij[0 + i*3];
-		T xij2 = xij[1 + i*3];
-		T xij3 = xij[2 + i*3];
-		T t2 = xij1*xij1;
-		T t3 = xij2*xij2;
-		T t4 = xij3*xij3;
-		T t5 = t2+t3+t4;
-		T t6 = 1.0/sqrt(t5);
-		if (tj[i] == 1) 
-			u[i] = pow(mu1*t6,mu2);
-		if (tj[i] == 2) 
-			u[i] = pow(mu3*t6,mu4);
-		i += blockDim.x * gridDim.x;
-	}
-}
-
-template <typename T> void gpuPairc1(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
-{
-	int blockDim = 256;
-	int gridDim = (ng + blockDim - 1) / blockDim;
-	gridDim = (gridDim>1024)? 1024 : gridDim;
-	kernelgpuPairc1<<<gridDim, blockDim>>>(u, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
-}
-
-template <typename T>  __global__  void kernelgpuPaircDensity1(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng)
-{
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
-	while (i<ng) {
-		T rho1 = rho[0 + i*1];
-		u[0 + i*1] = -sqrt(rho1);
-		i += blockDim.x * gridDim.x;
-	}
-}
-
-template <typename T> void gpuPaircDensity1(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng)
-{
-	int blockDim = 256;
-	int gridDim = (ng + blockDim - 1) / blockDim;
-	gridDim = (gridDim>1024)? 1024 : gridDim;
-	kernelgpuPaircDensity1<<<gridDim, blockDim>>>(u, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, ng);
-}
-
-
-template <typename T>  __global__  void kernelgpuPairc2(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
-{
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
-	while (i<ng) {
-		T mu1 = mu[0];
-		T mu2 = mu[1];
-		T mu3 = mu[2];
-		T mu4 = mu[3];
-		T xij1 = xij[0 + i*3];
-		T xij2 = xij[1 + i*3];
-		T xij3 = xij[2 + i*3];
-		T t2 = xij1*xij1;
-		T t3 = xij2*xij2;
-		T t4 = xij3*xij3;
-		T t5 = t2+t3+t4;
-		T t6 = 1.0/sqrt(t5);
-		if (tj[i] == 1) 
-			u[i] = pow(mu1*t6,mu2);
-		if (tj[i] == 2) 
-			u[i] = pow(mu3*t6,mu4);
-		i += blockDim.x * gridDim.x;
-	}
-}
-
-template <typename T> void gpuPairc2(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
-{
-	int blockDim = 256;
-	int gridDim = (ng + blockDim - 1) / blockDim;
-	gridDim = (gridDim>1024)? 1024 : gridDim;
-	kernelgpuPairc2<<<gridDim, blockDim>>>(u, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
-}
-
-template <typename T>  __global__  void kernelgpuPaircDensity2(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng)
-{
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
-	while (i<ng) {
-		T rho1 = rho[0 + i*1];
-		u[0 + i*1] = -sqrt(rho1);
-		i += blockDim.x * gridDim.x;
-	}
-}
-
-template <typename T> void gpuPaircDensity2(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng)
-{
-	int blockDim = 256;
-	int gridDim = (ng + blockDim - 1) / blockDim;
-	gridDim = (gridDim>1024)? 1024 : gridDim;
-	kernelgpuPaircDensity2<<<gridDim, blockDim>>>(u, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, ng);
-}
-
-
 template <typename T> void gpuPairc(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum)
 {
-	if (potnum == 1)
-		gpuPairc1(u, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
-	else if (potnum == 2)
-		gpuPairc2(u, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
 }
 template void gpuPairc(double *, double *, double *, double *, int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int);
 template void gpuPairc(float *, float *, float *, float *, int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int);
 
 template <typename T> void gpuPaircDensity(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum)
 {
-	if (potnum == 1)
-		gpuPaircDensity1(u, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, ng);
-	else if (potnum == 2)
-		gpuPaircDensity2(u, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, ng);
 }
 template void gpuPaircDensity(double *, double *, double *, double *, int*, int, int, int, int, int, int);
 template void gpuPaircDensity(float *, float *, float *, float *, int *, int, int, int, int, int, int);
+

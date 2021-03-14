@@ -14,12 +14,17 @@ if dim==2
     c2inum = zeros(nc1,nc2);
     for i=1:(inum+gnum)
         xt = P2S*xi(:,i);
-        for j1 = 1:nc1
+        if i<=inum
+            m = 1;
+        else
+            m = 0;
+        end        
+        for j1 = (1+m):nc1-m
             if (eta1(j1) <= xt(1)) && (xt(1)<= eta1(j1+1))
                 break;
             end
         end
-        for j2 = 1:nc2
+        for j2 = (1+m):nc2-m
             if (eta2(j2) <= xt(2)) && (xt(2)<= eta2(j2+1))
                 break;
             end
@@ -45,21 +50,60 @@ else
     c2inum = zeros(nc1,nc2,nc3);
     for i=1:(inum+gnum)
         xt = P2S*xi(:,i);
-        for j1 = 1:nc1
+        if i<=inum
+            m = 1;
+        else
+            m = 0;
+        end
+        for j1 = (1+m):nc1-m
             if (eta1(j1) <= xt(1)) && (xt(1)<= eta1(j1+1))
                 break;
             end
         end
-        for j2 = 1:nc2
+        for j2 = (1+m):nc2-m
             if (eta2(j2) <= xt(2)) && (xt(2)<= eta2(j2+1))
                 break;
             end
         end
-        for j3 = 1:nc3
+        for j3 = (1+m):nc3-m
             if (eta3(j3) <= xt(3)) && (xt(3)<= eta3(j3+1))
                 break;
             end
         end
+        
+%         if i<=inum
+%             for j1 = 2:nc1-1
+%                 if (eta1(j1) <= xt(1)) && (xt(1)<= eta1(j1+1))
+%                     break;
+%                 end
+%             end
+%             for j2 = 2:nc2-1
+%                 if (eta2(j2) <= xt(2)) && (xt(2)<= eta2(j2+1))
+%                     break;
+%                 end
+%             end
+%             for j3 = 2:nc3-1
+%                 if (eta3(j3) <= xt(3)) && (xt(3)<= eta3(j3+1))
+%                     break;
+%                 end
+%             end
+%         else
+%             for j1 = 1:nc1
+%                 if (eta1(j1) <= xt(1)) && (xt(1)<= eta1(j1+1))
+%                     break;
+%                 end
+%             end
+%             for j2 = 1:nc2
+%                 if (eta2(j2) <= xt(2)) && (xt(2)<= eta2(j2+1))
+%                     break;
+%                 end
+%             end
+%             for j3 = 1:nc3
+%                 if (eta3(j3) <= xt(3)) && (xt(3)<= eta3(j3+1))
+%                     break;
+%                 end
+%             end
+%         end                
         clist(1,i) = j1;
         clist(2,i) = j2;
         clist(3,i) = j3;

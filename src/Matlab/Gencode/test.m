@@ -14,7 +14,7 @@ app.ncmu4a = 4;
 app.ncmu4b = 4;
 app.ncmu4c = 4;
 app.natomtype = 2;
-app.potentialfile = "potential";
+app.potentialfile = "potential0";
 app.kappa = [app.nd app.natomtype];
 gencode(app);
 

@@ -325,75 +325,81 @@ template void cpuAtomList3D(int*, int*, int*, int*, double*, double*, double*, d
 template void cpuAtomList3D(int*, int*, int*, int*, float*, float*, float*, float*, int, int, int);
 
 template <typename T> void cpuCellList3D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
-        int *nc, int natom, int dim)
+        int *nc, int inum, int natom, int dim)
 {    
     for (int i=0; i<natom; i++) { // loop over each atom i
-        int j1, j2, j3;
+        int j1, j2, j3, m;
         int k = dim*i;
+        m = (i < inum) ? 1 : 0;
         // position of atom i in the unit square/cube
         T xt0 = s2rmap[0]*x[k+0] + s2rmap[3]*x[k+1] + s2rmap[6]*x[k+2];        
         T xt1 = s2rmap[1]*x[k+0] + s2rmap[4]*x[k+1] + s2rmap[7]*x[k+2];                                    
         T xt2 = s2rmap[2]*x[k+0] + s2rmap[5]*x[k+1] + s2rmap[8]*x[k+2];                
         // identify a cell containing atom i 
-        for (j1=0; j1<nc[0]; j1++)
+        for (j1=m; j1<nc[0]-m; j1++)
             if ((eta1[j1] <= xt0) && (xt0<= eta1[j1+1]))
                 break;
-        for (j2=0; j2<nc[1]; j2++) 
+        for (j2=m; j2<nc[1]-m; j2++) 
             if ((eta2[j2] <= xt1) && (xt1<= eta2[j2+1]))
                 break;
-        for (j3=0; j3<nc[2]; j3++) 
+        for (j3=m; j3<nc[2]-m; j3++) 
             if ((eta3[j3] <= xt2) && (xt2<= eta3[j3+1]))
                 break;
         clist[i] = j1 + nc[0]*j2 + nc[0]*nc[1]*j3; // link that cell to atom i                
     }                        
 }
-template void cpuCellList3D(int*, double*, double*, double*, double*, double*, int*, int, int);
-template void cpuCellList3D(int*, float*, float*, float*, float*, float*, int*, int, int);
+template void cpuCellList3D(int*, double*, double*, double*, double*, double*, int*, int, int, int);
+template void cpuCellList3D(int*, float*, float*, float*, float*, float*, int*, int, int, int);
 
-template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
+template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim)
 {            
-    T onet = (T) 1.0;
-    T A00 = ellipsoid[0]; // ellipsoid for element t   
-    T A10 = ellipsoid[1]; // ellipsoid for element t   
-    T A20 = ellipsoid[2]; // ellipsoid for element t   
-    T A01 = ellipsoid[3]; // ellipsoid for element t   
-    T A11 = ellipsoid[4]; // ellipsoid for element t   
-    T A21 = ellipsoid[5]; // ellipsoid for element t   
-    T A02 = ellipsoid[6]; // ellipsoid for element t   
-    T A12 = ellipsoid[7]; // ellipsoid for element t   
-    T A22 = ellipsoid[8]; // ellipsoid for element t                                                                                               
     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
-        int i = alist[ii];
-        neighbornum[i] = 0;
+        int i = alist[ii];        
         T xi0 = x[i*dim];        // position of atom i
-        T xi1 = x[i*dim+1];      // position of atom i            
+        T xi1 = x[i*dim+1];      // position of atom i        
         T xi2 = x[i*dim+2];      // position of atom i
-        int j = clist[i];         // cell j contains atom i           
-        int j1 = j%nc[0];
-        int j2 = (j-j1)/nc[0];
+        int ja = clist[i];         // cell j contains atom i           
+        int jb = ja%(nc[0]*nc[1]);
+        int j3 = (ja-jb)/(nc[0]*nc[1]);
+        int j1 = jb%nc[0];
+        int j2 = (jb-j1)/nc[0];
+        
         int inc = 0;                // increment
         for (int i1=-1; i1<=1; i1++) {
             int k1 = j1 + i1;
             for (int i2=-1; i2<=1; i2++) {
                 int k2 = j2 + i2;
-                int k = k1 + nc[0]*k2; // cell k
-                //int m = c2anum[k];     // number of atoms in cell k
-                int s = c2anumsum[k];    // starting position of the first atom in cell k
-                int m = c2anumsum[k+1]-s;  // number of atoms in cell k
-                for (int l=0; l<m ; l++) {
-                    j = c2alist[s+l];  // atom j
-                    T xij0 = x[j*dim] - xi0;  // xj - xi
-                    T xij1 = x[j*dim+1] - xi1; // xj - xi
-                    T xij2 = x[j*dim+2] - xi2; // xj - xi
-                    // distance between atom i and atom j 
-                    T rij = xij0*(A00*xij0 + A01*xij1 + A02*xij2) + xij1*(A10*xij0 + A11*xij1 + A12*xij2) + xij2*(A20*xij0 + A21*xij1 + A22*xij2);                
-                    if (rij <= onet) {                                                
-                        neighborlist[inc + jnum*i] = j; // add atom j into the list
-                        inc += 1;
+                for (int i3=-1; i3<=1; i3++) {
+                    int k3 = j3 + i3;                
+                    int k = k1 + nc[0]*k2 + nc[0]*nc[1]*k3; // cell k
+                    //int m = c2anum[k];     // number of atoms in cell k
+                    int s = c2anumsum[k];    // starting position of the first atom in cell k
+                    int m = c2anumsum[k+1]-s;  // number of atoms in cell k
+                    for (int l=0; l<m ; l++) {
+                        int j = c2alist[s+l];  // atom j
+                        if (j != i) {
+                            T xij0 = x[j*dim] - xi0;  // xj - xi
+                            T xij1 = x[j*dim+1] - xi1; // xj - xi
+                            T xij2 = x[j*dim+2] - xi2; // xj - xi
+                            // distance between atom i and atom j 
+                            T rijsq = xij0*xij0 + xij1*xij1 + xij2*xij2;          
+                            if (rijsq <= rcutsq[0]) {                                                
+                                neighborlist[inc + jnum*i] = j; // add atom j into the list
+                                inc += 1;
+                            }
+                        }
+                        if (inc==jnum)
+                            break;                    
                     }
+                    if (inc==jnum)
+                        break;                    
                 }
+                if (inc==jnum)
+                    break;                    
             }
+            if (inc==jnum)
+                break;                                
         }    
         neighbornum[ii] = inc;
     }        
@@ -401,145 +407,225 @@ template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbo
 template void cpuFullNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int, int, int);
 template void cpuFullNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int, int, int);
 
-template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
-        int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim)
-{            
-    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
-        int i = alist[ii];
-        int ti = atomtype[i];
-        neighbornum[i] = 0;
-        T xi0 = x[i*dim];        // position of atom i
-        T xi1 = x[i*dim+1];      // position of atom i        
-        T xi2 = x[i*dim+2];      // position of atom i
-        int j = clist[i];         // cell j contains atom i           
-        int j1 = j%nc[0];
-        int j2 = (j-j1)/nc[0];
-        int inc = 0;                // increment
-        for (int i1=-1; i1<=1; i1++) {
-            int k1 = j1 + i1;
-            for (int i2=-1; i2<=1; i2++) {
-                int k2 = j2 + i2;
-                int k = k1 + nc[0]*k2; // cell k
-                //int m = c2anum[k];     // number of atoms in cell k
-                int s = c2anumsum[k];    // starting position of the first atom in cell k
-                int m = c2anumsum[k+1]-s;  // number of atoms in cell k
-                for (int l=0; l<m ; l++) {
-                    j = c2alist[s+l];  // atom j
-                    int tj = atomtype[alist[j]];
-                    T xij0 = x[j*dim] - xi0;  // xj - xi
-                    T xij1 = x[j*dim+1] - xi1; // xj - xi
-                    T xij2 = x[j*dim+2] - xi2; // xj - xi
-                    // distance between atom i and atom j 
-                    T rijsq = xij0*xij0 + xij1*xij1 + xij2*xij2;          
-                    if (rijsq <= rcutsq[ti + tj*ntype]) {                                                
-                        neighborlist[inc + jnum*i] = j; // add atom j into the list
-                        inc += 1;
-                    }
-                }
-            }
-        }    
-        neighbornum[ii] = inc;
-    }        
-}
-template void cpuFullNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int*, int, int, int, int);
-template void cpuFullNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int*, int, int, int, int);
-
-template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
-        int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim)
-{            
-    T onet = (T) 1.0;
-    T A00 = ellipsoid[0]; // ellipsoid for element t   
-    T A10 = ellipsoid[1]; // ellipsoid for element t   
-    T A20 = ellipsoid[2]; // ellipsoid for element t   
-    T A01 = ellipsoid[3]; // ellipsoid for element t   
-    T A11 = ellipsoid[4]; // ellipsoid for element t   
-    T A21 = ellipsoid[5]; // ellipsoid for element t   
-    T A02 = ellipsoid[6]; // ellipsoid for element t   
-    T A12 = ellipsoid[7]; // ellipsoid for element t   
-    T A22 = ellipsoid[8]; // ellipsoid for element t                                                                                                       
-    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
-        int i = alist[ii];
-        neighbornum[i] = 0;
+template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, 
+        int anum, int inum, int jnum, int dim)
+{                
+    for (int i=0; i<inum; i++) {  // for each atom i in the simulation box    
         T xi0 = x[i*dim];        // position of atom i
         T xi1 = x[i*dim+1];      // position of atom i     
         T xi2 = x[i*dim+2];      // position of atom i
-        int j = clist[i];         // cell j contains atom i           
-        int j1 = j%nc[0];
-        int j2 = (j-j1)/nc[0];
         int inc = 0;                // increment
-        for (int i1=-1; i1<=1; i1++) {
-            int k1 = j1 + i1;
-            for (int i2=-1; i2<=1; i2++) {
-                int k2 = j2 + i2;
-                int k = k1 + nc[0]*k2; // cell k
-                //int m = c2anum[k];     // number of atoms in cell k
-                int s = c2anumsum[k];    // starting position of the first atom in cell k
-                int m = c2anumsum[k+1]-s;  // number of atoms in cell k
-                for (int l=0; l<m ; l++) {
-                    j = c2alist[s+l];  // atom j
-                    if (i < alist[j]) { // atom i is connected to atom j only when i < j  
-                        T xij0 = x[j*dim] - xi0;  // xj - xi
-                        T xij1 = x[j*dim+1] - xi1; // xj - xi
-                        T xij2 = x[j*dim+2] - xi2; // xj - xi
-                        // distance between atom i and atom j 
-                        T rij = xij0*(A00*xij0 + A01*xij1 + A02*xij2) + xij1*(A10*xij0 + A11*xij1 + A12*xij2) + xij2*(A20*xij0 + A21*xij1 + A22*xij2);
-                        if (rij <= onet) {                                                
-                            neighborlist[inc + jnum*i] = j; // add atom j into the list
-                            inc += 1;
-                        }
-                    }
-                }
+        for (int j=0; j<anum; j++) { // loop over atom j (including both local and ghost atoms)            
+            if (j != i) {
+                T xij0 = x[j*dim] - xi0;  // xj - xi
+                T xij1 = x[j*dim+1] - xi1; // xj - xi               
+                T xij2 = x[j*dim+2] - xi2; // xj - xi
+                T rijsq = xij0*xij0 + xij1*xij1 + xij2*xij2;  // distance between atom i and atom j                        
+                if (rijsq <= rcutsq[0]) {       
+                    neighborlist[inc + jnum*i] = j; // add atom j into the list
+                    inc += 1;
+                }            
             }
-        }    
-        neighbornum[ii] = inc;
+            if (inc==jnum)
+                break;                        
+        }
+        neighbornum[i] = inc;        
     }        
 }
-template void cpuHalfNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int, int, int);
-template void cpuHalfNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int, int, int);
+template void cpuFullNeighborList3D(int*, int*, double*, double*, int, int, int, int);
+template void cpuFullNeighborList3D(int*, int*, float*, float*, int, int, int, int);
 
-template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
-        int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim)        
-{            
-    for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
-        int i = alist[ii];
-        int ti = atomtype[i];
-        neighbornum[i] = 0;
-        T xi0 = x[i*dim];        // position of atom i
-        T xi1 = x[i*dim+1];      // position of atom i    
-        T xi2 = x[i*dim+2];      // position of atom i
-        int j = clist[i];         // cell j contains atom i           
-        int j1 = j%nc[0];
-        int j2 = (j-j1)/nc[0];
-        int inc = 0;                // increment
-        for (int i1=-1; i1<=1; i1++) {
-            int k1 = j1 + i1;
-            for (int i2=-1; i2<=1; i2++) {
-                int k2 = j2 + i2;
-                int k = k1 + nc[0]*k2; // cell k
-                //int m = c2anum[k];     // number of atoms in cell k
-                int s = c2anumsum[k];    // starting position of the first atom in cell k
-                int m = c2anumsum[k+1]-s;  // number of atoms in cell k
-                for (int l=0; l<m ; l++) {
-                    j = c2alist[s+l];  // atom j                    
-                    if (i < alist[j]) { // atom i is connected to atom j only when i < j  
-                        T xij0 = x[j*dim] - xi0;  // xj - xi
-                        T xij1 = x[j*dim+1] - xi1; // xj - xi
-                        T xij2 = x[j*dim+2] - xi2; // xj - xi
-                        // distance between atom i and atom j 
-                        T rijsq = xij0*xij0 + xij1*xij1 + xij2*xij2;                 
-                        if (rijsq <= rcutsq[ti + atomtype[alist[j]]*ntype]) {                                     
-                            neighborlist[inc + jnum*i] = j; // add atom j into the list
-                            inc += 1;
-                        }
-                    }
-                }
-            }
-        }    
-        neighbornum[ii] = inc;
-    }        
-}
-template void cpuHalfNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int*, int, int, int, int);
-template void cpuHalfNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int*, int, int, int, int);
+
+// template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
+//         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim)
+// {            
+//     T onet = (T) 1.0;
+//     T A00 = ellipsoid[0]; // ellipsoid for element t   
+//     T A10 = ellipsoid[1]; // ellipsoid for element t   
+//     T A20 = ellipsoid[2]; // ellipsoid for element t   
+//     T A01 = ellipsoid[3]; // ellipsoid for element t   
+//     T A11 = ellipsoid[4]; // ellipsoid for element t   
+//     T A21 = ellipsoid[5]; // ellipsoid for element t   
+//     T A02 = ellipsoid[6]; // ellipsoid for element t   
+//     T A12 = ellipsoid[7]; // ellipsoid for element t   
+//     T A22 = ellipsoid[8]; // ellipsoid for element t                                                                                               
+//     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
+//         int i = alist[ii];
+//         neighbornum[i] = 0;
+//         T xi0 = x[i*dim];        // position of atom i
+//         T xi1 = x[i*dim+1];      // position of atom i            
+//         T xi2 = x[i*dim+2];      // position of atom i
+//         int j = clist[i];         // cell j contains atom i           
+//         int j1 = j%nc[0];
+//         int j2 = (j-j1)/nc[0];
+//         int inc = 0;                // increment
+//         for (int i1=-1; i1<=1; i1++) {
+//             int k1 = j1 + i1;
+//             for (int i2=-1; i2<=1; i2++) {
+//                 int k2 = j2 + i2;
+//                 int k = k1 + nc[0]*k2; // cell k
+//                 //int m = c2anum[k];     // number of atoms in cell k
+//                 int s = c2anumsum[k];    // starting position of the first atom in cell k
+//                 int m = c2anumsum[k+1]-s;  // number of atoms in cell k
+//                 for (int l=0; l<m ; l++) {
+//                     j = c2alist[s+l];  // atom j
+//                     T xij0 = x[j*dim] - xi0;  // xj - xi
+//                     T xij1 = x[j*dim+1] - xi1; // xj - xi
+//                     T xij2 = x[j*dim+2] - xi2; // xj - xi
+//                     // distance between atom i and atom j 
+//                     T rij = xij0*(A00*xij0 + A01*xij1 + A02*xij2) + xij1*(A10*xij0 + A11*xij1 + A12*xij2) + xij2*(A20*xij0 + A21*xij1 + A22*xij2);                
+//                     if (rij <= onet) {                                                
+//                         neighborlist[inc + jnum*i] = j; // add atom j into the list
+//                         inc += 1;
+//                     }
+//                 }
+//             }
+//         }    
+//         neighbornum[ii] = inc;
+//     }        
+// }
+// template void cpuFullNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int, int, int);
+// template void cpuFullNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int, int, int);
+// 
+// template <typename T> void cpuFullNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
+//         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim)
+// {            
+//     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
+//         int i = alist[ii];
+//         int ti = atomtype[i];
+//         neighbornum[i] = 0;
+//         T xi0 = x[i*dim];        // position of atom i
+//         T xi1 = x[i*dim+1];      // position of atom i        
+//         T xi2 = x[i*dim+2];      // position of atom i
+//         int j = clist[i];         // cell j contains atom i           
+//         int j1 = j%nc[0];
+//         int j2 = (j-j1)/nc[0];
+//         int inc = 0;                // increment
+//         for (int i1=-1; i1<=1; i1++) {
+//             int k1 = j1 + i1;
+//             for (int i2=-1; i2<=1; i2++) {
+//                 int k2 = j2 + i2;
+//                 int k = k1 + nc[0]*k2; // cell k
+//                 //int m = c2anum[k];     // number of atoms in cell k
+//                 int s = c2anumsum[k];    // starting position of the first atom in cell k
+//                 int m = c2anumsum[k+1]-s;  // number of atoms in cell k
+//                 for (int l=0; l<m ; l++) {
+//                     j = c2alist[s+l];  // atom j
+//                     int tj = atomtype[alist[j]];
+//                     T xij0 = x[j*dim] - xi0;  // xj - xi
+//                     T xij1 = x[j*dim+1] - xi1; // xj - xi
+//                     T xij2 = x[j*dim+2] - xi2; // xj - xi
+//                     // distance between atom i and atom j 
+//                     T rijsq = xij0*xij0 + xij1*xij1 + xij2*xij2;          
+//                     if (rijsq <= rcutsq[ti + tj*ntype]) {                                                
+//                         neighborlist[inc + jnum*i] = j; // add atom j into the list
+//                         inc += 1;
+//                     }
+//                 }
+//             }
+//         }    
+//         neighbornum[ii] = inc;
+//     }        
+// }
+// template void cpuFullNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int*, int, int, int, int);
+// template void cpuFullNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int*, int, int, int, int);
+// 
+// template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *ellipsoid, int *alist, 
+//         int *clist, int *c2alist, int *c2anumsum, int *nc, int inum, int jnum, int dim)
+// {            
+//     T onet = (T) 1.0;
+//     T A00 = ellipsoid[0]; // ellipsoid for element t   
+//     T A10 = ellipsoid[1]; // ellipsoid for element t   
+//     T A20 = ellipsoid[2]; // ellipsoid for element t   
+//     T A01 = ellipsoid[3]; // ellipsoid for element t   
+//     T A11 = ellipsoid[4]; // ellipsoid for element t   
+//     T A21 = ellipsoid[5]; // ellipsoid for element t   
+//     T A02 = ellipsoid[6]; // ellipsoid for element t   
+//     T A12 = ellipsoid[7]; // ellipsoid for element t   
+//     T A22 = ellipsoid[8]; // ellipsoid for element t                                                                                                       
+//     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
+//         int i = alist[ii];
+//         neighbornum[i] = 0;
+//         T xi0 = x[i*dim];        // position of atom i
+//         T xi1 = x[i*dim+1];      // position of atom i     
+//         T xi2 = x[i*dim+2];      // position of atom i
+//         int j = clist[i];         // cell j contains atom i           
+//         int j1 = j%nc[0];
+//         int j2 = (j-j1)/nc[0];
+//         int inc = 0;                // increment
+//         for (int i1=-1; i1<=1; i1++) {
+//             int k1 = j1 + i1;
+//             for (int i2=-1; i2<=1; i2++) {
+//                 int k2 = j2 + i2;
+//                 int k = k1 + nc[0]*k2; // cell k
+//                 //int m = c2anum[k];     // number of atoms in cell k
+//                 int s = c2anumsum[k];    // starting position of the first atom in cell k
+//                 int m = c2anumsum[k+1]-s;  // number of atoms in cell k
+//                 for (int l=0; l<m ; l++) {
+//                     j = c2alist[s+l];  // atom j
+//                     if (i < alist[j]) { // atom i is connected to atom j only when i < j  
+//                         T xij0 = x[j*dim] - xi0;  // xj - xi
+//                         T xij1 = x[j*dim+1] - xi1; // xj - xi
+//                         T xij2 = x[j*dim+2] - xi2; // xj - xi
+//                         // distance between atom i and atom j 
+//                         T rij = xij0*(A00*xij0 + A01*xij1 + A02*xij2) + xij1*(A10*xij0 + A11*xij1 + A12*xij2) + xij2*(A20*xij0 + A21*xij1 + A22*xij2);
+//                         if (rij <= onet) {                                                
+//                             neighborlist[inc + jnum*i] = j; // add atom j into the list
+//                             inc += 1;
+//                         }
+//                     }
+//                 }
+//             }
+//         }    
+//         neighbornum[ii] = inc;
+//     }        
+// }
+// template void cpuHalfNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int, int, int);
+// template void cpuHalfNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int, int, int);
+// 
+// template <typename T> void cpuHalfNeighborList3D(int *neighborlist, int *neighbornum, T *x, T *rcutsq, int *alist, 
+//         int *clist, int *c2alist, int *c2anumsum, int *atomtype, int *nc, int ntype, int inum, int jnum, int dim)        
+// {            
+//     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box    
+//         int i = alist[ii];
+//         int ti = atomtype[i];
+//         neighbornum[i] = 0;
+//         T xi0 = x[i*dim];        // position of atom i
+//         T xi1 = x[i*dim+1];      // position of atom i    
+//         T xi2 = x[i*dim+2];      // position of atom i
+//         int j = clist[i];         // cell j contains atom i           
+//         int j1 = j%nc[0];
+//         int j2 = (j-j1)/nc[0];
+//         int inc = 0;                // increment
+//         for (int i1=-1; i1<=1; i1++) {
+//             int k1 = j1 + i1;
+//             for (int i2=-1; i2<=1; i2++) {
+//                 int k2 = j2 + i2;
+//                 int k = k1 + nc[0]*k2; // cell k
+//                 //int m = c2anum[k];     // number of atoms in cell k
+//                 int s = c2anumsum[k];    // starting position of the first atom in cell k
+//                 int m = c2anumsum[k+1]-s;  // number of atoms in cell k
+//                 for (int l=0; l<m ; l++) {
+//                     j = c2alist[s+l];  // atom j                    
+//                     if (i < alist[j]) { // atom i is connected to atom j only when i < j  
+//                         T xij0 = x[j*dim] - xi0;  // xj - xi
+//                         T xij1 = x[j*dim+1] - xi1; // xj - xi
+//                         T xij2 = x[j*dim+2] - xi2; // xj - xi
+//                         // distance between atom i and atom j 
+//                         T rijsq = xij0*xij0 + xij1*xij1 + xij2*xij2;                 
+//                         if (rijsq <= rcutsq[ti + atomtype[alist[j]]*ntype]) {                                     
+//                             neighborlist[inc + jnum*i] = j; // add atom j into the list
+//                             inc += 1;
+//                         }
+//                     }
+//                 }
+//             }
+//         }    
+//         neighbornum[ii] = inc;
+//     }        
+// }
+// template void cpuHalfNeighborList3D(int*, int*, double*, double*, int*, int*, int*, int*, int*, int*, int, int, int, int);
+// template void cpuHalfNeighborList3D(int*, int*, float*, float*, int*, int*, int*, int*, int*, int*, int, int, int, int);
 
 
 #endif

@@ -18,7 +18,7 @@ for i = 1:inum    % loop over each i atom
                 % distance between atom i and atom j
                 rij = (xt(1)-xi(1,j)).^2 + (xt(2)-xi(2,j)).^2;
                 if rij<=rsq
-                    jlist{i} = [jlist{i} ilist(j)];
+                    jlist{i} = [jlist{i} j];
                 end
             end
         end

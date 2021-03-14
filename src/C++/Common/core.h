@@ -131,6 +131,16 @@ inline void ArrayCopy(dstype *y, dstype *x, Int n, Int backend)
 #endif                  
 }
 
+inline void ArrayCopy(Int *y, Int *x, Int n, Int backend)
+{
+    if (backend == 1)  
+        cpuArrayCopy(y, x, n);   
+#ifdef HAVE_CUDA            
+    if (backend == 2)  
+        gpuArrayCopy(y, x, n);
+#endif                  
+}
+
 inline void ArrayMinus(dstype *y, dstype *x, Int n, Int backend)
 {
     if (backend == 1)  

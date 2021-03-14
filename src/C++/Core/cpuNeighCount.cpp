@@ -38,7 +38,7 @@ template <typename T> void cpuNeighSingles(T *xi, T *qi, T *x, T *q, int *ai,
 template void cpuNeighSingles(double*, double*, double*, double*, int*, int*, int*, int*,  int, int, int);
 template void cpuNeighSingles(float*, float*, float*, float*, int*, int*, int*, int*, int, int, int);
 
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim)
 {    
     for (int ii=0; ii<inum; ii++) {
@@ -46,24 +46,25 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
         int m = neighnum[i];     // number of neighbors around i                       
         int count = 0;              
         for (int l=0; l<m ; l++) {   // loop over each atom around atom i {
-            int g = neighlist[l + jnum*i];
-            T dij = 0.0;
-            for (int d=0; d<dim; d++) {
-                T xij = (x[g*dim+d] - x[i*dim+d]);  // xj - xi                        
-                dij += dij + xij*xij;
-            }
-            if (dij<=rcutsq) {
-                pairlist[l + jnum*ii] = g;  // atom j     
+            int g = neighlist[l + jnum*i];            
+            // distance between atom i and atom j                                    
+            T xij0 = x[g*dim] - x[i*dim];  // xj - xi
+            T xij1 = x[g*dim+1] - x[i*dim+1]; // xj - xi               
+            T dij = xij0*xij0 + xij1*xij1;
+            if (dim==3)                 
+                dij += (x[g*dim+2] - x[i*dim+2])*(x[g*dim+2] - x[i*dim+2]);              
+            if (dij <= rcutsq[0]) {
+                pairlist[count + jnum*ii] = g;  // atom j     
                 count += 1;
             }
-        }
-        pairnum[ii] = count;
+        }        
+        pairnum[ii] = count;       
     }    
 }
-template void cpuFullNeighPairList(int *, int *, double*, double, int*, int*, int*, int, int, int);
-template void cpuFullNeighPairList(int *, int *, float*, float, int*, int*, int*, int, int, int);
+template void cpuFullNeighPairList(int *, int *, double*, double*, int*, int*, int*, int, int, int);
+template void cpuFullNeighPairList(int *, int *, float*, float*, int*, int*, int*, int, int, int);
 
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq,  int *atomtype, int *ilist, int *alist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq,  int *atomtype, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int typej, int dim)
 {        
     for (int ii=0; ii<inum; ii++) {
@@ -74,12 +75,13 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
             int g = neighlist[l + jnum*i];  // atom j           
             int j = alist[g];  // atom j
             if (atomtype[j] == typej) {
-                T dij = 0.0;
-                for (int d=0; d<dim; d++) {
-                    T xij = (x[g*dim+d] - x[i*dim+d]);  // xj - xi                        
-                    dij += dij + xij*xij;
-                }
-                if (dij<=rcutsq) {
+                // distance between atom i and atom j                                    
+                T xij0 = x[g*dim] - x[i*dim];  // xj - xi
+                T xij1 = x[g*dim+1] - x[i*dim+1]; // xj - xi               
+                T dij = xij0*xij0 + xij1*xij1;
+                if (dim==3)                 
+                    dij += (x[g*dim+2] - x[i*dim+2])*(x[g*dim+2] - x[i*dim+2]);              
+                if (dij<=rcutsq[0]) {
                     pairlist[count + jnum*ii] = g;
                     count += 1;
                 }
@@ -88,10 +90,10 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
         pairnum[ii] = count;
     }                        
 }
-template void cpuFullNeighPairList(int *, int *, double*, double, int*, int*, int*, int*, int*, int, int, int, int);
-template void cpuFullNeighPairList(int *, int *, float*, float, int*, int*, int*, int*, int*, int, int, int, int);
+template void cpuFullNeighPairList(int *, int *, double*, double*, int*, int*, int*, int*, int*, int, int, int, int);
+template void cpuFullNeighPairList(int *, int *, float*, float*, int*, int*, int*, int*, int*, int, int, int, int);
 
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq,  int *atomtype, int *ilist, int *alist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq,  int *atomtype, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int typej, int typek, int dim)
 {        
     for (int ii=0; ii<inum; ii++) {
@@ -102,12 +104,13 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
             int g = neighlist[l + jnum*i];  // atom j           
             int j = alist[g];  // atom j
             if ((atomtype[j] == typej) || (atomtype[j] == typek)) {
-                T dij = 0.0;
-                for (int d=0; d<dim; d++) {
-                    T xij = (x[g*dim+d] - x[i*dim+d]);  // xj - xi                        
-                    dij += dij + xij*xij;
-                }
-                if (dij<=rcutsq) {
+                // distance between atom i and atom j                                    
+                T xij0 = x[g*dim] - x[i*dim];  // xj - xi
+                T xij1 = x[g*dim+1] - x[i*dim+1]; // xj - xi               
+                T dij = xij0*xij0 + xij1*xij1;
+                if (dim==3)                 
+                    dij += (x[g*dim+2] - x[i*dim+2])*(x[g*dim+2] - x[i*dim+2]);              
+                if (dij<=rcutsq[0]) {
                     pairlist[count + jnum*ii] = g;
                     count += 1;
                 }
@@ -116,10 +119,10 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
         pairnum[ii] = count;
     }                        
 }
-template void cpuFullNeighPairList(int *, int *, double*, double, int*, int*, int*, int*, int*, int, int, int, int, int);
-template void cpuFullNeighPairList(int *, int *, float*, float, int*, int*, int*, int*, int*, int, int, int, int, int);
+template void cpuFullNeighPairList(int *, int *, double*, double*, int*, int*, int*, int*, int*, int, int, int, int, int);
+template void cpuFullNeighPairList(int *, int *, float*, float*, int*, int*, int*, int*, int*, int, int, int, int, int);
 
-template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq,  int *atomtype, int *ilist, int *alist, 
+template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq,  int *atomtype, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int typej, int typek, int typel, int dim)
 {        
     for (int ii=0; ii<inum; ii++) {
@@ -130,12 +133,13 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
             int g = neighlist[l + jnum*i];  // atom j           
             int j = alist[g];  // atom j
             if ((atomtype[j] == typej) || (atomtype[j] == typek) || (atomtype[j] == typel)) {
-                T dij = 0.0;
-                for (int d=0; d<dim; d++) {
-                    T xij = (x[g*dim+d] - x[i*dim+d]);  // xj - xi                        
-                    dij += dij + xij*xij;
-                }
-                if (dij<=rcutsq) {
+                // distance between atom i and atom j                                    
+                T xij0 = x[g*dim] - x[i*dim];  // xj - xi
+                T xij1 = x[g*dim+1] - x[i*dim+1]; // xj - xi               
+                T dij = xij0*xij0 + xij1*xij1;
+                if (dim==3)                 
+                    dij += (x[g*dim+2] - x[i*dim+2])*(x[g*dim+2] - x[i*dim+2]);              
+                if (dij<=rcutsq[0]) {
                     pairlist[count + jnum*ii] = g;
                     count += 1;
                 }
@@ -144,11 +148,10 @@ template <typename T> void cpuFullNeighPairList(int *pairnum, int *pairlist, T *
         pairnum[ii] = count;
     }                        
 }
-template void cpuFullNeighPairList(int *, int *, double*, double, int*, int*, int*, int*, int*, int, int, int, int, int, int);
-template void cpuFullNeighPairList(int *, int *, float*, float, int*, int*, int*, int*, int*, int, int, int, int, int, int);
+template void cpuFullNeighPairList(int *, int *, double*, double*, int*, int*, int*, int*, int*, int, int, int, int, int, int);
+template void cpuFullNeighPairList(int *, int *, float*, float*, int*, int*, int*, int*, int*, int, int, int, int, int, int);
 
-
-template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *alist, 
+template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *alist, 
         int *neighlist, int *neighnum, int inum, int jnum, int dim)
 {        
     for (int ii=0; ii<inum; ii++) {
@@ -159,12 +162,13 @@ template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *
             int g = neighlist[l + jnum*i];  // atom j           
             int j = alist[g];  // atom j
             if (i < j) {
-                T dij = 0.0;
-                for (int d=0; d<dim; d++) {
-                    T xij = (x[g*dim+d] - x[i*dim+d]);  // xj - xi                        
-                    dij += dij + xij*xij;
-                }
-                if (dij<=rcutsq) {
+                // distance between atom i and atom j                                    
+                T xij0 = x[g*dim] - x[i*dim];  // xj - xi
+                T xij1 = x[g*dim+1] - x[i*dim+1]; // xj - xi               
+                T dij = xij0*xij0 + xij1*xij1;
+                if (dim==3)                 
+                    dij += (x[g*dim+2] - x[i*dim+2])*(x[g*dim+2] - x[i*dim+2]);              
+                if (dij<=rcutsq[0]) {
                     pairlist[count + jnum*ii] = g;
                     count += 1;                
                 }
@@ -173,10 +177,10 @@ template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *
         pairnum[ii] = count;
     }                        
 }
-template void cpuHalfNeighPairList(int *, int *, double*, double, int*, int*, int*, int*, int, int, int);
-template void cpuHalfNeighPairList(int *, int *, float*, float, int*, int*, int*, int*, int, int, int);
+template void cpuHalfNeighPairList(int *, int *, double*, double*, int*, int*, int*, int*, int, int, int);
+template void cpuHalfNeighPairList(int *, int *, float*, float*, int*, int*, int*, int*, int, int, int);
 
-template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *atomtype, int *ilist, 
+template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *atomtype, int *ilist, 
         int *alist, int *neighlist, int *neighnum, int inum, int jnum, int typej, int dim)
 {        
     for (int ii=0; ii<inum; ii++) {
@@ -187,12 +191,13 @@ template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *
             int g = neighlist[l + jnum*i];  // atom j           
             int j = alist[g];  // atom j
             if ((atomtype[j] == typej) && (i < j)) {
-                T dij = 0.0;
-                for (int d=0; d<dim; d++) {
-                    T xij = (x[g*dim+d] - x[i*dim+d]);  // xj - xi                        
-                    dij += dij + xij*xij;
-                }
-                if (dij<=rcutsq) {
+                // distance between atom i and atom j                                    
+                T xij0 = x[g*dim] - x[i*dim];  // xj - xi
+                T xij1 = x[g*dim+1] - x[i*dim+1]; // xj - xi               
+                T dij = xij0*xij0 + xij1*xij1;
+                if (dim==3)                 
+                    dij += (x[g*dim+2] - x[i*dim+2])*(x[g*dim+2] - x[i*dim+2]);              
+                if (dij<=rcutsq[0]) {
                     pairlist[count + jnum*ii] = g;
                     count += 1;
                 }
@@ -201,8 +206,8 @@ template <typename T> void cpuHalfNeighPairList(int *pairnum, int *pairlist, T *
         pairnum[ii] = count;
     }                        
 }
-template void cpuHalfNeighPairList(int *, int *, double*, double, int*, int*, int*, int*, int*, int, int, int, int);
-template void cpuHalfNeighPairList(int *, int *, float*, float, int*, int*, int*, int*, int*, int, int, int, int);
+template void cpuHalfNeighPairList(int *, int *, double*, double*, int*, int*, int*, int*, int*, int, int, int, int);
+template void cpuHalfNeighPairList(int *, int *, float*, float*, int*, int*, int*, int*, int*, int, int, int, int);
 
 template <typename T> void cpuNeighPairs(T *xij, T *qi, T *qj, T *x, T *q, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, int *alist,  
@@ -403,7 +408,7 @@ template void cpuNeighTriplets(double*, double*, double*, double*, double*, doub
 template void cpuNeighTriplets(float*, float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, 
         int*, int*, int*, int*, int*, int*, int*, int*, int, int, int);
 
-template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist, T *x, T rcutsq, int *pairnum, int *pairnumsum, 
+template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist, T *x, T *rcutsq, int *pairnum, int *pairnumsum, 
         int *pairlist, int *atomtype, int *ilist, int *alist, int *neighlist, int *neighnum, int inum, 
         int jnum, int typek, int dim)
 {        
@@ -420,15 +425,25 @@ template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist
                 int gk = neighlist[lk + jnum*i];  // atom k
                 int k = alist[gk];  // atom k                    
                 if ((atomtype[k] == typek) && (j != k)) {        
-                    T dik = 0.0;
-                    T djk = 0.0;
-                    for (int d=0; d<dim; d++) {
-                        T xik = (x[gk*dim+d] - x[i*dim+d]);  // xk - xi                        
-                        dik += dik + xik*xik;
-                        xik = (x[gk*dim+d] - x[gj*dim+d]);  // xk - xj                        
-                        djk += djk + xik*xik;
+//                     T dik = 0.0;
+//                     T djk = 0.0;
+//                     for (int d=0; d<dim; d++) {
+//                         T xik = (x[gk*dim+d] - x[i*dim+d]);  // xk - xi                        
+//                         dik += dik + xik*xik;
+//                         xik = (x[gk*dim+d] - x[gj*dim+d]);  // xk - xj                        
+//                         djk += djk + xik*xik;
+//                     }                                                        
+                    T xij0 = x[gk*dim] - x[i*dim];  // xk - xi
+                    T xij1 = x[gk*dim+1] - x[i*dim+1]; // xk - xi               
+                    T dik = xij0*xij0 + xij1*xij1;
+                    xij0 = x[gk*dim] - x[gj*dim];  // xk - xj
+                    xij1 = x[gk*dim+1] - x[gj*dim+1]; // xk - xj               
+                    T djk = xij0*xij0 + xij1*xij1;
+                    if (dim==3) {                 
+                        dik += (x[gk*dim+2] - x[i*dim+2])*(x[gk*dim+2] - x[i*dim+2]);              
+                        djk += (x[gk*dim+2] - x[gj*dim+2])*(x[gk*dim+2] - x[gj*dim+2]);              
                     }
-                    if ((dik <= rcutsq) || (djk <= rcutsq))  {
+                    if ((dik <= rcutsq[0]) || (djk <= rcutsq[0]))  {
                         int nn = 3*(count + (lj + s)*jnum); // count < jnum
                         tripletlist[0 + nn] = i;
                         tripletlist[1 + nn] = gj;
@@ -441,8 +456,8 @@ template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist
         }                                         
     }
 }
-template void cpuNeighTripletList(int *, int *, double*, double, int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int);
-template void cpuNeighTripletList(int *, int *, float*, float, int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int);
+template void cpuNeighTripletList(int *, int *, double*, double*, int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int);
+template void cpuNeighTripletList(int *, int *, float*, float*, int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int);
 
 template <typename T> void cpuNeighTriplets(T *xij, T *xik, T *qi, T *qj, T *qk, T *x, T *q, int *ai, int *aj, int *ak,  
       int *ti, int *tj, int *tk, int *tripletnum, int *tripletlist, int *tripletnumsum, int *alist,  
@@ -601,7 +616,7 @@ void cpuNeighQuadrupletList(int *quadrupletlist, int *quadrupletnumsum, int *pai
                 int gk = pairlist[lk + jnum*ii];  // atom k
                 int k = alist[gk];  // atom k
                 for (int ll=lk+1; ll<p; ll++) { // loop over each atom l around atom i (l > k)
-                    int gl = pairlist[ll + jnum*ii];  // atom k
+                    int gl = pairlist[ll + jnum*ii];  // atom l
                     int l = alist[gl];  // atom k                
                     quadrupletlist[0 + 3*(count + q)] = gj;
                     quadrupletlist[1 + 3*(count + q)] = gk;                

@@ -1,46 +1,33 @@
-function writeconfig(app, config, filename, mode)
+function writeconfig(config, filename, mode)
 
-% nconfigs = app.nconfigs; % number of configurations
-% dim = app.dim; % physical dimension
-% ncx = app.ncx; % number of compoments of x
-% ncv = app.ncv; % number of compoments of v
-% ncf = app.ncf; % number of compoments of f
-% ncq = app.ncq; % number of compoments of q
+% disp('Writing configurations into a binary file...'); 
 
-nconfigs = app.nconfigs; % number of configurations
-dim = app.dim; % physical dimension
-ncx = app.ncx; % number of compoments of x
-ncv = app.ncv; % number of compoments of v
-ncf = app.ncf; % number of compoments of f
-ncq = app.ncq; % number of compoments of q
+nconfigs = config.nconfigs; % number of configurations
+dim = config.dim; % physical dimension
+ncx = config.ncx; % number of compoments of x
+ncv = config.ncv; % number of compoments of v
+nce = config.nce; % number of compoments of e
+ncf = config.ncf; % number of compoments of f
+ncq = config.ncq; % number of compoments of q
 
 endian = 'native';
-tmp = [nconfigs dim ncx ncq ncv ncf];
+tmp = [nconfigs dim ncq ncv nce ncf];
 
 fileID = fopen(filename,'w');
 if mode==0 % binary    
     fwrite(fileID,tmp,'double',endian);
-    fwrite(fileID,[config.natom(:) config.a' config.b' config.c'],'double',endian);
+    fwrite(fileID,[config.natom(:) config.a' config.b' config.c' config.e(:)],'double',endian);
     fwrite(fileID,[config.t(:) config.x' config.q' config.v' config.f'],'double',endian);    
-%     fwrite(fileID,config.natom,'double',endian);
-%     fwrite(fileID,config.a,'double',endian);    
-%     fwrite(fileID,config.b,'double',endian);    
-%     fwrite(fileID,config.c,'double',endian);    
-%     fwrite(fileID,config.t,'double',endian);    
-%     fwrite(fileID,config.x,'double',endian);    
-%     fwrite(fileID,config.q,'double',endian);    
-%     fwrite(fileID,config.v,'double',endian);    
-%     fwrite(fileID,config.f,'double',endian);    
-else % text    
+elseif mode==1 % text    
     fprintf(fileID,'%d %d %d %d %d %d\n',tmp);
     
-    nc = 1 + dim*dim;
+    nc = 1 + dim*dim + nce;
     mystr = "%d";
     for d = 1:(nc-1)
         mystr = mystr + " %.16f";
     end
     mystr = mystr + " \n";    
-    fprintf(fileID,char(mystr),[config.natom(:) config.a' config.b' config.c']');        
+    fprintf(fileID,char(mystr),[config.natom(:) config.a' config.b' config.c' config.e(:)]);        
     
     nc = 1 + ncx + ncq + ncv + ncf;
     mystr = "%d";
@@ -48,7 +35,34 @@ else % text
         mystr = mystr + " %.16f";
     end
     mystr = mystr + " \n";    
-    fprintf(fileID,char(mystr),[config.t(:) config.x' config.q' config.v' config.f']');    
+    fprintf(fileID,char(mystr),[config.t(:) config.x' config.q' config.v' config.f']);    
+else
+    nsize = zeros(20,1);
+    nsize(1) = length(tmp(:));
+    nsize(2) = length(config.natom(:));  
+    nsize(3) = length(config.a(:)); 
+    nsize(4) = length(config.b(:)); 
+    nsize(5) = length(config.c(:)); 
+    nsize(6) = length(config.e(:));
+    nsize(7) = length(config.t(:));
+    nsize(8) = length(config.x(:));
+    nsize(9) = length(config.q(:)); 
+    nsize(10) = length(config.v(:)); 
+    nsize(11) = length(config.f(:));    
+    
+    fwrite(fileID,length(nsize(:)),'double',endian);
+    fwrite(fileID,nsize,'double',endian);
+    fwrite(fileID,tmp,'double',endian);
+    fwrite(fileID,config.natom,'double',endian);
+    fwrite(fileID,config.a,'double',endian);    
+    fwrite(fileID,config.b,'double',endian);    
+    fwrite(fileID,config.c,'double',endian); 
+    fwrite(fileID,config.e,'double',endian); 
+    fwrite(fileID,config.t,'double',endian);    
+    fwrite(fileID,config.x,'double',endian);    
+    fwrite(fileID,config.q,'double',endian);    
+    fwrite(fileID,config.v,'double',endian);    
+    fwrite(fileID,config.f,'double',endian);        
 end
 fclose(fileID);
 
