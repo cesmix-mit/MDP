@@ -29,6 +29,7 @@ for i = 1:config.nconfigs
     ximages = boxperiodicimages(app.pbc, config.a(:,i), config.b(:,i), config.c(:,i));    
     n = config.natom(i);
     config.x(:,m:(m+n-1)) = checkconfig(config.x(:,m:(m+n-1)), ximages, B2C, C2B);    
+    m = m + n;
 end
 
 writeapp(app, app.appname + "app.bin");
