@@ -5,12 +5,14 @@
   `Ω′′[j][i][t]`: if the atomic number type is t, 
                      it returns the neighbors of the atom i in conf. j,
                  else it returns empty
+  `Ω′′′[j][t]`: Atoms of the configuration j whose atomic number types is t.
    
 """
 function calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
     Ω   = [[ [] for i=1:N[j]] for j=1:J]
     Ω′  = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
     Ω′′ = [[[ [] for t=1:NZ] for i=1:N[j]] for j=1:J]
+    Ω′′′ = [[ [] for t=1:NZ] for j=1:J]
     for j = 1:J
         for i0 = 1:N[j]
             for i1 = 1:N[j]
@@ -25,7 +27,15 @@ function calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
             end
         end
     end
-    return Ω, Ω′, Ω′′
+    
+    for j = 1:J
+        for i = 1:N[j]
+            t = T[Z[j][i]]
+            push!(Ω′′′[j][t], i)
+        end
+    end
+    
+    return Ω, Ω′, Ω′′, Ω′′′
 end
 
 """
@@ -80,24 +90,22 @@ function load_input()
     end
 
     # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
-    r_cut = rand()
+    r_cut = 10.0
 
     # Calc. neighbors
-    Ω, Ω′, Ω′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
-    
-    # `K`: ?
-    K = 3
+    Ω, Ω′, Ω′′, Ω′′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
     
     # `L`: Degree.
-    L = 3
+    L = 1
     
-    # `M`: Number of basis functions.
-    M = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1))
-
-    # `c[m]`: Coefficient needed to calculate the potential/force.
-    #         Linearized version of c[t][k][k′][l].
-    #         Linear version needed in optimization.
-    c = [rand() for m = 1:M]
+    # `K`: ?
+    K = L + 1
+    
+    # `M`: Number of power spectrum basis functions.
+    M_ps = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1))
+    
+    # `M`: Number of power spectrum basis functions.
+    M_bs = ceil(Int, NZ * K * (K + 1) / 2.0 * (L + 1)^3)
     
     # `w[j]`: Weight associated to the configuration j.
     w = @SArray [1.0, 1.0, 1.0]
@@ -109,7 +117,7 @@ function load_input()
     Δ['y'] = Cartesian(0.0, h, 0.0)
     Δ['z'] = Cartesian(0.0, 0.0, h)
     
-    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, f_qm, K, L, M, w, Δ
+    return  J, N, NZ, r_N, Ω, Ω′, Ω′′, Ω′′′, f_qm, K, L, M_ps, M_bs, w, Δ
     
 end
 

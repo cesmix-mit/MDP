@@ -99,9 +99,9 @@ The following table shows all the relevant input variables or parameters needed 
     
     $Z_{ji}$ & Atomic number of atom $i$ in configuration $j$. & $\Omega''_{jit}$ & If the atomic number type of $i$ is $t$, returns the neighbors of the atom $i$ in configuration $j$, else it returns empty. \\ \hline
     
-    $T_z$ & Type of the atomic number z. Each atomic number z is indexed in T. & $\Omega'''_{jt}$ & Atoms in configuration $j$, whose atomic number type is $t$ \\ \hline
+    $T_z$ & Type of the atomic number z. Each atomic number z is indexed in T. & $\Omega'''_{jt}$ & Atoms in configuration $j$, whose atomic number type is $t$. \\ \hline
     
-    $N_z$ & Number of the different atomic numbers (or atomic number types) present in all configurations. &  L, K & Parameters of Degree \\ \hline
+    $N_z$ & Number of the different atomic numbers (or atomic number types) present in all configurations. &  L, K &  \\ \hline
     
     $\bm {r}^{N_j}_{i}$ & Position of atom $i$ in the configuration $j$. & M & Number of basis functions.\\ \hline
     
@@ -146,17 +146,18 @@ On the other hand, the atomic force calculated through the bispectrum basis func
 
 \begin{equation}
     \bm f(\bm {r}^{N_j}, \bm c, j, i) = 
+    \sum_{t=1}^{N_z}
     \sum_{k=1}^K
     \sum_{k'=k}^{K}
     \sum_{l=0}^L
     \sum_{l_1=0}^L
     \sum_{l_2=0}^L
-    c_{jkk'l{l_1}{l_2}}
-    \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i}
+    c_{tkk'l{l_1}{l_2}}
+    \frac{\partial d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i}
     \label{eq:force}
 \end{equation}
 
-Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$ and $ \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$
+Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$ and $ \frac{\partial d_{tkk'l{l_1}{l_2}}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$
  are the gradient vectors of $d_{tkk'l}$ and $d_{jkk'l{l_1}{l_2}}$, respectively, varying with respect to the position of the $i$-th atom in the $j$-configuration, i.e. $f$ is a vector quantity.
 
 
@@ -220,32 +221,31 @@ Returning to Equation \ref{eq:us}, the spherical harmonics of degree $l$ and ord
 \begin{equation}
  Y_{lm}(\theta,\phi) = \sqrt{\frac{(2l + 1)}{4 \pi} \frac{(l-m)!}{(l+m)!}} P_{lm}(\cos(\theta)) e^{i m \phi}
 \end{equation}
-$P_{lm}$ are the associated Legendre polynomials. They are not included in the original manuscript. Here they are defined as
-\begin{equation}
-    \label{eq:leg}
-    P_{lm}(x) = (-1)^m (1-x^2)^{m/2}  \frac{\mathrm{d}^m}{\mathrm{d}x^m} P_l(x), \ if \ m \ge 0
-\end{equation}
-\begin{equation}
-    \label{eq:leg2}
-    P_{lm} (x) = (-1)^{|m|} \frac{(l-|m|)!}{(l+|m|)!} P_{l|m|}, \ if \ m < 0
-\end{equation}
-$P_l$ is the Legendre polynomial of degree $l$ given by:
-\begin{equation}
-    \label{eq:leg3}
-    P_l(x)=\frac{1}{2^l l!} \frac{\mathrm{d}^l}{\mathrm{d}x^l}(x^2-1)^l
-\end{equation}
-
-By combining Equations \ref{eq:leg} and \ref{eq:leg3}, we obtain the following expressions for $P_{lm}(x)$, $l \ge 0$, $0 \le m \le l$ (Equations \ref{eq:leg4} and \ref{eq:leg5}). The case $-l \le m <0$ follows from Equation \ref{eq:leg2}. See Appendix \ref{app:legendre} for a brief proof.
+$P_{lm}$ are the associated Legendre polynomials. They are not included in the original manuscript. Here, the following expressions are used:
 
 \begin{equation}
     \label{eq:leg4}
-    P_{lm}(x) = (-1)^m (1-x^2)^{m/2} \Bigg( \frac{1}{2!} \sum_{k=\lceil \frac{l+m}{2} \rceil}^l  (-1)^{l-k} {l \choose k} {2k \choose l} \frac{(2k-l)!}{(2k-l-m)!} x^{2k-l-m} \Bigg), \quad m >0
+    P_{lm}(x) = (-1)^m (1-x^2)^{m/2} \Bigg( \frac{1}{2!} \sum_{k=\lceil \frac{l+m}{2} \rceil}^l  (-1)^{l-k} {l \choose k} {2k \choose l} \frac{(2k-l)!}{(2k-l-m)!} x^{2k-l-m} \Bigg) \quad m >0
 \end{equation}
+
+\begin{equation}
+    \label{eq:leg2}
+    P_{lm} (x) = (-1)^{|m|} \frac{(l-|m|)!}{(l+|m|)!} P_{l|m|} \quad m < 0
+\end{equation}
+
 \begin{equation}
     \label{eq:leg5}
-    P_{lm}(x) = P_l(x)  \quad m = 0.
+    P_{lm}(x) = P_l(x) \quad m = 0
 \end{equation} 
-In Equation \ref{eq:leg4}, $\lceil . \rceil$ denotes the ceiling function.
+
+
+$P_l$ is the Legendre polynomial of degree $l$ given by:
+\begin{equation}
+    \label{eq:fleg2}
+    P_l(x) = \frac{1}{2^l} \sum_{k=\lceil l/2 \rceil}^l {l \choose k} (-1)^{l-k} {2k \choose l} x^{2k-l}
+\end{equation}
+
+A derivation of the expressions above are presented in the Appendix.
 
 \subsection{Bispectrum basis functions}
 
@@ -253,10 +253,10 @@ The derivatives of the bispectrum basis functions are not presented in the origi
 
 \begin{equation}
 \begin{split}
-     \frac{\partial d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i} =  
- \bigg( \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta X_i, j, i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta X_i, j, i) } {2 |\bm \Delta X_i|}, \\
-          \frac{ d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i, j, i) - d_{jkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i, j, i) } {2 |\bm \Delta Y_i|},\\
-          \frac{ d_{jkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} + \bm \Delta Z_i, j, i) - d_{jkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} - \bm \Delta Z_i, j, i) } {2 |\bm \Delta Z_i|} \bigg)
+     \frac{\partial d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)}{\partial \bm r^{N_j}_i} =  
+ \bigg( \frac{ d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta X_i, j, i) - d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta X_i, j, i) } {2 |\bm \Delta X_i|}, \\
+          \frac{ d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i, j, i) - d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i, j, i) } {2 |\bm \Delta Y_i|},\\
+          \frac{ d_{tkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} + \bm \Delta Z_i, j, i) - d_{tkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} - \bm \Delta Z_i, j, i) } {2 |\bm \Delta Z_i|} \bigg)
 \end{split}
 \end{equation}
 
@@ -272,7 +272,8 @@ The bispectrum basis functions are defined in Equations 29 and 30 in the origina
 where 
 
 \begin{equation}
-    b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{m=-{l_1}}^l
+    b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = 
+     \sum_{m=-l}^l
      \sum_{m_1=-{l_1}}^{l_1}
      \sum_{m_2=-l_2}^{l_2}
      \bar{a}_{sklm}(\bm r^{N_j}, j)
@@ -282,7 +283,7 @@ where
 \end{equation}
 
 \begin{equation}
-    a_{iklm}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega_{ji}} u_{klm}(\bm r^{N_j}_s -\bm r^{N_j}_i)
+    a_{iklm}(\bm r^{N_j}, j) = \sum_{s \in \Omega_{ji}} u_{klm}(\bm r^{N_j}_s -\bm r^{N_j}_i)
 \end{equation}
 
 
@@ -292,8 +293,37 @@ In the computer code, the Clebsch–Gordan coefficients, $C_{{m_1}{m_2}m}^{{l_1}
 \begin{appendix}
 \section{Associated Legendre polynomials}
 \label{app:legendre}
+
+The associated Legendre polynomials are defined as:
+
+\begin{equation}
+    \label{eq:leg}
+    P_{lm}(x) = (-1)^m (1-x^2)^{m/2}  \frac{\mathrm{d}^m}{\mathrm{d}x^m} P_l(x), \ if \ m \ge 0
+\end{equation}
+\begin{equation}
+    \label{eq:leg2}
+    P_{lm} (x) = (-1)^{|m|} \frac{(l-|m|)!}{(l+|m|)!} P_{l|m|}, \ if \ m < 0
+\end{equation}
+$P_l$ is the Legendre polynomial of degree $l$ given by:
+\begin{equation}
+    \label{eq:leg3}
+    P_l(x)=\frac{1}{2^l l!} \frac{\mathrm{d}^l}{\mathrm{d}x^l}(x^2-1)^l
+\end{equation}
+
+By combining Equations \ref{eq:leg} and \ref{eq:leg3}, we obtain the following expressions for $P_{lm}(x)$, $l \ge 0$, $0 \le m \le l$ (Equations \ref{eq:leg4} and \ref{eq:leg5}). The case $-l \le m <0$ follows from Equation \ref{eq:leg2}. 
+
+\begin{equation}
+    \label{eq:leg4}
+    P_{lm}(x) = (-1)^m (1-x^2)^{m/2} \Bigg( \frac{1}{2!} \sum_{k=\lceil \frac{l+m}{2} \rceil}^l  (-1)^{l-k} {l \choose k} {2k \choose l} \frac{(2k-l)!}{(2k-l-m)!} x^{2k-l-m} \Bigg), \quad m >0
+\end{equation}
+\begin{equation}
+    \label{eq:leg5}
+    P_{lm}(x) = P_l(x)  \quad m = 0.
+\end{equation} 
+In Equation \ref{eq:leg4}, $\lceil . \rceil$ denotes the ceiling function.
+
     
-In this Appendix, it is presented a derivation of Equation \ref{eq:leg4} from the definitions of Legendre polynomials (Equation \ref{eq:leg3}) and associated Legendre polynomials (Equation \ref{eq:leg}).
+A derivation of Equation \ref{eq:leg4} from the definitions of Legendre polynomials (Equation \ref{eq:leg3}) and associated Legendre polynomials (Equation \ref{eq:leg}) is presented below.
 
 By applying the binomial theorem:
 \begin{equation}
