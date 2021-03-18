@@ -292,7 +292,7 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y,
                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
-template <typename T> void cpuSphericalHarmonicsSum(T *Ylmr, T *Ylmi, T *x, T *y, T *z, 
+template <typename T> void cpuSphericalHarmonicsAtomSum(T *Ylmr, T *Ylmi, T *x, T *y, T *z, 
                 T *P, T *tmp, T *fac, T pi, int L, int N);
 template <typename T> void cpuSphericalHarmonicsSum(T *Sr, T *Si, T *Ylmr, T *Ylmi, int L, int N);
 template <typename T> void cpuRadialSphericalHarmonicsSum(T *Sr, T *Si, T *Ylmr, T *Ylmi, T *g, int L, int K, int N);
@@ -333,6 +333,27 @@ template <typename T> void cpuRadialSphericalHarmonicsBasisDeriv(T *dx, T *dy, T
         int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
 template <typename T> void cpuRadialSphericalHarmonicsBasisDeriv2(T *dd, T *cd,
         int *atomtype, int *neighlist, int *Nnb, int Ntype, int Na, int Nbf);
+
+template <typename T> void cpuRadialSphericalHarmonicsSpectrum(T *c, T *ar, T *ai, T *sr, T *si, T *cg, int *indk, 
+        int *indl, int *indm, int *rowm, int *Nnb, int Nub, int Ncg, int Na, int L, int K, int spectrum);
+template <typename T> void cpuRadialSphericalHarmonicsSpectrumDeriv(T *cd, T *ar, T *ai, T *sr, T *si, 
+        T *srx, T *six, T *sry, T *siy, T *srz, T *siz, T *cg, int *indk, int *indl, int *indm, 
+        int *rowm, int *Nnb, int Nub, int Ncg, int Na, int L, int K, int spectrum);
+template <typename T> void cpuRadialSphericalHarmonicsSpectrumDeriv(T *cd, T *ar, T *ai, 
+        T *srx, T *six, T *sry, T *siy, T *srz, T *siz, T *cg, int *indk, int *indl, int *indm, 
+        int *rowm, int *Nnb, int Nub, int Ncg, int Na, int L, int K, int spectrum);
+template <typename T> void cpuForceDecomposition(T *f, T *fij, int *ai, int *aj, 
+        int inum, int ijnum, int Nbf);
+template <typename T> void cpuForceDecomposition(T *f, T *fij, int *ai, int *aj, int ijnum);
+template <typename T> void cpuCenterAtomDecomposition(T *f, T *fij, int *ilist, int *anumsum, 
+        int inum, int ijnum, int Na, int Nbf);
+template <typename T> void cpuNeighborAtomDecomposition(T *f, T *fij, int *jlist, int *bnumsum, int *index, 
+        int inum, int ijnum, int jnum, int Nbf);
+template <typename T> void cpuCenterAtomDecomposition(T *f, T *fij, int *ilist, int *anumsum, int inum);
+template <typename T> void cpuNeighborAtomDecomposition(T *f, T *fij, int *jlist, int *bnumsum, int *index, int jnum);
+template <typename T> void cpuCenterAtomDecomposition(T *e, T *ei, int *ilist, int Na);
+
+
 
 #endif  
 

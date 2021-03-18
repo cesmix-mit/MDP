@@ -36,12 +36,12 @@ using namespace std;
 #include "../Common/core.h"       // interface to core libraries
 #include "../Common/pblas.h"      // wrappers for blas libaries and MPI     
 
-#include "../Potentials/opuApp.cpp" // Read configurations and preprocess data 
-#include "../Configuration/Configuration.cpp" // Read configurations and preprocess data 
-#include "../Descriptors/Descriptors.cpp"   // describe atomistic forces for nonparameteric potentials 
-//#include "../Calculation/Calculation.cpp"  // Calculate energy and forces
-#include "../Regression/Regression.cpp"  // perform linear/gaussian/dnn regressions to train nonparameteric potentials  
-#include "../Integration/Integration.cpp"  // perform velocity Verlet algorithm and sample output 
+#include "../Configuration/Configuration.cpp" // read and preprocess input files 
+#include "../Potentials/Potentials.cpp" // empirical potentials
+#include "../Descriptors/Descriptors.cpp"   // nonparameteric potentials 
+#include "../Calculation/Calculation.cpp"  // calculate energy and forces
+#include "../Regression/Regression.cpp"  // perform linear/gaussian/dnn regressions 
+#include "../Integration/Integration.cpp"  // perform MD simulations 
 
 int main(int argc, char** argv) 
 {   
@@ -127,32 +127,32 @@ int main(int argc, char** argv)
     Int ci = 0;            
     dstype *x, *e, *f, *q, *param;
     
-    CConfiguration CConfig(filein, fileout, mpiprocs, mpirank, backend);       
-    CConfig.SetConfiguration(ci);
+    CCalculation CCal(filein, fileout, mpiprocs, mpirank, backend);       
+    CCal.SetConfiguration(ci);
     
-    x = &CConfig.sys.x[0];
-    e = &CConfig.sys.e[0];
-    f = &CConfig.sys.f[0];
-    q = &CConfig.sys.q[0];
-    param = &CConfig.app.mu2a[0];
-    Int nparam = CConfig.common.nmu2a;
+    x = &CCal.sys.x[0];
+    e = &CCal.sys.e[0];
+    f = &CCal.sys.f[0];
+    q = &CCal.sys.q[0];
+    param = &CCal.app.mu2a[0];
+    Int nparam = CCal.common.nmu2a;
     
-    for (ci=0; ci<CConfig.common.nconfigs; ci++) {        
-        ArraySetValue(e, 0.0, CConfig.common.inum, CConfig.common.backend);  
-        ArraySetValue(f, 0.0, CConfig.common.dim*CConfig.common.inum, CConfig.common.backend);  
+    for (ci=0; ci<CCal.common.nconfigs; ci++) {        
+        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
+        ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
         
-        CConfig.GetPositions(x, ci);   
-        CConfig.GetAtomtypes(CConfig.nb.atomtype, ci);           
-        CConfig.NeighborList(x);
-        CConfig.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
+        CCal.GetPositions(x, ci);   
+        CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+        CCal.NeighborList(x);
+        CCal.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
 
-        dstype energy = cpuArraySum(e, CConfig.common.inum);
+        dstype energy = cpuArraySum(e, CCal.common.inum);
         cout<<"Configuration #: "<<ci+1<<endl;
         cout<<"Potential energy: "<<energy<<endl;
-        //cout<<"Per-atom energies: "<<endl;
-        //printArray2D(e, 1, CConfig.common.inum, backend);
+        cout<<"Per-atom energies: "<<endl;
+        printArray2D(e, 1, CCal.common.inum, backend);
         cout<<"Atom forces: "<<endl;
-        printArray2D(f, CConfig.common.dim, CConfig.common.inum, backend);
+        printArray2D(f, CCal.common.dim, CCal.common.inum, backend);
     }
     
     

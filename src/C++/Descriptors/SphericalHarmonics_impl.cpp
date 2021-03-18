@@ -67,7 +67,7 @@ void InitSphericalHarmonic(shstruct &sh, Int Kin, Int Lin, Int backendin)
     dstype Ylmr[L2];
     dstype Ylmi[L2];            
     dstype b[L2*(L+1)];    
-    cpuSphericalHarmonicsSum(Ylmr, Ylmi, x, y, z, P, tmp, fac, M_PI, L, N);
+    cpuSphericalHarmonicsAtomSum(Ylmr, Ylmi, x, y, z, P, tmp, fac, M_PI, L, N);
     cpuSphericalHarmonicsBispectrum(b, Ylmr, Ylmi, fac, L);    
     
     // compute non-zero Clebsch-Gordan coefficients 

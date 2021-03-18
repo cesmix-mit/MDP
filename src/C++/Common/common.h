@@ -304,7 +304,13 @@ struct commonstruct {
     Int natomtypes;     // number of atom types     
     Int nmoletypes;     // number of molecule types     
     Int K;       // order of radial basis functions
-    Int L;       // order of spherical harmonics              
+    Int L;       // order of spherical harmonics             
+    Int Nub;     // number of unique bispectrum components
+    Int Npower; // number of power spectrum components
+    Int Nbispectrum; // number of bispectrum components
+    Int Nbf=0;    // Nbf = Npower+Nbispectrum
+    Int Ncoeff; // number of descriptors coefficients
+    Int Ncg;// the total number of non-zero Clebsch-Gordan coefficients 
     Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
     Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     Int training;     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
@@ -315,6 +321,7 @@ struct commonstruct {
     Int neighcell=0;  // 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
     Int decomposition=0;// 0 -> force decomposition, 1 -> atom decomposition
     Int bondtype=0;   // 0 -> non-bonded interaction, 1 -> bonded interaction
+    Int chemtype = 0;   // 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
     Int pairsymmetry;  // 1 -> V(r_ij) equal V(r_ji), 0 -> V(r_ij) not equal V(r_ji) 
     Int tripletsymmetry; // 1 -> V(r_ij, r_ik) equal V(r_ik, r_ij)
                          // 0 -> V(r_ij, r_ik) not equal V(r_ik, r_ij)
@@ -354,14 +361,18 @@ struct commonstruct {
     Int natom3b;
     Int natom3c;
     Int natom4b;    
+    Int nmu[12];
             
     Int pnum;  // number of periodic images
     Int inum;  // number of atoms in the simulation box
     Int jnum;  // maximum number of neighbors
     Int inummax;  // maximum number of atoms in the simulation box
     Int gnum;  // number of ghost atoms
-    Int anum;  // total number of atoms 
+    Int anum;  // (inum+gnum) total number of atoms 
+    Int anummax; // maximum  number of atoms allowed 
     Int cnum;  // number of cells
+    Int nintmem;
+    Int ntmpmem;
     Int nxij; //  number of xij = xj - xi  
     Int ne; 
     Int nt; 
@@ -372,11 +383,13 @@ struct commonstruct {
     Int ncq;
     Int nba; // number of blocks of atoms
     Int nab; // number of atoms per block
+    Int nabmax; // maxmimum number of atoms per block
     Int ablks[17];
         
     Int ntimesteps; // number of time steps
     dstype dt;   // timestep size     
     dstype time; // current simulation time    
+    dstype rbbvol; // volume of reference bounding box
     
     dstype boxoffset[3];
     Int pbc[3];
@@ -652,7 +665,6 @@ struct neighborstruct {
     dstype *s2rmap=NULL;     // map simulation domain to reference domain 
     dstype *pimages=NULL;    // coordinates of periodic images     
             
-    //dstype *x=NULL;       
     Int *atomtype=NULL;       // type of each atom i      
     Int *alist=NULL;
     Int *neighnum=NULL;  // numbers of neighbors for each atom i 
@@ -679,7 +691,6 @@ struct neighborstruct {
             CPUFREE(neighlist);
             CPUFREE(alist);
             CPUFREE(atomtype); 
-            //CPUFREE(x); 
         }
 #ifdef HAVE_CUDA                 
         else {         
@@ -701,7 +712,6 @@ struct neighborstruct {
             GPUFREE(neighlist); 
             GPUFREE(alist); 
             GPUFREE(atomtype); 
-            //GPUFREE(x);             
         }
 #endif               
     }

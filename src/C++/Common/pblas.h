@@ -335,6 +335,32 @@ static void PGEMNV(cublasHandle_t handle, Int m, Int n, dstype* alpha, dstype* A
 }
 
 static void PGEMTV(cublasHandle_t handle, Int m, Int n, dstype *alpha, dstype* A, Int lda, 
+        dstype* x, Int incx, dstype *beta, dstype* ylocal, Int incy, Int backend) 
+{
+    /* y = alpha*A^T * x + beta y */
+#ifdef USE_FLOAT     
+    if (backend <= 1) 
+        SGEMV(&cht, &m, &n, alpha, A, &lda, x, &incx, beta, ylocal, &incy);
+#else   
+    if (backend <= 1) 
+        DGEMV(&cht, &m, &n, alpha, A, &lda, x, &incx, beta, ylocal, &incy);
+#endif
+    
+#ifdef HAVE_CUDA          
+#ifdef USE_FLOAT  
+    if (backend == 2)     
+        cublasSgemv(handle, CUBLAS_OP_T, m, n, alpha, A, lda, x, incx,
+                             beta, ylocal, incy);        
+#else            
+    if (backend == 2)  
+        cublasDgemv(handle, CUBLAS_OP_T, m, n, alpha, A, lda, x, incx,
+                             beta, ylocal, incy);
+#endif        
+#endif                 
+}
+
+
+static void PGEMTV(cublasHandle_t handle, Int m, Int n, dstype *alpha, dstype* A, Int lda, 
         dstype* x, Int incx, dstype *beta, dstype* y, Int incy, dstype* ylocal, Int backend) 
 {
     /* y = alpha*A^T * x + beta y */

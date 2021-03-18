@@ -4,13 +4,8 @@
 class CIntegration {
 private:
 public:
-    CConfiguration cconf;   // configuration class
-    CDescriptors cdesc;     // descriptors class
-        
     // constructor 
-    CIntegration(string configfile, string appfile, Int mpiprocs, Int mpirank, Int backend)   
-       : cconf(configfile, appfile, mpiprocs, mpirank, backend),
-         cdesc(cconf){ };        
+    CIntegration(CCalculation &CCal);          
     
     // destructor        
     ~CIntegration(){  }; 

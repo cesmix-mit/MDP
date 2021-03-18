@@ -16,7 +16,12 @@
 #include "cpuNeighborList3D.cpp"
 #include "cpuNeighCount.cpp"
 #include "cpuForceCalculation.cpp"
+#include "cpuSphericalHarmonicFunctions.cpp"
+#include "cpuClebschGordan.cpp"
+#include "cpuSphericalBessel.cpp"
 #include "cpuSphericalHarmonics.cpp"
+#include "cpuSphericalHarmonicsBessel.cpp"
+#include "cpuRadialSphericalHarmonics.cpp"
 
 #endif
 

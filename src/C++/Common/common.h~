@@ -304,7 +304,13 @@ struct commonstruct {
     Int natomtypes;     // number of atom types     
     Int nmoletypes;     // number of molecule types     
     Int K;       // order of radial basis functions
-    Int L;       // order of spherical harmonics              
+    Int L;       // order of spherical harmonics             
+    Int Nub;     // number of unique bispectrum components
+    Int Npower; // number of power spectrum components
+    Int Nbispectrum; // number of bispectrum components
+    Int Nbf;    // Nbf = Npower+Nbispectrum
+    Int Ncoeff; // number of descriptors coefficients
+    Int Ncg;// the total number of non-zero Clebsch-Gordan coefficients 
     Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
     Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     Int training;     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
@@ -314,8 +320,8 @@ struct commonstruct {
     Int neighpair=0;  // 0 -> full neighbor list, 1 -> half neighbor list
     Int neighcell=0;  // 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
     Int decomposition=0;// 0 -> force decomposition, 1 -> atom decomposition
-    Int pairtype=0;   // 0 -> neighbor pairs, 1 -> neighbor pairs based on type of atom i, 
-                      // 2 -> neighbor pairs based on type of atom i and type of atom j
+    Int bondtype=0;   // 0 -> non-bonded interaction, 1 -> bonded interaction
+    Int chemtype = 0;   // 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
     Int pairsymmetry;  // 1 -> V(r_ij) equal V(r_ji), 0 -> V(r_ij) not equal V(r_ji) 
     Int tripletsymmetry; // 1 -> V(r_ij, r_ik) equal V(r_ik, r_ij)
                          // 0 -> V(r_ij, r_ik) not equal V(r_ik, r_ij)
@@ -355,16 +361,19 @@ struct commonstruct {
     Int natom3b;
     Int natom3c;
     Int natom4b;    
+    Int nmu[12];
             
     Int pnum;  // number of periodic images
     Int inum;  // number of atoms in the simulation box
     Int jnum;  // maximum number of neighbors
     Int inummax;  // maximum number of atoms in the simulation box
     Int gnum;  // number of ghost atoms
-    Int anum;  // total number of atoms 
+    Int anum;  // (inum+gnum) total number of atoms 
+    Int anummax; // maximum  number of atoms allowed 
     Int cnum;  // number of cells
+    
     Int nxij; //  number of xij = xj - xi  
-    Int ns; 
+    Int ne; 
     Int nt; 
     Int nx; 
     Int nv;
@@ -378,6 +387,7 @@ struct commonstruct {
     Int ntimesteps; // number of time steps
     dstype dt;   // timestep size     
     dstype time; // current simulation time    
+    dstype rbbvol; // volume of reference bounding box
     
     dstype boxoffset[3];
     Int pbc[3];
@@ -421,23 +431,12 @@ struct commonstruct {
         CPUFREE(pot3c);
         CPUFREE(pot4a);
         CPUFREE(pot4b);            
-        CPUFREE(rcutsqml);
-        CPUFREE(rcutsq2a);
-        CPUFREE(rcutsq2b);
-        CPUFREE(rcutsq2c);
-        CPUFREE(rcutsq3a);
-        CPUFREE(rcutsq3b);
-        CPUFREE(rcutsq3c);
-        CPUFREE(rcutsq4a);
-        CPUFREE(rcutsq4b);                        
-        CPUFREE(rcutsq);            
         CPUFREE(atom1b);
         CPUFREE(atom2b);
         CPUFREE(atom2c);
         CPUFREE(atom3b);
         CPUFREE(atom3c);
-        CPUFREE(atom4b);                        
-        
+        CPUFREE(atom4b);                                
     }                         
 };
 
@@ -665,11 +664,9 @@ struct neighborstruct {
     dstype *pimages=NULL;    // coordinates of periodic images     
             
     Int *atomtype=NULL;       // type of each atom i      
-    dstype *x=NULL;   
     Int *alist=NULL;
     Int *neighnum=NULL;  // numbers of neighbors for each atom i 
-    //Int *neighnumsum=NULL;  // numbers of neighbors for each atom i 
-    Int *neighlist=NULL;    
+    Int *neighlist=NULL; // list of neighbors for each atom i    
             
     void freememory(Int backend)
     {
@@ -689,11 +686,9 @@ struct neighborstruct {
             CPUFREE(s2rmap); 
             CPUFREE(pimages); 
             CPUFREE(neighnum); 
-            //CPUFREE(neighnumsum); 
             CPUFREE(neighlist);
             CPUFREE(alist);
             CPUFREE(atomtype); 
-            CPUFREE(x); 
         }
 #ifdef HAVE_CUDA                 
         else {         
@@ -712,11 +707,9 @@ struct neighborstruct {
             GPUFREE(s2rmap); 
             GPUFREE(pimages);             
             GPUFREE(neighnum); 
-            //GPUFREE(neighnumsum); 
             GPUFREE(neighlist); 
             GPUFREE(alist); 
             GPUFREE(atomtype); 
-            GPUFREE(x);             
         }
 #endif               
     }
@@ -730,7 +723,7 @@ struct sysstruct {
     dstype *q=NULL;    // atomic charges of local atoms in processor mpiRank               
     dstype *s=NULL;    // stresses
     dstype *d=NULL;    // basis functions
-    dstype *dd=NULL;    // derivatives of basis functions
+    dstype *dd=NULL;   // derivatives of basis functions
     dstype *c=NULL;    // vector of coeffcients associated with the basis functions            
     
     void freememory(Int backend)

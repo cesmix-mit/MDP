@@ -3,30 +3,54 @@
 
 class CCalculation {
 private:
-public:               
+public:          
+    appstruct app;
+    configstruct config;    
+    commonstruct common;
+    neighborstruct nb; 
+    sysstruct sys;     
+    tempstruct tmp;    
+    shstruct sh;
+    
+    // default constructor 
+    CCalculation(){}; 
+    
+    // constructor 
+    CCalculation(string filein, string fileout, Int mpiprocs, Int mpirank, Int backend); 
+    
     // destructor        
-    ~CCalculation();    
+    ~CCalculation(); 
     
-//     CConfiguration cconf;   // configuration class
-//     CDescriptors cdesc;     // descriptors class
-//                 
-//     // constructor 
-//     CCalculation(string filein, string fileout, Int mpiprocs, Int mpirank, Int backend)   
-//        : cconf(filein, fileout, mpiprocs, mpirank, backend),
-//          cdesc(cconf){ };        
-//         
-//     // destructor        
-//     ~CCalculation();    
-//     
-//     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);   
-//     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int typei, Int istart, Int iend);   
-//     void NeighPairs(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int istart, Int iend);   
-//         
-//     void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);     
-//     void NeighFullTriplets(dstype* x, dstype *q, Int *atomtype, Int istart, Int iend);     
-//     void NeighTriplets(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int typek, Int istart, Int iend);              
-//     void NeighFullTriplets(dstype* x, dstype *q, Int *atomtype, Int typei, Int typej, Int typek, Int istart, Int iend);              
+    // Read input files
+    void SetConfiguration(Int ci);    
+    void GetPositions(dstype* x, Int ci);   
+    void GetAtomtypes(Int* atomtype, Int ci);   
+    void GetVelocities(dstype* v, Int ci);   
+    void GetForces(dstype* f, Int ci);   
+    void GetEnergy(dstype* e, Int ci);   
     
+    // Build neighbor list
+    void NeighborList(dstype* x);        
+    
+    // Empirical potentials
+    void NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void BondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void NonbondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void BondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void BondOrderPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void NonbondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void BondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void BondOrderTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void NonbondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    void BondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+    
+    // Combined empirical potentials
+    void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam); 
+    
+    // Machine learning potentials
+    void SetSphericalHarmonics();    
+    void RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam);     
+    void RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int nparam);     
 };
 
 
