@@ -202,14 +202,6 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
         T x = xij[i*3];
         T y = xij[i*3+1];
         T z = xij[i*3+2];        
-        
-        if (sqrt(x*x + y*y) < 2e-14) {
-            T signx = (x >= 0.0) ? 1.0 : -1.0;
-            T signy = (y >= 0.0) ? 1.0 : -1.0;
-            x = fabs(x) > 1e-14 ? x : signx*1e-14;
-            y = fabs(y) > 1e-14 ? y : signy*1e-14;
-        }
-        
         // Cartersian -> Spherical
         T r = sqrt(x*x + y*y + z*z);
         T the = acos(z/r);
@@ -671,19 +663,13 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         T x = xij[i*3];
         T y = xij[i*3+1];
         T z = xij[i*3+2];        
-        
-        if (sqrt(x*x + y*y) < 2e-14) {
-            T signx = (x >= 0.0) ? 1.0 : -1.0;
-            T signy = (y >= 0.0) ? 1.0 : -1.0;
-            x = fabs(x) > 1e-14 ? x : signx*1e-14;
-            y = fabs(y) > 1e-14 ? y : signy*1e-14;
-        }
-        
         // Cartersian -> Spherical
         T r = sqrt(x*x + y*y + z*z);
         T the = acos(z/r);
         T phi = atan2(y,x);
-                                
+                        
+        x =  ? x : 1e-12;
+        
         // partial derivatives of spherical coordinates
         T r2 = r*r;
         T rxy = sqrt(x*x + y*y);
@@ -735,7 +721,7 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
             Six[j] = gx*Ylmi + g*Ylmix;
             Siy[j] = gy*Ylmi + g*Ylmiy;
             Siz[j] = gz*Ylmi + g*Ylmiz;            
-            //cout<<i<<" "<<j<<" "<<Sr[j]<<"  "<<Srx[j]<<" "<<gx<<"  "<<Ylmrx<<"  "<<Thex<<"  "<<Phix<<endl;
+            cout<<i<<" "<<j<<" "<<Sr[j]<<"  "<<Srx[j]<<" "<<gx<<"  "<<Ylmrx<<"  "<<Thex<<"  "<<Phix<<endl;
         }
                         
         l = 1;

@@ -234,8 +234,8 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.backend = backend;
     
     common.dim = app.ndims[0];
-    common.L = app.ndims[1];  // order of radial basis functions
-    common.K = app.ndims[2];  // order of spherical harmonics          
+    common.K = app.ndims[1];  // order of radial basis functions
+    common.L = app.ndims[2];  // order of spherical harmonics          
     common.ntimesteps = app.ndims[3]; // number of time steps
     common.nab = app.ndims[4]; // number of atoms per block
     common.natomtypes = app.ndims[8]; // number of atom types
@@ -367,15 +367,6 @@ void implSetAtomBlocks(commonstruct &common)
     for (int i=0; i<=common.nba; i++)
         common.ablks[i] = i*na;
     common.ablks[common.nba] = inum;
-    
-    common.nabmax = 0;
-    for (Int b=0; b<common.nba; b++) {
-        Int e1 = common.ablks[b];
-        Int e2 = common.ablks[b+1];            
-        na = e2 - e1; 
-        if (na > common.nabmax)
-            common.nabmax = na;
-    }    
 }
 
 void implGetConfiguration(Int *atomtype, dstype *x, commonstruct &common, configstruct &config, Int ci)
@@ -525,7 +516,6 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     }
     if (dim==3) 
         cellnum[2] = 0;    
-    
     dstype eta1[cellnum[0]+1], eta2[cellnum[1]+1], eta3[cellnum[2]+1];
     cpuMakeReferenceGrid(eta1, smin[0], smax[0], cellsize[0], cellnum[0]);
     cpuMakeReferenceGrid(eta2, smin[1], smax[1], cellsize[1], cellnum[1]);
@@ -604,24 +594,8 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
 void implSetTempStruct(tempstruct & tmp, commonstruct &common)
 {
     // need to check size of tmp.intmem and tmp.tmpmem
-    Int anummax= common.anummax;
-    Int inum = common.inum;
-    Int jnum = common.jnum;
-    Int pnum = common.pnum;
-    Int nabmax = common.nabmax;
-    
-    Int n1 = pnum*inum + 2*inum + 1;
-    Int n2 = 4*anummax;    
-    Int n3 = 1 + 3*nabmax + 11*nabmax*jnum; 
-    common.nintmem = max(max(n1, n2), n3);
-    TemplateMalloc(&tmp.intmem, common.nintmem, common.backend);  
-    
-    Int nbasis = common.K*(common.L+1)*(common.L+1);    
-    n1 = nabmax*jnum*(7*common.dim+3*common.ncq+1);
-    n2 = 2*nabmax*nbasis + nabmax*jnum*(8*nbasis) + nabmax*common.Nbf;
-    n3 = 2*nabmax*nbasis + nabmax*jnum*(6*nbasis) + 3*nabmax*jnum*common.Nbf;    
-    common.ntmpmem = max(max(n1, n2), n3);    
-    TemplateMalloc(&tmp.tmpmem, common.ntmpmem, common.backend);          
+    TemplateMalloc(&tmp.intmem, 40*(2+common.pnum)*common.inum+1, common.backend);  
+    TemplateMalloc(&tmp.tmpmem, 100*common.inum, common.backend);  
 }
 
 void implSetSysStruct(sysstruct & sys, commonstruct &common, configstruct &config, Int ci)
@@ -670,6 +644,8 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         common.inum = inum;
         common.gnum = gnum;
         common.anum = anum;
+        if (anum > common.anummax)
+            error("Memory allocation for ghost atoms is insffucient");
         
         if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list        
             cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim);    
@@ -714,7 +690,7 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         else { // form neighbor list using cell list
             Int *clist = &tmp.intmem[0]; //anum
             Int *c2alist = &tmp.intmem[anum]; // anum
-            Int *c2anum = &tmp.intmem[2*anum]; // anum
+            Int *c2anum = &tmp.intmem[2*anum]; // cnum
             Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
 
             cpuCellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim);                
@@ -726,9 +702,6 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         }
     }
     //cpuCumsum(nb.neighnumsum, nb.neighnum, inum+1);    
-    
-    if (anum > common.anummax)
-        error("Memory allocation for ghost atoms is insffucient");    
 }
 
 void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &common, 
@@ -743,8 +716,112 @@ void implSetConfiguration(neighborstruct &nb, tempstruct &tmp, sysstruct &sys, a
 {
     implSetNeighborStruct(nb, common, config, ci);            
     implSetSysStruct(sys, common, config, ci);       
-    implSetAtomBlocks(common);    
+    implSetAtomBlocks(common);
+    implSetTempStruct(tmp, common);  
 }
+
+
+
+
+
+
+
+//         if (common.cutofftype) {
+//             if (common.neightype)
+//                 cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                         c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+//             else
+//                 cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                         c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                                                            
+//         }
+//         else {
+//             if (common.neightype)
+//                 cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+//                         c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                
+//             else
+//                 cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+//                         c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                            
+//         }               
+
+//         if (common.cutofftype) {
+//             if (common.neightype)
+//                 cpuHalfNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                         c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+//             else
+//                 cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                         c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                                                            
+//         }
+//         else {
+//             if (common.neightype)
+//                 cpuHalfNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+//                         c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                
+//             else
+//                 cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
+//                         c2alist, c2anumsum, atomtype, nb.cellnum, ntype, inum, jnum, dim);                            
+//         }        
+
+
+// void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, dstype* x, Int inum)
+// {
+//     common.inum = inum;
+//     Int dim = common.dim;
+//     Int cnum = common.cnum;
+//     Int pnum = common.pnum;
+//     Int jnum = common.jnum;    
+//     Int gnum, anum;
+// 
+//     Int *inside = &tmp.intmem[0]; // inum*pnum
+//     Int *glistnum = &tmp.intmem[inum*common.pnum]; // inum
+//     Int *glistnumsum = &tmp.intmem[inum*common.pnum + inum]; // inum+1
+//     
+//     if (dim==2) {
+//         cpuAtomList2D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
+//             nb.s2rmap, inum, pnum, dim);
+//         
+//         gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+//         anum = inum + common.gnum;
+//         common.gnum = gnum;
+//         common.anum = anum;
+//                 
+//         Int *clist = &tmp.intmem[0]; //anum
+//         Int *c2alist = &tmp.intmem[anum]; // anum
+//         Int *c2anum = &tmp.intmem[2*anum]; // cnum
+//         Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
+//         cpuCellList2D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, anum, dim);                
+//         cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);
+//         
+//         if (common.neightype)
+//             cpuHalfNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+//         else
+//             cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                            
+//     }
+//     else {
+//         cpuAtomList3D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
+//             nb.s2rmap, inum, pnum, dim);
+//         
+//         gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+//         anum = inum + common.gnum;
+//         common.gnum = gnum;
+//         common.anum = anum;
+//                 
+//         Int *clist = &tmp.intmem[0]; //anum
+//         Int *c2alist = &tmp.intmem[anum]; // anum
+//         Int *c2anum = &tmp.intmem[2*anum]; // cnum
+//         Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
+//         cpuCellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, anum, dim);                
+//         cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);
+//         
+//         if (common.neightype)
+//             cpuHalfNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                
+//         else
+//             cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.cutoffellipsoid, nb.alist, clist, 
+//                     c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);                                                    
+//     }
+// }        
+    
 
 #endif
 

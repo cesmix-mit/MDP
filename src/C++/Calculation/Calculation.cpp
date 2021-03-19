@@ -23,7 +23,10 @@ CCalculation::~CCalculation()
 
 void CCalculation::SetConfiguration(Int ci)
 {
-    implSetConfiguration(nb, tmp, sys, app, config, common, ci);               
+    implSetConfiguration(nb, tmp, sys, app, config, common, ci);      
+    if (common.K > 0)
+        InitSphericalHarmonics(sh, common);            
+    implSetTempStruct(tmp, common);  
 }
 
 void CCalculation::GetPositions(dstype *x, Int ci)
@@ -54,11 +57,6 @@ void CCalculation::GetEnergy(dstype *e, Int ci)
 void CCalculation::NeighborList(dstype* x)
 {
     implNeighborList(nb, common, app, tmp, x, common.inum);    
-}
-
-void CCalculation::SetSphericalHarmonics()
-{
-    InitSphericalHarmonics(sh, common);            
 }
 
 void CCalculation::NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
@@ -117,9 +115,9 @@ void CCalculation::EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype* x
 }
 
 void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-{    
+{        
     if (common.descriptor==0)
-        implSphericalHarmonicBesselDescriptors(e, f, nb, common, app, tmp, sh, x, q, param, nparam);              
+       implSphericalHarmonicBesselDescriptors(e, f, nb, common, app, tmp, sh, x, q, param, nparam);              
 }
 
 void CCalculation::RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype* x, dstype *coeff, dstype *q, dstype *param, Int nparam) 

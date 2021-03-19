@@ -29,7 +29,7 @@ public:
     void GetForces(dstype* f, Int ci);   
     void GetEnergy(dstype* e, Int ci);   
     
-    // Build neighbor list
+    // Constr
     void NeighborList(dstype* x);        
     
     // Empirical potentials
@@ -44,12 +44,10 @@ public:
     void NonbondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
     void BondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
     
-    // Combined empirical potentials
-    void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam); 
-    
     // Machine learning potentials
+    void SetSphericalHarmonics();    
     void RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam);     
-    void RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int nparam);     
+    void RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff,  dstype *q, dstype *param, Int nparam);     
 };
 
 
