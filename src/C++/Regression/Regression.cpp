@@ -3,16 +3,16 @@
 
 #include "Regression.h"
 
-void CRegression::LinearRegression()
+void CRegression::LinearRegression(CCalculation &CCal)
 {
     
 }
 
-void CRegression::GaussianRegression()
+void CRegression::GaussianRegression(CCalculation &CCal)
 {
 }
 
-void CRegression::NeuralNetRegression()
+void CRegression::NeuralNetRegression(CCalculation &CCal)
 {
 }
         

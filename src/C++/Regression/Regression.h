@@ -10,9 +10,9 @@ public:
     // destructor        
     ~CRegression(){  }; 
     
-    void LinearRegression();
-    void GaussianRegression();
-    void NeuralNetRegression();
+    void LinearRegression(CCalculation &CCal);
+    void GaussianRegression(CCalculation &CCal);
+    void NeuralNetRegression(CCalculation &CCal);
 };
 
 
