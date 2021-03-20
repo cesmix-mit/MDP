@@ -15,10 +15,11 @@ app.neighpair = 0;    % 0 -> full neighbor list, 1 -> half neighbor list for pai
 app.neighcell = 0;    % 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
 app.decomposition = 0;% 0 -> force decomposition, 1 -> atom decomposition
 app.descriptor = 0;   % descriptor flag: 0 -> Spherical Harmonics Bessel
-app.spectrum = 2;     % spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
-app.K = 3;            % degree of radial basis functions
-app.L = 3;            % degree of spherical harmonics     
-app.rcutml = 0.1;     % cut-off radius for machine learning potential
+app.spectrum = 0;     % spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
+app.chemtype = 0;     % 0 -> single atom-type basis functions, 1 -> double atom-type basis functions  
+app.K = 2;            % number roots of radial basis functions
+app.L = 6;            % degree of radial basis functions and spherical harmonics     
+app.rcutml = 8.5;     % cut-off radius for machine learning potential
 app.energycal = 1;    % turns energy calculation on or off
 app.forcecal = 1;     % turns force calculation on or off
 app.bcs = [0 0 0 0 0 0]; % boundary conditions
@@ -29,7 +30,7 @@ app.atomnumbers = [18];
 app.atommasses = [39.948];
 app.atomcharges = [0];
 app.appname = "test";
-app.configfile = "configs/CONFIGS1";
+app.configfile = "configs/CONFIGS1"; % configuration file
 
 % LJ potential
 epsilon = 0.01029849;
