@@ -61,7 +61,8 @@ app.L = 0;          % degree of spherical harmonics
 app.rcutml = 0.0;    % cut-off radius for machine learning potential
 app.descriptor = 0; % descriptor flag: 0 -> Spherical Harmonics Bessel
 app.spectrum = 2;   % spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
-app.ncmuml = 0;      % length of mu0
+app.chemtype = 0;   % 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
+app.ncmuml = 0;     % length of mu0
 
 % empirical potential parameters
 app.eta = [];   % hyperparameters for emprical potentials
