@@ -1,6 +1,6 @@
-function cppfiles(filename, stropu, strcpu, strgpu, potnum)
+function cppfiles(foldername,filename, stropu, strcpu, strgpu, potnum)
 
-foldername = "app";
+#foldername = "app";
 opufile = "opu" * filename;
 cpufile = "cpu" * filename;
 gpufile = "gpu" * filename;

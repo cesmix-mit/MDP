@@ -1,6 +1,6 @@
 function gencode(app)
 
-disp("generate code...");
+disp("Generate C++ code...");
 if ~exist(char("app"), 'dir')
     mkdir(char("app"));
 else
@@ -64,8 +64,8 @@ filename = "Pairc";
 mu = sym('mu',[app.ncmu2c 1]);
 rho = sym('rho',[1 1]);
 if isfield(pot, filename)    
-    u = pot.Pairc(xij, qi, qj, ti, tj, rho, mu, eta, kappa);
-    genbo2(filename, u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);    
+    u = pot.Pairc(xij, qi, qj, ti, tj, rho, mu, eta, kappa);    
+    genbo2(filename, u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
 else
     ifile = 0;
     gen = 0;    
@@ -134,5 +134,8 @@ if isfield(pot, filename)
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
+
+movefile('app/*', char(app.sourcepath + "C++/Potentials"));
+rmdir('app');
 
 end

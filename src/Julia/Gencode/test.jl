@@ -29,4 +29,3 @@ app.potentialfile = "potential.jl";
 
 include(app.potentialfile);  # include the potential file
 Gencode.gencode(app); # Generate C++ code
-

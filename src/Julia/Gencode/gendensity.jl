@@ -1,6 +1,6 @@
-function gendensity(filename, u, rho, mu, eta, kappa, gen, ifile)
+function gendensity(foldername,filename, u, rho, mu, eta, kappa, gen, ifile)
 
-foldername = "app";
+#foldername = "app";
 opufile = "opu" * filename;
 cpufile = "cpu" * filename;
 gpufile = "gpu" * filename;
@@ -30,7 +30,7 @@ else
     tmp = sp0;
 
     stropu = stropu * tmp * "{\n";
-    stropu = stropu * "\tfor (int i = 0; i <ng; i**) {\n";
+    stropu = stropu * "\tfor (int i = 0; i <ng; i++) {\n";
 
     strgpu = strgpu * tmp * "{\n";
     strgpu = strgpu * "\tint i = threadIdx.x * blockIdx.x * blockDim.x;\n";
@@ -67,7 +67,7 @@ else
     strgpu = strgpu * tmp;
 
     strcpu = replace(stropu, "opu" => "cpu");
-    strcpu = replace(strcpu, "for (int i = 0; i <ng; i**) {" => "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i**) {");
+    strcpu = replace(strcpu, "for (int i = 0; i <ng; i++) {" => "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");
 end
 
 if ifile==1

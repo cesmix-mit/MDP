@@ -34,8 +34,9 @@ void implSingleEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         cpuNeighSingles(xi, qi, x, q, ai, ti, ilist, atomtype, na, ncq, dim);
 
         dstype *fi = &tmp.tmpmem[na*(dim+ncq)]; // na*dim
-        dstype *ei = &tmp.tmpmem[na*(2*dim+ncq)]; // na*dim
-        cpuComputeSingleEnergyForce(ei, fi, xi, qi, ti, ai, param, app.eta, app.kappa, 
+        dstype *ei = &tmp.tmpmem[na*(2*dim+ncq)]; // na
+        dstype *du = &tmp.tmpmem[na*(2*dim+ncq+1)]; // na
+        cpuComputeSingleEnergyForce(ei, du, fi, xi, qi, ti, ai, param, app.eta, app.kappa, 
                 dim, ncq, nparam, common.neta, common.nkappa, na, potnum, common.bondtype);
         
         cpuSingleDecomposition(e, f, ei, fi, ai, na, dim);        
@@ -110,13 +111,16 @@ void implFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, comm
                         
         dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
         //cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, dim, ncq, nparam, ntuples, potnum);        
-        cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+        cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
                 
         //cout<<ntuples*(2*dim+2*ncq+1)<<"  "<<common.ntmpmem<<"  "<<100*common.inum<<endl;
         //error("here");
-        
+//         printArray2D(eij,1,ntuples,0);
+//         printArray2D(fij,dim,ntuples,0);
+//         error("here");
         if (decomp==0)
             cpuFullNeighPairDecomposition(e, f, eij, fij, ai, ntuples, dim);
         else
@@ -171,8 +175,9 @@ void implHalfNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, comm
                         
         dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
         //cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, dim, ncq, nparam, ntuples, potnum);
-        cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+        cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
 
         if (decomp==0)
@@ -283,18 +288,20 @@ void implBO2EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
                 atomtype, na, jnum, ncq, dim);       
                         
-        dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples
-        dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq+1)]; // ntuples*dim        
+        dstype *du = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples
+        dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq+1)]; // ntuples        
+        dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq+2)]; // ntuples*dim                             
         //cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, dim, ncq, nparam, ntuples, potnum); 
-        cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+        cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
         
         dstype *rhoi = &tmp.tmpmem[0]; // na
         dstype *ei = &tmp.tmpmem[na]; // na
         dstype *gi = &tmp.tmpmem[2*na]; // na
+        dstype *du2 = &tmp.tmpmem[3*na]; // na
         cpuElectronDensity(rhoi, eij, pairnum, pairnumsum, na); 
         //cpuComputeEmbedingEnergy(ei, gi, rhoi, na); 
-        cpuPaircDensity(ei, gi, rhoi, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, na, potnum);
+        cpuPaircDensity(ei, du2, gi, rhoi, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, na, potnum);
         cpuEmbedingForce(fij, gi, pairnum, pairnumsum, na);        
                 
         cpuPutArrayAtIndex(e, ei, ilist, na);        
@@ -404,8 +411,9 @@ void implTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstru
               
         dstype *fij = &tmp.tmpmem[ntuples*(2*dim+3*ncq)]; // ntuples*dim
         dstype *fik = &tmp.tmpmem[ntuples*(3*dim+3*ncq)]; // ntuples*dim
-        dstype *eijk = &tmp.tmpmem[ntuples*(4*dim+3*ncq)]; // ntuples*dim
-        cpuComputeTripletEnergyForce(eijk, fij, fik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak,
+        dstype *eijk = &tmp.tmpmem[ntuples*(4*dim+3*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(4*dim+3*ncq+1)]; // ntuples
+        cpuComputeTripletEnergyForce(eijk, du, fij, fik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak,
                          param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
              
         if (decomp==0)            
@@ -490,11 +498,12 @@ void implBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &
         dstype *xij = &tmp.tmpmem[npairs*(1+dim)]; // npairs*dim
         dstype *qi = &tmp.tmpmem[npairs*(1+2*dim)]; // npairs*ncq
         dstype *qj = &tmp.tmpmem[npairs*(1+2*dim+ncq)]; // npairs*ncq
+        dstype *du = &tmp.tmpmem[npairs*(1+2*dim+2*ncq)]; // npairs
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
                 atomtype, na, jnum, ncq, dim);       
                                 
         //cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, dim, ncq, nparam, npairs, potnum);
-        cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+        cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, npairs, potnum, 3);
         
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj)                 
@@ -526,9 +535,10 @@ void implBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &
         dstype *f3ij = &tmp.tmpmem[npairs*(1+dim)+ntuples*(2*dim+3*ncq)]; // ntuples*dim
         dstype *f3ik = &tmp.tmpmem[npairs*(1+dim)+ntuples*(3*dim+3*ncq)]; // ntuples*dim
         dstype *e3ijk = &tmp.tmpmem[npairs*(1+dim)+ntuples*(4*dim+3*ncq)]; // ntuples
+        dstype *du2 = &tmp.tmpmem[npairs*(1+dim)+ntuples*(4*dim+3*ncq+1)]; // ntuples
         //cpuComputeTripletEnergyForce(e3ijk, f3ij, f3ik, x3ij, x3ik, q3i, q3j, q3k, t3i, t3j, t3k, a3i, a3j, a3k,
         //                        param, dim, ncq, nparam, ntuples, potnum);
-        cpuComputeTripletEnergyForce(e3ijk, f3ij, f3ik, x3ij, x3ik, q3i, q3j, q3k, t3i, t3j, t3k, a3i, a3j, a3k,
+        cpuComputeTripletEnergyForce(e3ijk, du2, f3ij, f3ik, x3ij, x3ik, q3i, q3j, q3k, t3i, t3j, t3k, a3i, a3j, a3k,
                        param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
         
         dstype *h3ij = &tmp.tmpmem[npairs*(1+dim)]; // npairs        
@@ -538,7 +548,7 @@ void implBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &
         cpuElectronDensity(h3ij, e3ijk, tripletnum, tripletnumsum, npairs);
         cpuElectronDensity(g3ij, f3ij, tripletnum, tripletnumsum, npairs);
         //cpuComputeEmbedingEnergy(c3ij, d3ij, h3ij, npairs);         
-        cpuTripletcDensity(c3ij, d3ij, h3ij, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, npairs, potnum);
+        cpuTripletcDensity(c3ij, du, d3ij, h3ij, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, npairs, potnum);
         
         for (int i=0; i<npairs; i++) 
             for (int j=0; j<dim; j++)
@@ -696,9 +706,8 @@ void implQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commons
         dstype *fik = &tmp.tmpmem[ntuples*(5*dim+3*ncq)]; // ntuples*dim
         dstype *fil = &tmp.tmpmem[ntuples*(6*dim+3*ncq)]; // ntuples*dim
         dstype *eijkl = &tmp.tmpmem[ntuples*(7*dim+3*ncq)]; // ntuples
-//         cpuComputeQuadrupletEnergyForce(eijkl, fij, fik, fil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
-//                                 param, dim, ncq, nparam, ntuples, potnum);
-        cpuComputeQuadrupletEnergyForce(eijkl, fij, fik, fil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
+        dstype *du = &tmp.tmpmem[ntuples*(7*dim+3*ncq+1)]; // ntuples
+        cpuComputeQuadrupletEnergyForce(eijkl, du, fij, fik, fil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
                 param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);                                
 
         if (decomp==0)
@@ -772,6 +781,8 @@ void implEmpiricalPotentialEnergyForce(dstype *e, dstype *f, neighborstruct &nb,
 
     if (common.npot4b > 0)
         implBondedQuadrupletEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);              
+    
+    ArrayMinus(f, f, common.dim*common.inum, common.backend);
 }
 
 #endif

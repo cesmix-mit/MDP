@@ -1,13 +1,15 @@
 // Example usage of Enzyme to differentiate cpuSphericalHarmonics function
 // Example ways to run (setting path as appropriate:
 //  1)
-//     clang++ -ffast-math -O3 enzymeSphericalHarmoics.cpp -Xclang -load -Xclang /path/to/ClangEnzyme-7.so -lm
+//     clang++ -std=c++11 -ffast-math -O3 enzymeSphericalHarmonics.cpp -Xclang -load -Xclang ../enzyme/build/Enzyme/ClangEnzyme-10.dylib -lm
 //     ./a.out
 //  2)
-//     clang++ -ffast-math -O3 enzymeSphericalHarmoics. -S -emit-llvm | opt - -load=/path/to/LLVMEnzyme-7.so -enzyme -O3 -S | clang -x ir - -lm
+//     clang++ -ffast-math -O3 enzymeSphericalHarmonics.cpp -S -emit-llvm | opt - -load=../enzyme/build/Enzyme/LLVMEnzyme-10.dylib -enzyme -O3 -S | clang -x ir - -lm
 //     ./a.out
 // The first method only runs optimization prior to Enzyme, whereas the second
 // method runs before and after Enzyme
+
+// !/usr/local/Cellar/llvm/11.1.0/bin/clang++ -std=c++11 -ffast-math -O3 enzymeSphericalHarmonics.cpp -Xclang -load -Xclang /usr/local/lib/ClangEnzyme-11.dylib -lm
 
 #include <stdio.h>
 #include <math.h>

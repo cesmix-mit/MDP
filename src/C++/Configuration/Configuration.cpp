@@ -52,7 +52,7 @@ void implReadAppStruct(appstruct &app, string filein, Int mpiprocs, Int mpirank,
     app.pot3b = readiarrayfromdouble(in, app.nsize[29]);    
     app.pot3c = readiarrayfromdouble(in, app.nsize[30]);    
     app.pot4a = readiarrayfromdouble(in, app.nsize[31]);    
-    app.pot4b = readiarrayfromdouble(in, app.nsize[32]);        
+    app.pot4b = readiarrayfromdouble(in, app.nsize[32]);      
     readarray(in, &app.rcutsqml, app.nsize[33]);       
     readarray(in, &app.rcutsq2a, app.nsize[34]);       
     readarray(in, &app.rcutsq2b, app.nsize[35]);       
@@ -70,6 +70,42 @@ void implReadAppStruct(appstruct &app, string filein, Int mpiprocs, Int mpirank,
     app.atom3c = readiarrayfromdouble(in, app.nsize[47]);    
     app.atom4b = readiarrayfromdouble(in, app.nsize[48]);        
         
+    int n = 0;
+    for (int i=13; i<=22; i++) 
+        n += app.nsize[i];
+    TemplateMalloc(&app.muep, n, backend); 
+    
+    for (int i=0; i < app.nsize[13]; i++) 
+        app.muep[i] = app.mu1a[i];
+    n = app.nsize[13];    
+    for (int i=0; i < app.nsize[14]; i++) 
+        app.muep[i+n] = app.mu1b[i];
+    n += app.nsize[14];    
+    for (int i=0; i < app.nsize[15]; i++) 
+        app.muep[i+n] = app.mu2a[i];
+    n += app.nsize[15];    
+    for (int i=0; i < app.nsize[16]; i++) 
+        app.muep[i+n] = app.mu2b[i];
+    n += app.nsize[16];    
+    for (int i=0; i < app.nsize[17]; i++) 
+        app.muep[i+n] = app.mu2c[i];
+    n += app.nsize[17];        
+    for (int i=0; i < app.nsize[18]; i++) 
+        app.muep[i+n] = app.mu3a[i];
+    n += app.nsize[18];    
+    for (int i=0; i < app.nsize[19]; i++) 
+        app.muep[i+n] = app.mu3b[i];
+    n += app.nsize[19];    
+    for (int i=0; i < app.nsize[20]; i++) 
+        app.muep[i+n] = app.mu3c[i];
+    n += app.nsize[20];    
+    for (int i=0; i < app.nsize[21]; i++) 
+        app.muep[i+n] = app.mu4a[i];
+    n += app.nsize[21];    
+    for (int i=0; i < app.nsize[22]; i++) 
+        app.muep[i+n] = app.mu4b[i];
+    n += app.nsize[22];    
+    
     // Close file:
     in.close();        
 }
@@ -128,6 +164,11 @@ void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
     TemplateMalloc(&app.atom3c, happ.nsize[47], backend); 
     TemplateMalloc(&app.atom4b, happ.nsize[48], backend);                
     
+    int n = 0;
+    for (int i=13; i<=22; i++) 
+        n += happ.nsize[i];
+    TemplateMalloc(&app.muep, n, backend); 
+    
     if (backend==2) { // GPU
 #ifdef HAVE_CUDA        
         CHECK( cudaMemcpy(app.nsize, happ.nsize, happ.lsize[0]*sizeof(Int), cudaMemcpyHostToDevice ) );              
@@ -180,6 +221,7 @@ void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
         CHECK( cudaMemcpy(app.atom3b, happ.atom3b, happ.nsize[46]*sizeof(Int), cudaMemcpyHostToDevice ) );              
         CHECK( cudaMemcpy(app.atom3c, happ.atom3c, happ.nsize[47]*sizeof(Int), cudaMemcpyHostToDevice ) );                      
         CHECK( cudaMemcpy(app.atom4b, happ.atom4b, happ.nsize[48]*sizeof(Int), cudaMemcpyHostToDevice ) );                                      
+        CHECK( cudaMemcpy(app.muep, happ.muep, n*sizeof(dstype), cudaMemcpyHostToDevice ) );              
 #endif        
     }        
 }
@@ -214,10 +256,12 @@ void implReadConfigStruct(configstruct &config, string filein, Int mpiprocs, Int
     readarray(in, &config.e, config.nsize[5]);   
     config.t = readiarrayfromdouble(in, config.nsize[6]);
     readarray(in, &config.x, config.nsize[7]);   
-    readarray(in, &config.v, config.nsize[8]);   
-    readarray(in, &config.f, config.nsize[9]);   
-    readarray(in, &config.q, config.nsize[10]);       
-            
+    readarray(in, &config.q, config.nsize[8]);   
+    readarray(in, &config.v, config.nsize[9]);   
+    readarray(in, &config.f, config.nsize[10]);      
+    readarray(in, &config.we, config.nsize[11]);      
+    readarray(in, &config.wf, config.nsize[12]);      
+                
     TemplateMalloc(&config.natomssum, config.nsize[1]+1, 0); 
     cpuCumsum(config.natomssum, config.natoms, config.nsize[1]+1); 
     
@@ -254,10 +298,12 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.neighcell = app.flags[9];   // 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
     common.decomposition = app.flags[10]; // 0 -> force decomposition, 1 -> atom decomposition
     common.chemtype = app.flags[11];      // 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
+    common.dftdata = app.flags[12];       // 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
     
     common.time = app.simulaparam[0];
     common.dt = app.simulaparam[1];
-    
+    common.rcutml = sqrt(app.rcutsqml[0]);
+            
     common.nflags = app.nsize[1];
     common.nsimulaparam = app.nsize[8];   
     common.nsolversparam = app.nsize[9];       
@@ -339,22 +385,22 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     TemplateMalloc(&common.atom3c, app.nsize[47], 0); 
     TemplateMalloc(&common.atom4b, app.nsize[48], 0);        
     
-    ArrayCopy(common.pot1a, app.pot1a, app.nsize[23], 0);
-    ArrayCopy(common.pot1b, app.pot1b, app.nsize[24], 0);
-    ArrayCopy(common.pot2a, app.pot2a, app.nsize[25], 0);
-    ArrayCopy(common.pot2b, app.pot2b, app.nsize[26], 0);
-    ArrayCopy(common.pot2c, app.pot2c, app.nsize[27], 0);
-    ArrayCopy(common.pot3a, app.pot3a, app.nsize[28], 0);
-    ArrayCopy(common.pot3b, app.pot3b, app.nsize[29], 0);
-    ArrayCopy(common.pot3c, app.pot3c, app.nsize[30], 0);
-    ArrayCopy(common.pot4a, app.pot4a, app.nsize[31], 0);
-    ArrayCopy(common.pot4b, app.pot4b, app.nsize[32], 0);    
-    ArrayCopy(common.atom1b, app.atom1b, app.nsize[43], 0);
-    ArrayCopy(common.atom2b, app.atom2b, app.nsize[44], 0);
-    ArrayCopy(common.atom2c, app.atom2c, app.nsize[45], 0);
-    ArrayCopy(common.atom3b, app.atom3b, app.nsize[46], 0);
-    ArrayCopy(common.atom3c, app.atom3c, app.nsize[47], 0);
-    ArrayCopy(common.atom4b, app.atom4b, app.nsize[48], 0);
+    cpuArrayCopy(common.pot1a, app.pot1a, app.nsize[23]);
+    cpuArrayCopy(common.pot1b, app.pot1b, app.nsize[24]);
+    cpuArrayCopy(common.pot2a, app.pot2a, app.nsize[25]);
+    cpuArrayCopy(common.pot2b, app.pot2b, app.nsize[26]);
+    cpuArrayCopy(common.pot2c, app.pot2c, app.nsize[27]);
+    cpuArrayCopy(common.pot3a, app.pot3a, app.nsize[28]);
+    cpuArrayCopy(common.pot3b, app.pot3b, app.nsize[29]);
+    cpuArrayCopy(common.pot3c, app.pot3c, app.nsize[30]);
+    cpuArrayCopy(common.pot4a, app.pot4a, app.nsize[31]);
+    cpuArrayCopy(common.pot4b, app.pot4b, app.nsize[32]);    
+    cpuArrayCopy(common.atom1b, app.atom1b, app.nsize[43]);
+    cpuArrayCopy(common.atom2b, app.atom2b, app.nsize[44]);
+    cpuArrayCopy(common.atom2c, app.atom2c, app.nsize[45]);
+    cpuArrayCopy(common.atom3b, app.atom3b, app.nsize[46]);
+    cpuArrayCopy(common.atom3c, app.atom3c, app.nsize[47]);
+    cpuArrayCopy(common.atom4b, app.atom4b, app.nsize[48]);    
 }
 
 void implSetAtomBlocks(commonstruct &common) 
@@ -385,8 +431,8 @@ void implGetConfiguration(Int *atomtype, dstype *x, commonstruct &common, config
     common.inum = inum;    
     
     if (common.backend <= 1) {               
-        ArrayCopy(x, &config.x[common.dim*start], common.dim*inum, common.backend);
-        ArrayCopy(atomtype, &config.t[start], inum, common.backend);
+        cpuArrayCopy(x, &config.x[common.dim*start], common.dim*inum);
+        cpuArrayCopy(atomtype, &config.t[start], inum);
     }
     else {
 #ifdef HAVE_CUDA                
@@ -401,7 +447,7 @@ void implGetAtomtypes(Int *atomtype, commonstruct &common, configstruct &config,
     common.inum = config.natoms[ci];    
     Int start = config.natomssum[ci];        
     if (common.backend <= 1) {               
-        ArrayCopy(atomtype, &config.t[start], common.inum, common.backend);
+        cpuArrayCopy(atomtype, &config.t[start], common.inum);
     }
     else {
 #ifdef HAVE_CUDA                
@@ -415,7 +461,7 @@ void implGetPositions(dstype *x, commonstruct &common, configstruct &config, Int
     common.inum = config.natoms[ci];    
     Int start = config.natomssum[ci];      
     if (common.backend <= 1) {
-        ArrayCopy(x, &config.x[common.dim*start], common.dim*common.inum, common.backend);    
+        cpuArrayCopy(x, &config.x[common.dim*start], common.dim*common.inum);    
     }
     else {
 #ifdef HAVE_CUDA                        
@@ -428,7 +474,7 @@ void implGetVelocities(dstype *v, commonstruct &common, configstruct &config, In
 {
     Int start = config.natomssum[ci];      
     if (common.backend <= 1) {
-        ArrayCopy(v, &config.v[common.dim*start], common.dim*common.inum, common.backend);    
+        cpuArrayCopy(v, &config.v[common.dim*start], common.dim*common.inum);    
     }
     else {
 #ifdef HAVE_CUDA                        
@@ -441,7 +487,7 @@ void implGetForces(dstype *f, commonstruct &common, configstruct &config, Int ci
 {
     Int start = config.natomssum[ci];        
     if (common.backend <= 1) {
-        ArrayCopy(f, &config.f[common.dim*start], common.dim*common.inum, common.backend);    
+        cpuArrayCopy(f, &config.f[common.dim*start], common.dim*common.inum);    
     }
     else {
 #ifdef HAVE_CUDA                                
@@ -454,7 +500,7 @@ void implGetCharges(dstype *q, commonstruct &common, configstruct &config, Int c
 {
     Int start = config.natomssum[ci]; 
     if (common.backend <= 1) {
-        ArrayCopy(q, &config.q[common.dim*start], common.ncq*common.inum, common.backend);    
+        cpuArrayCopy(q, &config.q[common.dim*start], common.ncq*common.inum);    
     }
     else {
 #ifdef HAVE_CUDA                                
@@ -466,7 +512,7 @@ void implGetCharges(dstype *q, commonstruct &common, configstruct &config, Int c
 void implGetEnergy(dstype *e, commonstruct &common, configstruct &config, Int ci)
 {    
     if (common.backend <= 1) {
-        ArrayCopy(e, &config.e[ci], 1, common.backend);    
+        cpuArrayCopy(e, &config.e[ci], 1);    
     }
     else {
 #ifdef HAVE_CUDA                                
@@ -567,19 +613,19 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     if (common.backend <= 1) {
         for (Int i=0; i<dim; i++)
             nb.cellnum[i] = cellnum[i];
-        ArrayCopy(nb.cellsize, cellsize, dim, common.backend);
-        ArrayCopy(nb.a, a, dim, common.backend);
-        ArrayCopy(nb.b, b, dim, common.backend);
-        ArrayCopy(nb.c, c, dim, common.backend);
-        ArrayCopy(nb.s2rmap, s2rmap, dim*dim, common.backend);
-        ArrayCopy(nb.refvertices, refvertices, m, common.backend);
-        ArrayCopy(nb.rbvertices, rbvertices, m, common.backend);
-        ArrayCopy(nb.boxvertices, boxvertices, m, common.backend);
-        ArrayCopy(nb.bbvertices, bbvertices, m, common.backend);
-        ArrayCopy(nb.pimages, pimages, n, common.backend);
-        ArrayCopy(nb.eta1, eta1, cellnum[0]+1, common.backend);
-        ArrayCopy(nb.eta2, eta2, cellnum[1]+1, common.backend);
-        ArrayCopy(nb.eta3, eta3, cellnum[2]+1, common.backend);
+        cpuArrayCopy(nb.cellsize, cellsize, dim);
+        cpuArrayCopy(nb.a, a, dim);
+        cpuArrayCopy(nb.b, b, dim);
+        cpuArrayCopy(nb.c, c, dim);
+        cpuArrayCopy(nb.s2rmap, s2rmap, dim*dim);
+        cpuArrayCopy(nb.refvertices, refvertices, m);
+        cpuArrayCopy(nb.rbvertices, rbvertices, m);
+        cpuArrayCopy(nb.boxvertices, boxvertices, m);
+        cpuArrayCopy(nb.bbvertices, bbvertices, m);
+        cpuArrayCopy(nb.pimages, pimages, n);
+        cpuArrayCopy(nb.eta1, eta1, cellnum[0]+1);
+        cpuArrayCopy(nb.eta2, eta2, cellnum[1]+1);
+        cpuArrayCopy(nb.eta3, eta3, cellnum[2]+1);
     }
     else if (common.backend==2) { // GPU
 #ifdef HAVE_CUDA        
@@ -626,22 +672,22 @@ void implSetTempStruct(tempstruct & tmp, commonstruct &common)
 
 void implSetSysStruct(sysstruct & sys, commonstruct &common, configstruct &config, Int ci)
 {    
-    TemplateMalloc(&sys.e, common.inum, common.backend);  
-    TemplateMalloc(&sys.f, common.dim*common.inum, common.backend);  
+    TemplateMalloc(&sys.e, common.inummax, common.backend);  
+    TemplateMalloc(&sys.f, common.dim*common.inummax, common.backend);  
     
     if (common.nx>0) {
         // need to check size of sys.x
-        TemplateMalloc(&sys.x, common.anummax*common.dim*common.inum, common.backend);  
+        TemplateMalloc(&sys.x, common.anummax*common.dim*common.inummax, common.backend);  
         implGetPositions(sys.x, common, config, ci);
     }
     
     if (common.nv > 0) {
-        TemplateMalloc(&sys.v, common.dim*common.inum, common.backend);  
+        TemplateMalloc(&sys.v, common.dim*common.inummax, common.backend);  
         implGetVelocities(sys.v, common, config, ci);
     }
     
     if (common.nq > 0) {
-        TemplateMalloc(&sys.q, common.ncq*common.inum, common.backend);  
+        TemplateMalloc(&sys.q, common.ncq*common.inummax, common.backend);  
         implGetCharges(sys.q, common, config, ci);           
     }
 }

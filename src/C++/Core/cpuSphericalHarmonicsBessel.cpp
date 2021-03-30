@@ -203,13 +203,13 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
         T y = xij[i*3+1];
         T z = xij[i*3+2];        
         
-        if (sqrt(x*x + y*y) < 2e-14) {
+        if (sqrt(x*x + y*y) < 2e-12) {
             T signx = (x >= 0.0) ? 1.0 : -1.0;
-            T signy = (y >= 0.0) ? 1.0 : -1.0;
-            x = fabs(x) > 1e-14 ? x : signx*1e-14;
-            y = fabs(y) > 1e-14 ? y : signy*1e-14;
+            T signy = (y >= 0.0) ? -1.0 : 1.0;
+            x = fabs(x) > 1e-12 ? x : signx*1e-12;
+            y = fabs(y) > 1e-12 ? y : signy*1e-12;
         }
-        
+                
         // Cartersian -> Spherical
         T r = sqrt(x*x + y*y + z*z);
         T the = acos(z/r);
@@ -231,8 +231,10 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
                 
         // Spherical harmonics for l = 1;
         l = 1;
-        T costhe = cos(the);
-        T a = -sin(the);        
+//         T costhe = cos(the);
+//         T a = -sin(the);        
+        T costhe = z/r; 
+        T a = -sqrt((r-z)*(r+z))/r;             
         int m = 0;    
         P[0] = costhe;
         P[1] = a;
@@ -253,13 +255,15 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
         C = sqrt((2*l+1)*fac[l-m]/(4*pi*fac[l+m]));
         Ylmr = C*cos(phi)*P[1];
         Ylmi = C*sin(phi)*P[1];                
+        //cout<<m<<"  "<<C<<"  "<<cos(phi)<<"  "<<P[1]<<endl;
         // Spherical Bessel for l = 1, see https://en.wikipedia.org/wiki/Bessel_function#Spherical_Bessel_functions:_jn,_yn
         for (k=0; k<K; k++) {
             xr = x0[k*(L+1)+l]*r;                        
             g = cos(xr)/(xr*xr) + sin(xr)/xr; 
             j = ((l*l + l + m)*K + k)*N + i; // spherical harmonics Bessel functions for m > 0                
             Sr[j] = g*Ylmr; // real part           
-            Si[j] = g*Ylmi; // imag part                                                            
+            Si[j] = g*Ylmi; // imag part              
+            //cout<<j<<"  "<<g<<"  "<<Ylmr<<"  "<<Sr[j]<<endl;
             jm = ((l*l + l - m)*K + k)*N + i; // spherical harmonics Bessel functions for m < 0                
             Sr[jm] = -Sr[j]; // real part                      
             Si[jm] =  Si[j]; // imag part                                                                       
@@ -371,9 +375,15 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         
         // Cartersian -> Spherical
         T r = sqrt(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]);
-        T the = acos(z[i]/r);
+        //T the = acos(z[i]/r);
         T phi = atan2(y[i],x[i]);
                 
+//         cout<<z[i]<<endl;
+//         cout<<r<<endl;
+//         cout<<the<<endl;
+//         cout<<sin(the)<<endl;
+//         cout<<cos(the)<<endl;
+        
         // partial derivatives of spherical coordinates
         T r2 = r*r;
         T rxy = sqrt(x[i]*x[i] + y[i]*y[i]);
@@ -428,8 +438,9 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         }
                         
         l = 1;
-        T costhe = cos(the);
-        T a = -sin(the);        
+        T costhe = z[i]/r; //cos(the);
+        T a = -sqrt(1-costhe*costhe);        
+        //T a = -sin(the);        
         T dcosthe = a;
         T da = -costhe;        
         int m = 0;    
@@ -491,6 +502,7 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         Ylmix = YlmiThe*Thex + YlmiPhi*Phix;
         Ylmiy = YlmiThe*They + YlmiPhi*Phiy;
         Ylmiz = YlmiThe*Thez + YlmiPhi*Phiz;
+        //cout<<m<<"  "<<C<<"  "<<cos(phi)<<"  "<<P[1]<<"  "<<the<<"  "<<sin(the)<<endl;
         for (k=0; k<K; k++) {
             // Spherical Bessel g_{lk}(x,y,z) and their derivatives for l = 1
             xr = x0[k*(L+1)+l]*r;                        
@@ -503,7 +515,8 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
             // derivatives of S_{klm}(x,y,z) = g_{lk}(x,y,z)*Y_{lm}(x,y,z) for l = 1 and m = 1
             j = ((l*l + l + m)*K + k)*N + i;          
             Sr[j] = g*Ylmr; // real part           
-            Si[j] = g*Ylmi; // imag part                                                                        
+            Si[j] = g*Ylmi; // imag part        
+            //cout<<j<<"  "<<g<<"  "<<Ylmr<<"  "<<Sr[j]<<endl;
             Srx[j] = gx*Ylmr + g*Ylmrx;
             Sry[j] = gy*Ylmr + g*Ylmry;
             Srz[j] = gz*Ylmr + g*Ylmrz;
@@ -671,17 +684,17 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         T x = xij[i*3];
         T y = xij[i*3+1];
         T z = xij[i*3+2];        
-        
-        if (sqrt(x*x + y*y) < 2e-14) {
+                
+        if (sqrt(x*x + y*y) < 2e-12) {
             T signx = (x >= 0.0) ? 1.0 : -1.0;
-            T signy = (y >= 0.0) ? 1.0 : -1.0;
-            x = fabs(x) > 1e-14 ? x : signx*1e-14;
-            y = fabs(y) > 1e-14 ? y : signy*1e-14;
+            T signy = (y >= 0.0) ? -1.0 : 1.0;
+            x = fabs(x) > 1e-12 ? x : signx*1e-12;
+            y = fabs(y) > 1e-12 ? y : signy*1e-12;
         }
         
         // Cartersian -> Spherical
         T r = sqrt(x*x + y*y + z*z);
-        T the = acos(z/r);
+        //T the = acos(z/r);
         T phi = atan2(y,x);
                                 
         // partial derivatives of spherical coordinates
@@ -739,8 +752,10 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         }
                         
         l = 1;
-        T costhe = cos(the);
-        T a = -sin(the);        
+//         T costhe = cos(the);
+//         T a = -sin(the);        
+        T costhe = z/r; 
+        T a = -sqrt((r-z)*(r+z))/r;     
         T dcosthe = a;
         T da = -costhe;        
         int m = 0;    
@@ -750,7 +765,6 @@ template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si,
         dP[1] = da;
         tmp[0] = 1.0;
         dtmp[0] = 0.0;
-        
         // Spherical harmonics Y_{lm}(x,y,z) and their derivatives for l = 1 and m = 0  
         m = 0;
         T C = sqrt((2*l+1)*fac[l-m]/(4*pi*fac[l+m]));

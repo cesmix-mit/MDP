@@ -33,21 +33,22 @@ public:
     void NeighborList(dstype* x);        
     
     // Empirical potentials
-    void NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void BondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void NonbondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void BondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void BondOrderPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void NonbondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void BondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void BondOrderTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void NonbondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-    void BondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void BondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+     void NonbondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void BondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void BondOrderPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void NonbondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void BondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void BondOrderTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void NonbondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void BondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
     
-    // Combined empirical potentials
+    // Empirical potentials
     void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam); 
     
     // Machine learning potentials
+    void RadialSphericalHarmonicDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int nparam);     
     void RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam);     
     void RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int nparam);     
 };

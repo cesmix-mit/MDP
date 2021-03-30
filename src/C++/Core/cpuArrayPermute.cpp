@@ -1,6 +1,18 @@
 #ifndef __CPUARRAYPERMUTE
 #define __CPUARRAYPERMUTE
 
+template <typename T> void cpuKron(T *C, T *A, T *B, int M1, int M2)
+{            
+    int M = M1*M2;        
+    //#pragma omp parallel for
+    for (int idx=0; idx<M; idx++)     
+    {
+        int ib = idx%M2;
+        int ia = (idx-ib)/M2;        
+        C[idx] += A[ia]*B[ib];        
+    }
+}
+
 template <typename T> void cpuKron(T *C, T *A, T *B, int M1, int N1, int M2, int N2)
 {            
     int M = M1*M2;
@@ -145,6 +157,9 @@ template <typename T> void cpuPermute23(T *B, T *A, int I1, int I2, int I3, int 
 //void cpuIndexPermute12(int*, int, int, int);
 //void cpuIndexPermute13(int*, int, int, int, int);
 //void cpuIndexPermute23(int*, int, int, int, int);
+
+template void cpuKron(double*, double*, double*, int, int);
+template void cpuKron(float*, float*, float*, int, int);
 
 template void cpuKron(double*, double*, double*, int, int, int, int);
 template void cpuKron(float*, float*, float*, int, int, int, int);

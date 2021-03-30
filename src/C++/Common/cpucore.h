@@ -1,6 +1,7 @@
 #ifndef __CPUCORE_H__
 #define __CPUCORE_H__
 
+template <typename T> void cpuKron(T *C, T *A, T *B, int M1, int M2);
 template <typename T> void cpuKron(T *C, T *A, T *B, int M1, int N1, int M2, int N2);
 void cpuIndexPermute12(int *index, int I1, int I2, int I3);
 void cpuIndexPermute13(int *index, int I1, int I2, int I3, int I4);
@@ -56,6 +57,7 @@ template <typename T> void cpuArrayMultiplyScalarDiagonal(T *C, T a, int n);
 template <typename T> void cpuArrayAddVectorToDiagonal(T *C, T *x, T a, int n);
 template <typename T> void cpuArrayRowAverage(T *a, T *b, int m, int n);
 template <typename T> void cpuArrayAXPB(T *y, T *x, T a, T b, int n);
+template <typename T> void cpuArrayRowkAXPB(T *y, T *x, T a, T b, int m, int n, int k);
 template <typename T> void cpuArrayAXPBY(T *z, T *x, T *y, T a, T b, int n);
 template <typename T> void cpuArrayAXY(T *s, T *x, T *y, T a, int n);
 template <typename T> void cpuArrayAXYZ(T *s, T *x, T *y, T *z, T a, int n);

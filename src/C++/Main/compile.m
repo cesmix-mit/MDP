@@ -1,5 +1,7 @@
 function compilerstr = compile(cpucompiler,gpucompiler)
 
+disp("Compiling C++ source code");
+
 if nargin<1
     cpucompiler = "g++";
 end
@@ -14,10 +16,10 @@ end
 
 delete('../Core/cpuCore.a');
 delete('../Core/libcpuCore.so');
-compilerstr{1} = cpucompiler + " -fPIC -O3 -c ../Core/cpuCore.cpp -o ../Core/cpuCore.o";
+compilerstr{1} = cpucompiler + " -fPIC -std=c++11 -ffast-math -O3 -c ../Core/cpuCore.cpp -o ../Core/cpuCore.o";
 compilerstr{2} = cpucompiler + " --shared ../Core/cpuCore.o -o ../Core/libcpuCore.so";
 compilerstr{3} = "ar rvs ../Core/cpuCore.a ../Core/cpuCore.o";
-compilerstr{4} = cpucompiler + " -std=c++11 main.cpp -o cpuMDP ../Core/cpuCore.a -O3 -lblas";
+compilerstr{4} = cpucompiler + " -std=c++11 main.cpp -o cpuMDP ../Core/cpuCore.a -ffast-math -O3 -Xclang -load -Xclang /usr/local/lib/ClangEnzyme-11.dylib -lblas -llapack";
 for i = 1:4
     eval(char("!" + compilerstr{i}));
 end

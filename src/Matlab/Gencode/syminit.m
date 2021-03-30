@@ -1,7 +1,7 @@
 function [xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al] = syminit(app)
 %, mu1a, mu1b, mu2a, mu2b, mu2c, mu3a, mu3b, mu3c, mu4a, mu4b, mu4c
 
-nd = app.nd;
+nd = app.dim;
 ncq = app.ncq;
 % ncmu1a = app.ncmu1a;
 % ncmu1b = app.ncmu1b;

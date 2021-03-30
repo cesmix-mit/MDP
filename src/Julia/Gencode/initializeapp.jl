@@ -20,7 +20,7 @@ mutable struct AppStruct
     dim::Int64; # physical dimension
     natomtype::Int64; # number of atom types
     ncq::Int64; # number of compoments of q
-    ncmu::Int64; # number of compoments of eta
+    ncmu::Int64; # number of compoments of mu
     nceta::Int64; # number of compoments of eta
     nckappa::Int64;# number of compoments of kappa
     ncmu1a::Int64;# number of compoments mu1a

@@ -313,6 +313,13 @@ template <typename T> void cpuArrayRowAverage(T *y, T *x, int m, int n)
     }        
 }
 
+template <typename T> void cpuArrayRowkAXPB(T *y, T *x, T a, T b, int m, int n, int k)
+{    
+    //#pragma omp parallel 
+    for (int j=0; j<n; j++)    
+        y[k + m*j] = a*x[k + m*j] + b;    
+}
+
 template <typename T> void cpuArrayAXPB(T *y, T *x, T a, T b, int n)
 {    
     //#pragma omp parallel for
@@ -501,6 +508,7 @@ template void cpuArrayMultiplyScalarDiagonal(double*, double, int);
 template void cpuArrayAddVectorToDiagonal(double*, double*, double, int);
 template void cpuArrayRowAverage(double*, double*, int, int);
 template void cpuArrayAXPB(double*, double*, double, double, int);
+template void cpuArrayRowkAXPB(double*, double*, double, double, int, int, int);
 template void cpuArrayAXPBY(double*, double*, double*, double, double, int);
 template void cpuArrayAXY(double*, double*, double*, double, int);
 template void cpuArrayAXYZ(double*, double*, double*, double*, double, int);
@@ -557,6 +565,7 @@ template void cpuArrayMultiplyScalarDiagonal(float*, float, int);
 template void cpuArrayAddVectorToDiagonal(float*, float*, float, int);
 template void cpuArrayRowAverage(float*, float*, int, int);
 template void cpuArrayAXPB(float*, float*, float, float, int);
+template void cpuArrayRowkAXPB(float*, float*, float, float, int, int, int);
 template void cpuArrayAXPBY(float*, float*, float*, float, float, int);
 template void cpuArrayAXY(float*, float*, float*, float, int);
 template void cpuArrayAXYZ(float*, float*, float*, float*, float, int);

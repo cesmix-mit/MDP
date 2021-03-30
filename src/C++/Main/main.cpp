@@ -3,10 +3,10 @@
 #include <sstream>
 #include <iostream>
 #include <math.h>
-#include <string.h>
+//#include <string.h>
 //#include <stdlib.h>
-#include <sys/unistd.h>
-#include <random>
+//#include <sys/unistd.h>
+//#include <random>
 
 #ifdef _CUDA
 #define HAVE_CUDA
@@ -30,7 +30,17 @@
 #include <chrono>
 #endif
 
-using namespace std;
+//using namespace std;
+using std::cout;
+using std::endl;
+using std::string;
+using std::ios;
+using std::ofstream;
+using std::ifstream;
+using std::ostringstream;
+using std::min;
+using std::max;
+using std::scientific;
 
 #include "../Common/common.h"     // declaration of variables and structs
 #include "../Common/core.h"       // interface to core libraries
@@ -141,23 +151,24 @@ int main(int argc, char** argv)
     Int nparam = CCal.common.nmu2a;
     
     // LJ potential
-    for (ci=0; ci<CCal.common.nconfigs; ci++) {  // loop over each configuration      
-        // initialize per-atom energy and forces
-        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
-        ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
-        
+    for (ci=0; ci<CCal.common.nconfigs; ci++) {  // loop over each configuration                              
         // get atom positions for configuration ci       
         CCal.GetPositions(x, ci);   
         
         // get atom types for configuration ci
         CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
         
+        // initialize per-atom energy and forces
+        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
+        ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
+        
         // form neighbor list
         CCal.NeighborList(x);
         
         // compute energy and forces for a nonbonded pair potential
-        CCal.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
-
+        //CCal.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
+        CCal.EmpiricalPotentialEnergyForce(e, f, x, q, CCal.app.muep, CCal.common.nmu); 
+        
         dstype energy = cpuArraySum(e, CCal.common.inum);
         cout<<"Configuration # "<<ci+1<<": "<<endl;
         cout<<"Potential energy: "<<energy<<endl;
@@ -166,36 +177,155 @@ int main(int argc, char** argv)
         cout<<"Atom forces: "<<endl;
         printArray2D(f, CCal.common.dim, CCal.common.inum, backend);
     }
+            
+    // construct regression object
+    CRegression CReg(CCal);
+    
+    // train machine learning potential using linear regression
+    CReg.LinearRegression(CCal);
         
-    // Machine learning potential
-    if (CCal.common.K > 0) {        
-        dstype *d, *dd;        
-        TemplateMalloc(&d, CCal.common.Ncoeff, backend);         
-        TemplateMalloc(&dd, CCal.common.dim*CCal.common.inum*CCal.common.Ncoeff, backend);         
-        for (ci=0; ci<CCal.common.nconfigs; ci++) {      
-            // spherical harmonic descriptors
-            ArraySetValue(d, 0.0, CCal.common.Ncoeff, CCal.common.backend);  
-            // derivatives of spherical harmonic descriptors
-            ArraySetValue(dd, 0.0, CCal.common.dim*CCal.common.inum*CCal.common.Ncoeff, CCal.common.backend);          
-            
-            // get atom positions for configuration ci   
-            CCal.GetPositions(x, ci);   
-            
-            // get atom types for configuration ci
-            CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
-            
-            // form neighbor list
-            CCal.NeighborList(x);
+    // check linear regression errors
+    for (int ci=0; ci<CCal.common.nconfigs; ci++) { // loop over each configuration             
+        // get atom positions for configuration ci   
+        CCal.GetPositions(x, ci);   
 
-            // compute descriptors and their derivatives
-            CCal.RadialSphericalHarmonicDescriptors(d, dd, x, q, param, 0);
-            
-            cout<<"Descriptors for configuration # "<<ci+1<<": "<<endl;
-            printArray2D(d, 1, CCal.common.Ncoeff, CCal.common.backend);
-            //printArray2D(dd, CCal.common.dim*CCal.common.inum, CCal.common.Ncoeff, CCal.common.backend);            
-        }
-    }
-            
+        // get atom types for configuration ci
+        CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+
+        // form neighbor list
+        CCal.NeighborList(x);
+
+        // Calculate energies and forces using ML potential
+        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
+        ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
+        CCal.RadialSphericalHarmonicEnergyForce(e, f, x, CCal.sys.c, q, param, 0); 
+        
+        // check errors
+        CCal.GetForces(x, ci);
+        cout<<"Configuration # "<<ci+1<<": "<<cpuArraySum(e, CCal.common.inum)<<"  "<<CCal.config.e[ci]<<endl;
+        printArray2D(f, CCal.common.dim, 10, CCal.common.backend);
+        printArray2D(x, CCal.common.dim, 10, CCal.common.backend);                
+    }            
+    
+    
+    
+//     if (CCal.common.K > 0) {        
+//         dstype *d, *dd;        
+//         TemplateMalloc(&d, CCal.common.Ncoeff, backend);         
+//         TemplateMalloc(&dd, CCal.common.dim*CCal.common.inummax*CCal.common.Ncoeff, backend);         
+//         for (ci=0; ci<CCal.common.nconfigs; ci++) {                  
+//             // get atom positions for configuration ci   
+//             CCal.GetPositions(x, ci);   
+//             
+//             // get atom types for configuration ci
+//             CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+//             
+//             // form neighbor list
+//             CCal.NeighborList(x);
+// 
+//             // spherical harmonic descriptors
+//             ArraySetValue(d, 0.0, CCal.common.Ncoeff, CCal.common.backend);  
+//             // derivatives of spherical harmonic descriptors
+//             ArraySetValue(dd, 0.0, CCal.common.dim*CCal.common.inum*CCal.common.Ncoeff, CCal.common.backend);          
+//             
+//             // compute descriptors and their derivatives
+//             CCal.RadialSphericalHarmonicDescriptors(d, dd, x, q, param, 0);
+//             
+//             cout<<"Descriptors for configuration # "<<ci+1<<": "<<endl;
+//             printArray2D(d, 1, CCal.common.Ncoeff, CCal.common.backend);
+//             //printArray2D(dd, CCal.common.dim*CCal.common.inum, CCal.common.Ncoeff, CCal.common.backend);            
+//         }
+//     }
+    
+//     int M = CCal.common.Ncoeff;
+//     int dim = CCal.common.dim;
+//     int K = CCal.common.nconfigs;
+//     //int backend = CCal.common.backend;
+//     
+//     dstype *d, *dd, *Q;        
+//     TemplateMalloc(&d, M, backend);         
+//     TemplateMalloc(&dd, dim*CCal.common.inummax*M, backend);             
+    
+//     TemplateMalloc(&Q, K*M, backend);          
+//     for (int ci=0; ci<CCal.common.nconfigs; ci++) {      
+//         // get atom positions for configuration ci   
+//         CCal.GetPositions(x, ci);   
+// 
+//         // get atom types for configuration ci
+//         CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+// 
+//         // form neighbor list
+//         CCal.NeighborList(x);
+// 
+//         // spherical harmonic descriptors
+//         ArraySetValue(d, 0.0, M, backend);  
+//         // derivatives of spherical harmonic descriptors
+//         ArraySetValue(dd, 0.0, dim*CCal.common.inum*M, backend);          
+//         
+//         // compute descriptors and their derivatives
+//         CCal.RadialSphericalHarmonicDescriptors(d, dd, x, q, param, 0);
+//         
+//         // insert d into Q at row ci
+//         ArrayInsert(Q, d, K, M, 1, ci, ci+1, 0, M, 0, 1, backend);
+//     }
+    
+    // total number of atoms for all configurations
+//     int ki = 0, N = 0;  
+//     for (int ci=0; ci<CCal.common.nconfigs; ci++)
+//         N += CCal.config.natoms[ci];
+//         
+//     TemplateMalloc(&Q, (dim*N)*M, backend);          
+//     for (int ci=0; ci<CCal.common.nconfigs; ci++) {      
+//         // get atom positions for configuration ci   
+//         CCal.GetPositions(x, ci);   
+// 
+//         // get atom types for configuration ci
+//         CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+// 
+//         // form neighbor list
+//         CCal.NeighborList(x);
+// 
+//         // number of atoms in configuration ci        
+//         int inum = CCal.common.inum; 
+//         // spherical harmonic descriptors
+//         ArraySetValue(d, 0.0, M, backend);  
+//         // derivatives of spherical harmonic descriptors
+//         ArraySetValue(dd, 0.0, dim*inum*M, backend);          
+//         
+//         // compute descriptors and their derivatives
+//         CCal.RadialSphericalHarmonicDescriptors(d, dd, x, q, param, 0);
+//                 
+//         // insert dd into Q at row ki
+//         ArrayInsert(Q, dd, dim*N, M, 1, ki, ki+dim*inum, 0, M, 0, 1, backend);
+//         ki += dim*inum;
+//     }
+    
+//     TemplateMalloc(&Q, (K + dim*N)*M, backend);          
+//     for (int ci=0; ci<CCal.common.nconfigs; ci++) {      
+//         // get atom positions for configuration ci   
+//         CCal.GetPositions(x, ci);   
+// 
+//         // get atom types for configuration ci
+//         CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+// 
+//         // form neighbor list
+//         CCal.NeighborList(x);
+// 
+//         // number of atoms in configuration ci        
+//         int inum = CCal.common.inum; 
+//         // spherical harmonic descriptors
+//         ArraySetValue(d, 0.0, M, backend);  
+//         // derivatives of spherical harmonic descriptors
+//         ArraySetValue(dd, 0.0, dim*inum*M, backend);          
+//         
+//         // compute descriptors and their derivatives
+//         CCal.RadialSphericalHarmonicDescriptors(d, dd, x, q, param, 0);
+//                 
+//         // insert d and dd into Q at row ki
+//         ArrayInsert(Q, d, K, M, 1, ki, ki+1, 0, M, 0, 1, backend);
+//         ArrayInsert(Q, dd, dim*N, M, 1, ki+1, ki+1+dim*inum, 0, M, 0, 1, backend);
+//         ki += 1 + dim*inum;
+//     }
     
 #ifdef HAVE_MPI
   MPI_Finalize();

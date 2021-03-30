@@ -1,4 +1,4 @@
-function genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, pot)
+function genpotential(foldername, filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, pot)
 
 n = length(u);
 gen = 1;
@@ -14,13 +14,13 @@ for i = 1:n
         potnum = potnum + 1;
         fn = filename * string(potnum);
         if pot==1
-            tmpopu, tmpcpu, tmpgpu = gensingle(fn, ui, xi, qi, ti, ai, mu, eta, kappa, gen, ifile);
+            tmpopu, tmpcpu, tmpgpu = gensingle(foldername, fn, ui, xi, qi, ti, ai, mu, eta, kappa, gen, ifile);
         elseif pot==2
-            tmpopu, tmpcpu, tmpgpu = genpair(fn, ui, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, gen, ifile);
+            tmpopu, tmpcpu, tmpgpu = genpair(foldername, fn, ui, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, gen, ifile);
         elseif pot==3
-            tmpopu, tmpcpu, tmpgpu = gentriplet(fn, ui, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, kappa, gen, ifile);
+            tmpopu, tmpcpu, tmpgpu = gentriplet(foldername, fn, ui, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, kappa, gen, ifile);
         elseif pot==4    
-            tmpopu, tmpcpu, tmpgpu = genquadruplet(fn, ui, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, gen, ifile);
+            tmpopu, tmpcpu, tmpgpu = genquadruplet(foldername, fn, ui, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, gen, ifile);
         end
         tmpopu = modifystr1(tmpopu);
         tmpcpu = modifystr1(tmpcpu);
@@ -32,7 +32,7 @@ for i = 1:n
 end    
 
 if potnum==0
-    nopotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, pot);
+    nopotential(foldername, filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, pot);
 else
     sp0, sp1, sp2, sp3 = getpotstr(pot);
     sp0 = replace(sp0, "int ng)" => "int ng, int potnum)");
@@ -42,7 +42,7 @@ else
     stropu = stropu * tmpopu;
     strcpu = strcpu * tmpcpu;
     strgpu = strgpu * tmpgpu;    
-    cppfiles(filename, stropu, strcpu, strgpu, 0);
+    cppfiles(foldername, filename, stropu, strcpu, strgpu, 0);
 end    
 
 end

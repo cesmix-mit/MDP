@@ -1,5 +1,7 @@
 function config = readconfig(app, mode)
 
+disp("Read configuration file");
+
 filename = app.configfile;
 fileID = fopen(filename,'r');
 if mode==0 % binary    

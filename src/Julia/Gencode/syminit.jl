@@ -1,6 +1,6 @@
 function syminit(app)
 
-nd = app.nd;
+nd = app.dim;
 ncq = app.ncq;
 # ncmu1a = app.ncmu1a;
 # ncmu1b = app.ncmu1b;

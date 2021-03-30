@@ -1,6 +1,6 @@
-function [app,config] = initializemdp(version)
+function [app,config] = initializemdp(sourcepath,version)
 
-app = initializeapp(version);
+app = initializeapp(sourcepath,version);
 config = initializeconfig(app);
 
 end

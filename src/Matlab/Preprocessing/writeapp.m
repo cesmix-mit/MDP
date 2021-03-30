@@ -1,4 +1,4 @@
-function writeapp(app,filename)
+function app = writeapp(app,filename)
 
 %disp('Writing app into a binary file...'); 
 % filename = "testapp.bin";

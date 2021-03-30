@@ -314,6 +314,7 @@ struct commonstruct {
     Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
     Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     Int training;     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
+    Int dftdata;      // 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
     Int runMD;        // 0 no MD simulation, 1 -> run MD simulation
     Int potential;    // 0 -> empirical potential, 1 -> empirical + LR, 2 -> empirical + GP, 3 -> empirical + NN
     Int cutofftype=0; // 0 -> single cut-off raidus for all atoms, 1 -> multiple cut-off radii for atom pairs  
@@ -334,6 +335,7 @@ struct commonstruct {
     Int nsimulaparam;   
     Int neta;   
     Int nkappa;   
+    Int nmuep;
     Int nmuml;
     Int nmu1a;
     Int nmu1b;
@@ -389,6 +391,7 @@ struct commonstruct {
     Int ntimesteps; // number of time steps
     dstype dt;   // timestep size     
     dstype time; // current simulation time    
+    dstype rcutml; // cutoff-radius for machine learning potential;
     dstype rbbvol; // volume of reference bounding box
     
     dstype boxoffset[3];
@@ -460,6 +463,7 @@ struct appstruct {
     dstype *eta=NULL; // hyperparameters      
     Int *kappa=NULL; // integer parameters                  
                         
+    dstype *muep=NULL;
     dstype *muml=NULL; 
     dstype *mu1a=NULL; 
     dstype *mu1b=NULL;
@@ -518,6 +522,7 @@ struct appstruct {
             CPUFREE(eta);
             CPUFREE(kappa);
             CPUFREE(muml);
+            CPUFREE(muep);
             CPUFREE(mu1a);
             CPUFREE(mu1b);
             CPUFREE(mu2a);
@@ -573,6 +578,7 @@ struct appstruct {
             GPUFREE(eta);
             GPUFREE(kappa);
             GPUFREE(muml);
+            GPUFREE(muep);
             GPUFREE(mu1a);
             GPUFREE(mu1b);
             GPUFREE(mu2a);
@@ -629,6 +635,8 @@ struct configstruct {
     dstype *a=NULL;   // principal vectors of the simulation box for all configurations       
     dstype *b=NULL;   // principal vectors of the simulation box for all configurations       
     dstype *c=NULL;   // principal vectors of the simulation box for all configurations       
+    dstype *we=NULL;   // weights on energies
+    dstype *wf=NULL;   // weights on forces 
     
     void freememory()
     {        
@@ -646,6 +654,8 @@ struct configstruct {
         CPUFREE(a);
         CPUFREE(b);
         CPUFREE(c);
+        CPUFREE(we);
+        CPUFREE(wf);
     }                         
 };
 
@@ -727,6 +737,8 @@ struct sysstruct {
     dstype *d=NULL;    // basis functions
     dstype *dd=NULL;   // derivatives of basis functions
     dstype *c=NULL;    // vector of coeffcients associated with the basis functions            
+    dstype *A=NULL;    // Regression matrix A 
+    dstype *b=NULL;    // Regression vector b
     
     void freememory(Int backend)
     {
@@ -739,7 +751,9 @@ struct sysstruct {
             CPUFREE(s);             
             CPUFREE(d);             
             CPUFREE(dd);             
-            CPUFREE(c);             
+            CPUFREE(c);       
+            CPUFREE(A);       
+            CPUFREE(b);       
         }            
 #ifdef HAVE_CUDA      
        else {
@@ -751,7 +765,9 @@ struct sysstruct {
             GPUFREE(s);
             GPUFREE(d);
             GPUFREE(dd);             
-            GPUFREE(c);                   
+            GPUFREE(c);             
+            GPUFREE(A);       
+            GPUFREE(b);       
        }
 #endif       
     }                     

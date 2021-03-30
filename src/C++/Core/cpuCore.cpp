@@ -1,11 +1,13 @@
 #ifndef __CPUCORE
 #define __CPUCORE
 
-
 #include <math.h>
+#include <algorithm>
 
-#define min(a,b) ((a)<(b)?(a):(b))
-#define max(a,b) ((a)>(b)?(a):(b))
+// #define min(a,b) ((a) < (b) ? (a) : (b))
+// #define max(a,b) ((a) > (b) ? (a) : (b))
+using std::min;
+using std::max;
 
 #include "cpuArrayOperations.cpp"
 #include "cpuArrayPermute.cpp"

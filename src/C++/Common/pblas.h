@@ -498,6 +498,32 @@ static void PGEMTM(cublasHandle_t handle, Int m, Int n, Int k, dstype *alpha, ds
 #endif        
 }
 
+static void PGEMTM(cublasHandle_t handle, Int m, Int n, Int k, dstype *alpha, dstype* A, Int lda, 
+        dstype* B, Int ldb, dstype *beta, dstype* Clocal, Int ldc, Int backend) 
+{
+    /* C = alpha*A^T * B + beta C */
+#ifdef USE_FLOAT     
+    if (backend <= 1) 
+        SGEMM(&cht, &chn, &m, &n, &k, alpha, A, &lda, B, &ldb, beta, Clocal, &ldc);
+#else   
+    if (backend <= 1) 
+        DGEMM(&cht, &chn, &m, &n, &k, alpha, A, &lda, B, &ldb, beta, Clocal, &ldc);
+#endif
+    
+#ifdef HAVE_CUDA          
+#ifdef USE_FLOAT  
+    if (backend == 2)     
+        cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, m, n, k, 
+            alpha, A, lda, B, ldb, beta, Clocal, ldc);                    
+#else            
+    if (backend == 2)  
+        cublasDgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, m, n, k, 
+            alpha, A, lda, B, ldb, beta, Clocal, ldc);
+#endif        
+#endif                         
+}
+
+
 // static void PGEMNMStridedBached(cublasHandle_t handle, Int m, Int n, Int k, dstype *alpha, dstype* A, Int lda, 
 //         dstype* B, Int ldb, dstype *beta, dstype* C, Int ldc, Int batchCount, Int backend) 
 // {

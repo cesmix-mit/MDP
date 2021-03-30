@@ -15,15 +15,15 @@ end
 
 if length(fs)==1
     for i = 1:n
-        #str1 = "\t\tf[" * string(i-1) * "*ng+i" * "]";        
-        str1 = "\t\tf[" * string(i-1) * " + i*" * string(n) * "]";
+        #str1 = "\t\tu[" * string(i-1) * "*ng+i" * "]";        
+        str1 = "\t\tu[" * string(i-1) * " + i*" * string(n) * "]";
         str2 = sympy.ccode(fs[1][i]);
         str = str * str1 * " = " * str2 * ";\n";
     end
 elseif length(fs)>1
     for i = 1:n
-        #str1 = "\t\tf[" * string(i-1) * "*ng+i" * "]";
-        str1 = "\t\tf[" * string(i-1) * " + i*" * string(n) * "]";
+        #str1 = "\t\tu[" * string(i-1) * "*ng+i" * "]";
+        str1 = "\t\tu[" * string(i-1) * " + i*" * string(n) * "]";
         str2 = sympy.ccode(fs[i]);
         str = str * str1 * " = " * str2 * ";\n";
     end
