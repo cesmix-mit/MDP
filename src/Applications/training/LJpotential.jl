@@ -7,6 +7,7 @@ end
 function Singleb(xi, qi, ti, mu, eta, kappa)
     u = 0.0;    
     return u;
+end
 
 # two-body non-bonded potentials 
 function Paira(xij, qi, qj, ti, tj, mu, eta, kappa)
