@@ -152,12 +152,10 @@ void CRegression::LinearRegression(CCalculation &CCal)
     }
 
     // solve the linear system A*c = b         
-    dstype *work=NULL;  
-    Int *ipiv=NULL;
-    TemplateMalloc(&work, M*M, backend);        
-    TemplateMalloc(&ipiv, M+1, backend);           
+    dstype *work = &CCal.tmp.tmpmem[0];  
+    Int *ipiv = &CCal.tmp.intmem[0];
     Inverse(CCal.common.cublasHandle, A, work, ipiv, M, 1, backend);     
-    PGEMNV(CCal.common.cublasHandle, M, M, &one, A, M, b, inc1, &zero, c, inc1, backend);    
+    PGEMNV(CCal.common.cublasHandle, M, M, &one, A, M, b, inc1, &zero, c, inc1, backend);        
 }
 
 void CRegression::GaussianRegression(CCalculation &CCal)
