@@ -4,8 +4,9 @@ using StaticArrays
 using LinearAlgebra
 using Test
 
-
-@testset "1-Atom-Basis-Function" begin
+# Test rotation invariance of the power spectrum and bispectrum basis functions
+# for a system of 1 atom and 100 neighbors
+@testset "1-Atom-Rotation-Invariance-Basis-Function" begin
 
     # Configuration 1: 101 H atoms
 
@@ -91,6 +92,7 @@ using Test
 
 end
 
+# Test rotation
 @testset "Rotation" begin
     I =  @SMatrix [1.0 0.0 0.0
                    0.0 1.0 0.0
