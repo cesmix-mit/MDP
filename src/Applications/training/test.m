@@ -52,7 +52,7 @@ app.pot2a = [1];     % list of nonbonded pair potentials
 app.mu2a = [A B];    % parameters for  LJ potential
 app.rcut2a = [8.5];  % cut-off radius 
 
-% run C++ code
+% train and validate the potential
 app = mdp(app);
 
 
