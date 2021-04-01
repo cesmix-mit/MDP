@@ -19,6 +19,7 @@ template <typename T> void cpuArrayMinusXAtIndex(T *y, T *x, int *ind, int n);
 template <typename T> void cpuArrayAXPYAtIndex(T *y, T *x, T a, int *ind, int n);
 
 void cpuArrayFill(int *a, int start, int n);
+template <typename T> T cpuArrayMaxError(T *a, T *b, int n);
 template <typename T> T cpuArrayMin(T *a, int n);
 template <typename T> T cpuArrayMax(T *a, int n);
 template <typename T> T cpuArraySum(T *a, int n);
@@ -202,6 +203,19 @@ template <typename T> void cpuNeighTripletList(int *tripletnum, int *tripletlist
 template <typename T> void cpuNeighTriplets(T *xij, T *xik, T *qi, T *qj, T *qk, T *x, T *q, int *ai, int *aj, int *ak,  
       int *ti, int *tj, int *tk, int *tripletnum, int *tripletlist, int *tripletnumsum, int *alist,  
       int *atomtype, int jnum, int ijnum, int ncq, int dim);
+
+template <typename T> void cpuSingleDecomposition(T *e, T *ei, int *ai, int inum, int dim);
+template <typename T> void cpuFullNeighPairDecomposition(T *e, T *eij, int *ai, int ijnum, int dim);
+template <typename T> void cpuCenterAtomPairDecomposition(T *e, T *eij, int *ilist, int *anumsum, int inum, int dim);
+template <typename T> void cpuHalfNeighPairDecomposition(T *e, T *eij, int *ai, int *aj, int ijnum, int dim);
+template <typename T> void cpuNeighborAtomPairDecomposition(T *e, T *eij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
+template <typename T> void cpuTripletDecomposition(T *e, T *eijk, int *ai, int *aj, int *ak, int ijknum, int dim);
+template <typename T> void cpuCenterAtomTripletDecomposition(T *e, T *eijk, int *ilist, int *anumsum, int inum, int dim);
+template <typename T> void cpuNeighborAtomTripletDecomposition(T *e, T *eij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
+template <typename T> void cpuQuadrupletDecomposition(T *e, T *eijkl, int *ai, int *aj, int *ak, int *al, int ijklnum, int dim);
+template <typename T> void cpuCenterAtomQuadrupletDecomposition(T *e, T *eijkl, int *ilist, int *anumsum, int inum, int dim);
+template <typename T> void cpuNeighborAtomQuadrupletDecomposition(T *e, T *eij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
+
 
 template <typename T> void cpuSingleDecomposition(T *e, T *f, T *ei, T *fi, int *ai, int inum, int dim);
 template <typename T> void cpuCenterAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *ilist, int *anumsum, int inum, int dim);

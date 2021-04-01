@@ -14,6 +14,31 @@ void cpuArrayFill(int* output, int start, int length)
 		output[j] = start + j;
 }
 
+// template <typename T> T cpuArrayErrorNorm(T *a, T *b, int n)
+// {
+//     T e = (a[0]-b[0])*(a[0]-b[0]);
+//     for (int i=1; i<n; i++)        
+//         e += (a[i]-b[i])*(a[i]-b[i]);    
+//     return sqrt(e);
+// }
+
+template <typename T> T cpuArrayMaxError(T *a, T *b, int n)
+{
+    T e = fabs(a[0]-b[0]);
+    for (int i=1; i<n; i++)
+        if (fabs(a[i]-b[i])>e)
+            e = fabs(a[i]-b[i]);    
+    return e;
+}
+
+// template <typename T> T cpuArrayNorm(T *a, int n)
+// {
+//     T e = a[0]*a[0];
+//     for (int i=1; i<n; i++)        
+//         e += a[i]*a[i];    
+//     return sqrt(e);
+// }
+
 template <typename T> T cpuArrayMin(T *a, int n)
 {
     T b = a[0];
@@ -470,6 +495,7 @@ template void cpuArrayPlusXAtIndex(double*, double*, int*, int);
 template void cpuArrayMinusXAtIndex(double*, double*, int*, int);
 template void cpuArrayAXPYAtIndex(double*, double*, double, int*, int);
 
+template double cpuArrayMaxError(double*, double *, int);
 template double cpuArrayMin(double*, int);
 template double cpuArrayMax(double*, int);
 template double cpuArraySum(double*, int);
@@ -527,6 +553,7 @@ template void cpuArrayPlusXAtIndex(float*, float*, int*, int);
 template void cpuArrayMinusXAtIndex(float*, float*, int*, int);
 template void cpuArrayAXPYAtIndex(float*, float*, float, int*, int);
 
+template float cpuArrayMaxError(float*, float*, int);
 template float cpuArrayMin(float*, int);
 template float cpuArrayMax(float*, int);
 template float cpuArraySum(float*, int);

@@ -83,7 +83,6 @@ void InitSphericalHarmonics(shstruct &sh, commonstruct &common)
             x0[k*(L+1) + l] = bzeros[k*25 + l]/common.rcutml;
     
     //printArray2D(x0, 1, K*(1+L), backend);    
-    // free memory
     //sh.freememory(backend);
          
     // allocate memory for sh struct

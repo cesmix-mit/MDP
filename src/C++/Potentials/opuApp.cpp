@@ -19,7 +19,7 @@ void __enzyme_autodiff(void*, Args... args);
 int enzyme_const, enzyme_dup;
  
 // TO DO: Use Enzyme to calculate the potential derivatives
-template <typename T> void opuSingle(T *__restrict__ u, 
+template <typename T> void cpuSingle(T *__restrict__ u, 
             T *__restrict__ xi, 
             T *__restrict__ qi, 
             int *__restrict__ ti, 
@@ -36,9 +36,9 @@ template <typename T> void opuSingle(T *__restrict__ u,
         opuSingleb(u, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
     }    
 }
-template void opuSingle(double *, double *, double *, int *, int *, double *, double *,
+template void cpuSingle(double *, double *, double *, int *, int *, double *, double *,
         int*, int, int, int, int, int, int, int, int);
-template void opuSingle(float *, float *, float *, int *, int *, float *, float *, 
+template void cpuSingle(float *, float *, float *, int *, int *, float *, float *, 
         int *, int, int, int, int, int, int, int, int);
 
 template <typename T> void cpuComputeSingleEnergyForce(T *__restrict__ u,
@@ -57,7 +57,7 @@ template <typename T> void cpuComputeSingleEnergyForce(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, inum);
     cpuArraySetValue(u_x, (T) 0.0, dim*inum);
  
-    __enzyme_autodiff((void*)opuSingle<T>, 
+    __enzyme_autodiff((void*)cpuSingle<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xi, u_x,
                         enzyme_const, qi,
@@ -74,7 +74,7 @@ template void cpuComputeSingleEnergyForce(double *, double *, double *, double *
 template void cpuComputeSingleEnergyForce(float *, float *, float *, float *, float *,
         int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
 
-template <typename T> void opuPair(T *__restrict__ u,
+template <typename T> void cpuPair(T *__restrict__ u,
                                     T *__restrict__ xij,
                                     T *__restrict__ qi, 
                                     T *__restrict__ qj, 
@@ -105,9 +105,9 @@ template <typename T> void opuPair(T *__restrict__ u,
                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
     }    
 }
-template void opuPair(double *, double *, double *, double *, int *, int *, int *, int *, 
+template void cpuPair(double *, double *, double *, double *, int *, int *, int *, int *, 
         double *, double *, int*, int, int, int, int, int, int, int, int);
-template void opuPair(float *, float *, float *, float *, int *, int *, int *, int *, 
+template void cpuPair(float *, float *, float *, float *, int *, int *, int *, int *, 
         float *, float *, int *, int, int, int, int, int, int, int, int);
 
 template <typename T> void cpuComputePairEnergyForce(T *__restrict__ u,
@@ -130,7 +130,7 @@ template <typename T> void cpuComputePairEnergyForce(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, ijnum);
     cpuArraySetValue(u_x, (T) 0.0, dim*ijnum);
 
-    __enzyme_autodiff((void*)opuPair<T>, 
+    __enzyme_autodiff((void*)cpuPair<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xij, u_x,
                         enzyme_const, qi,
@@ -152,7 +152,7 @@ template void cpuComputePairEnergyForce(double *, double *, double *, double *, 
 template void cpuComputePairEnergyForce(float *, float *, float *, float *, float *, float *,
         int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
 
-template <typename T> void opuTriplet(T *__restrict__ u,
+template <typename T> void cpuTriplet(T *__restrict__ u,
                                     T *__restrict__ xij,
                                     T *__restrict__ xik,
                                     T *__restrict__ qi, 
@@ -183,9 +183,9 @@ template <typename T> void opuTriplet(T *__restrict__ u,
                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
     }    
 }
-template void opuTriplet(double *, double *, double *, double *, double *, double *, int *, int *, 
+template void cpuTriplet(double *, double *, double *, double *, double *, double *, int *, int *, 
         int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int, int);
-template void opuTriplet(float *, float *, float *, float *, float *, float *, int *, int *, 
+template void cpuTriplet(float *, float *, float *, float *, float *, float *, int *, int *, 
         int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
 
 template <typename T> void cpuComputeTripletEnergyForce(T *__restrict__ u,
@@ -214,7 +214,7 @@ template <typename T> void cpuComputeTripletEnergyForce(T *__restrict__ u,
     cpuArraySetValue(u_xij, (T) 0.0, dim*ijknum);
     cpuArraySetValue(u_xik, (T) 0.0, dim*ijknum);
     
-    __enzyme_autodiff((void*)opuTriplet<T>, 
+    __enzyme_autodiff((void*)cpuTriplet<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xij, u_xij,
                         enzyme_dup, xik, u_xik,
@@ -241,7 +241,7 @@ template void cpuComputeTripletEnergyForce(float *, float *, float *, float *, f
         float *, float *, int *, int *, int *, int *, int *, int *, float *, float *, int *, int, int, 
         int, int, int, int, int, int);
 
-template <typename T> void opuQuadruplet(T *__restrict__ u,
+template <typename T> void cpuQuadruplet(T *__restrict__ u,
                                     T *__restrict__ xij,
                                     T *__restrict__ xik,
                                     T *__restrict__ xil,        
@@ -272,10 +272,10 @@ template <typename T> void opuQuadruplet(T *__restrict__ u,
                 mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);
     }            
 }
-template void opuQuadruplet(double *, double *, double *, double *, double *, double *, double *, 
+template void cpuQuadruplet(double *, double *, double *, double *, double *, double *, double *, 
         double *, int *, int *, int *, int *, int *, int *, int *, int *, double *, double *, 
         int*, int, int, int, int, int, int, int, int);
-template void opuQuadruplet(float *, float *, float *, float *, float *, float *, float *, 
+template void cpuQuadruplet(float *, float *, float *, float *, float *, float *, float *, 
         float *, int *, int *, int *, int *, int *, int *, int *, int *, float *, float *, 
         int *, int, int, int, int, int, int, int, int);
 
@@ -311,7 +311,7 @@ template <typename T> void cpuComputeQuadrupletEnergyForce(T *__restrict__ u,
     cpuArraySetValue(u_xik, (T) 0.0, dim*ijklnum);
     cpuArraySetValue(u_xil, (T) 0.0, dim*ijklnum);
     
-    __enzyme_autodiff((void*)opuQuadruplet<T>, 
+    __enzyme_autodiff((void*)cpuQuadruplet<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xij, u_xij,
                         enzyme_dup, xik, u_xik,

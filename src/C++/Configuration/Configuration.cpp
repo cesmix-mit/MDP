@@ -4,7 +4,7 @@
 #include "errormsg.cpp"
 #include "ioutilities.cpp"
 
-void implReadAppStruct(appstruct &app, string filein, Int mpiprocs, Int mpirank, Int backend)
+void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int mpiprocs, Int mpirank, Int backend)
 {
     string filename = filein + "app.bin";                    
     
@@ -69,7 +69,11 @@ void implReadAppStruct(appstruct &app, string filein, Int mpiprocs, Int mpirank,
     app.atom3b = readiarrayfromdouble(in, app.nsize[46]);    
     app.atom3c = readiarrayfromdouble(in, app.nsize[47]);    
     app.atom4b = readiarrayfromdouble(in, app.nsize[48]);        
-        
+    common.traininglist = readiarrayfromdouble(in, app.nsize[50]);        
+    common.validatelist = readiarrayfromdouble(in, app.nsize[51]);        
+    common.trainingnum = app.nsize[50];
+    common.validatenum = app.nsize[51];
+    
     int n = 0;
     for (int i=13; i<=22; i++) 
         n += app.nsize[i];
@@ -347,7 +351,11 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.nmu[8] = common.nmu[7] + common.nmu3c;
     common.nmu[9] = common.nmu[8] + common.nmu4a;
     common.nmu[10] = common.nmu[9] + common.nmu4b;
-        
+    common.Nempot = common.npot1a + common.npot1b;
+    common.Nempot += common.npot2a + common.npot2b + common.npot2c;
+    common.Nempot += common.npot3a + common.npot3b + common.npot3c;
+    common.Nempot += common.npot4a + common.npot4b;
+    
     common.nconfigs = config.nsize[1]; // number of configurations
     common.ne = config.nsize[5];
     common.nt = config.nsize[6];
@@ -671,8 +679,8 @@ void implSetTempStruct(tempstruct & tmp, commonstruct &common)
 }
 
 void implSetSysStruct(sysstruct & sys, commonstruct &common, configstruct &config, Int ci)
-{    
-    TemplateMalloc(&sys.e, common.inummax, common.backend);  
+{   
+    TemplateMalloc(&sys.e, common.inummax, common.backend);      
     TemplateMalloc(&sys.f, common.dim*common.inummax, common.backend);  
     
     if (common.nx>0) {
@@ -780,7 +788,7 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
 void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &common, 
         string filein, string fileout, Int mpiprocs, Int mpirank, Int backend)
 {
-    implReadAppStruct(app, filein, mpiprocs, mpirank, backend);    
+    implReadAppStruct(app, common, filein, mpiprocs, mpirank, backend);    
     implReadConfigStruct(config, filein, mpiprocs, mpirank, backend);            
     implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);        
 }

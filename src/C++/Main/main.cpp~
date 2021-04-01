@@ -133,38 +133,66 @@ int main(int argc, char** argv)
     Int gpuid = 0;        
     if (backend==2)
         ngpus = 1;
-             
+    
+    Int ci = 0;            
+    dstype *x, *e, *f, *q, *param;
+    
     // Read input files
     CCalculation CCal(filein, fileout, mpiprocs, mpirank, backend);       
     
     // set up configuration and allocate memory
-    CCal.SetConfiguration(0);
+    CCal.SetConfiguration(ci);
         
-    dstype *x, *e, *f, *q;
     x = &CCal.sys.x[0];
-    e = &CCal.sys.e[0];
+    e = new dstype[CCal.common.inummax];
     f = &CCal.sys.f[0];
     q = &CCal.sys.q[0];
-                
+    param = &CCal.app.mu2a[0];
+    Int nparam = CCal.common.nmu2a;
+    
+    // LJ potential
+    for (ci=0; ci<CCal.common.nconfigs; ci++) {  // loop over each configuration                              
+        // get atom positions for configuration ci       
+        CCal.GetPositions(x, ci);   
+        
+        // get atom types for configuration ci
+        CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+        
+        // initialize per-atom energy and forces
+        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
+        ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
+        
+        // form neighbor list
+        CCal.NeighborList(x);
+        
+        // compute energy and forces for a nonbonded pair potential
+        //CCal.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
+        CCal.EmpiricalPotentialEnergyForce(e, f, x, q, CCal.app.muep, CCal.common.nmu); 
+        
+        dstype energy = cpuArraySum(e, CCal.common.inum);
+        cout<<"Configuration # "<<ci+1<<": "<<endl;
+        cout<<"Potential energy: "<<energy<<endl;
+        cout<<"Per-atom energies: "<<endl;
+        printArray2D(e, 1, CCal.common.inum, backend);
+        cout<<"Atom forces: "<<endl;
+        printArray2D(f, CCal.common.dim, CCal.common.inum, backend);
+    }
+            
     // construct regression object
     CRegression CReg(CCal);
     
-    do {
-       cout <<"Initialization is done! Press RETURN key to train the potential.";
-    } while (std::cin.get() != '\n');
-    
-    // train the potential using linear regression 
-    CReg.LinearRegression(CCal);    
-    
-    do {
-       cout <<"Training is done! Press RETURN key to validate the potential.";
+    // train machine learning potential using linear regression
+    CReg.LinearRegression(CCal);
+        
+    cout<<"Potential Coefficients: ";
+    printArray2D(CCal.sys.c, 1, CCal.common.Ncoeff+CCal.common.Nempot, CCal.common. backend);
+    do 
+    {
+       cout <<"Press RETURN key to continue...";
     } while (std::cin.get() != '\n');
         
     // check linear regression errors
-    for (int i=0; i<CCal.common.validatenum; i++) { // loop over each configuration             
-        int ci = CCal.common.validatelist[i]; // configuration ci
-        int N = CCal.common.dim*CCal.common.inum;
-        
+    for (int ci=0; ci<CCal.common.nconfigs; ci++) { // loop over each configuration             
         // get atom positions for configuration ci   
         CCal.GetPositions(x, ci);   
 
@@ -176,7 +204,7 @@ int main(int argc, char** argv)
 
         // Calculate energies and forces using ML potential
         ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
-        ArraySetValue(f, 0.0, N, CCal.common.backend);  
+        ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
         CCal.PotentialEnergyForce(e, f, x, CCal.sys.c, q, CCal.app.muep, CCal.common.nmu); 
                 
         // check errors
@@ -184,44 +212,14 @@ int main(int argc, char** argv)
         cout<<"Configuration # "<<ci+1<<": "<<cpuArraySum(e, CCal.common.inum)<<"  "<<CCal.config.e[ci]<<endl;
         //printArray2D(f, CCal.common.dim, 10, CCal.common.backend);
         //printArray2D(x, CCal.common.dim, 10, CCal.common.backend);                
-        dstype energyerror = fabs((cpuArraySum(e, CCal.common.inum)-CCal.config.e[ci])/CCal.config.e[ci]);
-        cout<<"Relative error in energy : "<<energyerror<<endl;        
-        dstype normf = PNORM(CCal.common.cublasHandle, N, x, CCal.common.backend);
-        ArrayAXPBY(f, f, x, one, minusone, N, CCal.common.backend);    
-        dstype norme = PNORM(CCal.common.cublasHandle, N, f, CCal.common.backend);
-        dstype forceerror = norme/normf;
-        cout<<"Relative error in forces : "<<forceerror<<endl;        
+        cout<<"Absolute error in energy : "<<fabs(cpuArraySum(e, CCal.common.inum)-CCal.config.e[ci])<<endl;
+        dstype = cpuArrayMaxError(f, x, CCal.common.dim*CCal.common.inum)
+        //cout<<"Maximum absolute error in forces : "<<cpuArrayMaxError(f, x, CCal.common.dim*CCal.common.inum)<<endl;
     }            
-        
     
-//     // LJ potential
-//     for (ci=0; ci<CCal.common.nconfigs; ci++) {  // loop over each configuration                              
-//         // get atom positions for configuration ci       
-//         CCal.GetPositions(x, ci);   
-//         
-//         // get atom types for configuration ci
-//         CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
-//         
-//         // initialize per-atom energy and forces
-//         ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
-//         ArraySetValue(f, 0.0, CCal.common.dim*CCal.common.inum, CCal.common.backend);  
-//         
-//         // form neighbor list
-//         CCal.NeighborList(x);
-//         
-//         // compute energy and forces for a nonbonded pair potential
-//         //CCal.NonbondedPairEnergyForce(e, f, x, q, param, nparam);
-//         CCal.EmpiricalPotentialEnergyForce(e, f, x, q, CCal.app.muep, CCal.common.nmu); 
-//         
-//         dstype energy = cpuArraySum(e, CCal.common.inum);
-//         cout<<"Configuration # "<<ci+1<<": "<<endl;
-//         cout<<"Potential energy: "<<energy<<endl;
-//         cout<<"Per-atom energies: "<<endl;
-//         printArray2D(e, 1, CCal.common.inum, backend);
-//         cout<<"Atom forces: "<<endl;
-//         printArray2D(f, CCal.common.dim, CCal.common.inum, backend);
-//     }
-        
+    delete[] e;
+    
+    
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif 

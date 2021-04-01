@@ -35,7 +35,7 @@ public:
     // Empirical potentials
 //     void NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
 //     void BondedSingleEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
-     void NonbondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
+//     void NonbondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
 //     void BondedPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
 //     void BondOrderPairEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
 //     void NonbondedTripletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
@@ -45,13 +45,23 @@ public:
 //     void BondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam); 
     
     // Empirical potentials
+    void EmpiricalPotentialDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int *nparam);     
+    void EmpiricalPotentialDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam);     
     void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam); 
+    void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam); 
     
     // Machine learning potentials
     void RadialSphericalHarmonicDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int nparam);     
     void RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam);     
     void RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int nparam);     
+    
+    // Combined empirical + ML potentials
+    void PotentialDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int *nparam);     
+    void PotentialDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam);     
+    void PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam);     
 };
+
+
 
 
 #endif        

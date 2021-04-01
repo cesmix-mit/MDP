@@ -6,7 +6,7 @@ function app = writeapp(app,filename)
 % tmp = fread(fileID,'double');
 % fclose(fileID);
 
-nsize = zeros(50,1);
+nsize = zeros(60,1);
 nsize(1) = length(app.ndims(:));
 nsize(2) = length(app.flag(:));  
 nsize(3) = length(app.bcs(:)); 
@@ -56,7 +56,8 @@ nsize(46) = length(app.atom2c(:));
 nsize(47) = length(app.atom3b(:));
 nsize(48) = length(app.atom3c(:));
 nsize(49) = length(app.atom4b(:));
-
+nsize(51) = length(app.traininglist(:));
+nsize(52) = length(app.validatelist(:));
 
 endian = 'native';
 app.nsize = nsize;
@@ -112,6 +113,8 @@ fwrite(fileID,app.atom2c(:),'double',endian);
 fwrite(fileID,app.atom3b(:),'double',endian);
 fwrite(fileID,app.atom3c(:),'double',endian);
 fwrite(fileID,app.atom4b(:),'double',endian);
+fwrite(fileID,app.traininglist(:)-1,'double',endian);
+fwrite(fileID,app.validatelist(:)-1,'double',endian);
 
 fclose(fileID);
 

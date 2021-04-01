@@ -33,13 +33,6 @@ function u = Paira(xij, qi, qj, ti, tj, mu, eta, kappa)
     A = mu(1);
     B = mu(2);
     u = (A/r12 - B/r6);    
-    % shitfted Lennard-Jones potential   
-%     R = eta(1);     % cut-off radius for shitfted Lennard-Jones potential   
-%     R2 = R*R;
-%     R4 = R2*R2;
-%     R6 = R4*R2;
-%     R12 = R6*R6;    
-%     u = (A/r12 - B/r6) - (A/R12 - B/R6);    
 end
 
 % two-body bonded potentials 

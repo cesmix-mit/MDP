@@ -748,6 +748,7 @@ void implBondedQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, c
            common.atom4b[4*i], common.atom4b[1+4*i], common.atom4b[2+4*i], common.atom4b[3+4*i], common.decomposition, common.pot4b[i]);                
 }
 
+
 void implEmpiricalPotentialEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &common, 
         appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
 {    
@@ -784,65 +785,60 @@ void implEmpiricalPotentialEnergyForce(dstype *e, dstype *f, neighborstruct &nb,
     ArrayMinus(f, f, common.dim*common.inum, common.backend);
 }
 
-void implEmpiricalPotentialDescriptors(dstype *ei, dstype *f, neighborstruct &nb, commonstruct &common, 
+void implEmpiricalPotentialDescriptors(dstype *e, dstype *f, neighborstruct &nb, commonstruct &common, 
         appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
 {    
     int inum = common.inum;
     int dim = common.dim;
-    
     int m = 0;
     int n = 0;
     if (common.npot1a > 0)
-        implNonbondedSingleEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+        implNonbondedSingleEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
 
     m += common.npot1a*inum;
     n += common.npot1a*dim*inum;
     if (common.npot1b > 0)
-        implBondedSingleEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+        implBondedSingleEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
 
     m += common.npot1b*inum;
     n += common.npot1b*dim*inum;
     if (common.npot2a > 0)
-        implNonbondedPairEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+        implNonbondedPairEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
 
     m += common.npot2a*inum;
     n += common.npot2a*dim*inum;
     if (common.npot2b > 0)
-        implBondedPairEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+        implBondedPairEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
 
     m += common.npot2b*inum;
     n += common.npot2b*dim*inum;
     if (common.npot2c > 0)    
-        implBoPairEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+        implBoPairEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
 
     m += common.npot2c*inum;
     n += common.npot2c*dim*inum;
     if (common.npot3a > 0)    
-        implNonbondedTripletEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+        implNonbondedTripletEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
     
     m += common.npot3a*inum;
     n += common.npot3a*dim*inum;
     if (common.npot3b > 0)
-        implBondedTripletEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+        implBondedTripletEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
 
     m += common.npot3b*inum;
     n += common.npot3b*dim*inum;
     if (common.npot3c > 0)    
-        implBoTripletEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+        implBoTripletEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
 
     m += common.npot3c*inum;
     n += common.npot3c*dim*inum;
     if (common.npot4a > 0)
-        implNonbondedQuadrupletEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+        implNonbondedQuadrupletEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
 
     m += common.npot4a*inum;
     n += common.npot4a*dim*inum;
     if (common.npot4b > 0)
-        implBondedQuadrupletEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
-    
-//     dstype *onevec =  &tmp.tmpmem[0];  
-//     ArraySetValue(onevec, 1.0, inum, common.backend);
-//     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                                
+        implBondedQuadrupletEnergyForce(&e[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
 }
 
 void implSingleEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
@@ -1069,7 +1065,7 @@ void implBondedPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common, a
     }            
 }
 
-void implBO2Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+void implBO2EnergyForce(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
         dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int decomp, Int potnum)
 {        
     for (Int b=0; b<common.nba; b++) {
@@ -1118,399 +1114,69 @@ void implBO2Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruc
         
         dstype *rhoi = &tmp.tmpmem[0]; // na
         dstype *ei = &tmp.tmpmem[na]; // na
+        dstype *gi = &tmp.tmpmem[2*na]; // na
+        dstype *du2 = &tmp.tmpmem[3*na]; // na
         cpuElectronDensity(rhoi, eij, pairnum, pairnumsum, na); 
-        opuPaircDensity(ei, rhoi, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, na, potnum);                
+        opuPaircDensity(ei, rhoi, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, na, potnum);
+        opuPaircDensity(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum)
+                
         cpuPutArrayAtIndex(e, ei, ilist, na);        
     }        
 }
-void implBoPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+void implBoPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
         dstype* x, dstype *q, dstype* param, Int nparam)
 {    
     common.bondtype = 2; // non-bonded interaction
     for (int i = 0; i < common.npot2c; i++)
-        implBO2Energy(e, nb, common, app, tmp, x, q, param, &app.rcutsq2c[i], 
+        implBO2EnergyForce(e, f, nb, common, app, tmp, x, q, param, &app.rcutsq2c[i], 
                     nb.atomtype, nparam, common.atom2c[2*i], common.atom2c[1+2*i], common.decomposition, common.pot2c[i]);                    
 }
 
-void implTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, dstype* x, 
-        dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int typek, Int decomp, Int potnum)
-{        
-    for (Int b=0; b<common.nba; b++) {
-        Int e1 = common.ablks[b];
-        Int e2 = common.ablks[b+1];            
-        Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
-        Int ncq = common.ncq;
-        Int dim = common.dim;
-                
-        Int *ilist = &tmp.intmem[0]; //na     
-        if (typei>0) {               
-            Int *olist = &tmp.intmem[na]; //na        
-            cpuArrayFill(olist, e1, na);        
-
-            Int *t0 = &tmp.intmem[2*na]; //na        
-            Int *t1 = &tmp.intmem[3*na]; //na        
-            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
-        }
-        else {
-            cpuArrayFill(ilist, e1, na);        
-        }
-                
-        Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum        
-        if ((typej>0) && (typek>0))
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, dim);
-        else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
-                
-        Int *tripletnum = &tmp.intmem[na]; // na        
-        for (int ii=0; ii<na; ii++)
-            tripletnum[ii] = (pairnum[ii]-1)*pairnum[ii]/2;       
-                        
-        //a list contains the starting positions of the first neighbor 
-        Int *tripletnumsum = &tmp.intmem[2*na]; // na+1        
-        cpuCumsum(tripletnumsum, tripletnum, na+1);                                         
-        int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, common.backend);     
-                
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
-        cpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
-        Int *tripletlist = &tmp.intmem[1 + 3*na]; // 2*ntuples    (ilist, tripletnum, tripletnumsum, tripletlist)            
-        cpuArrayCopy(tripletlist, temp, 2*ntuples);
-        
-        Int *ai = &tmp.intmem[1 + 3*na + 2*ntuples]; // ntuples        
-        Int *aj = &tmp.intmem[1 + 3*na + 3*ntuples]; // ntuples   
-        Int *ak = &tmp.intmem[1 + 3*na + 4*ntuples]; // ntuples   
-        Int *ti = &tmp.intmem[1 + 3*na + 5*ntuples]; // ntuples        
-        Int *tj = &tmp.intmem[1 + 3*na + 6*ntuples]; // ntuples        
-        Int *tk = &tmp.intmem[1 + 3*na + 7*ntuples]; // ntuples        
-        dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
-        dstype *xik = &tmp.tmpmem[ntuples*dim]; // ntuples*dim
-        dstype *qi = &tmp.tmpmem[2*ntuples*dim]; // ntuples*ncq
-        dstype *qj = &tmp.tmpmem[ntuples*(2*dim+ncq)]; // ntuples*ncq
-        dstype *qk = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples*ncq
-        cpuNeighTriplets(xij, xik, qi, qj, qk, x, q, ai, aj, ak, ti, tj, tk, tripletnum, tripletlist, tripletnumsum, 
-                ilist, nb.alist, atomtype, na, ncq, dim);                     
-              
-        dstype *eijk = &tmp.tmpmem[ntuples*(2*dim+3*ncq)]; // ntuples
-        cpuTriplet(eijk, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak,
-                         param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
-             
-        if (decomp==0)            
-            cpuTripletDecomposition(e, eijk, ai, aj, ak, ntuples, dim);
-        else {
-            cpuCenterAtomTripletDecomposition(e,  eijk, ilist, tripletnumsum, na, dim);                
-            Int *jlist = &tmp.intmem[0];  // ntuples       
-            Int *bnumsum = &tmp.intmem[ntuples]; // ntuples       
-            Int *index = &tmp.intmem[2*ntuples]; // ntuples       
-            Int *t0 = &tmp.intmem[1 + 3*na + 5*ntuples]; // ntuples       
-            Int *t1 = &tmp.intmem[1 + 3*na + 6*ntuples]; // ntuples       
-            Int *t2 = &tmp.intmem[1 + 3*na + 7*ntuples]; // ntuples       
-            Int *t3 = &tmp.intmem[1 + 3*na + 8*ntuples]; // ntuples       
-            Int naj = cpuUniqueSort(jlist, bnumsum, index, t0, aj, t1, t2, t3, ntuples);
-            cpuNeighborAtomTripletDecomposition(e, eijk, jlist, bnumsum, index, naj, dim);
-            Int nak = cpuUniqueSort(jlist, bnumsum, index, t0, ak, t1, t2, t3, ntuples);
-            cpuNeighborAtomTripletDecomposition(e, eijk, jlist, bnumsum, index, nak, dim);
-        }        
-    }        
-}
-void implNonbondedTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
-        dstype* x, dstype *q, dstype* param, Int nparam)
-{    
-    common.bondtype = 0; // non-bonded interaction    
-    for (int i = 0; i < common.npot3a; i++)
-        implTripletEnergy(e, nb, common, app, tmp, x, q, param, &app.rcutsq3a[i], 
-            nb.atomtype, nparam, 0, 0, 0, common.decomposition, common.pot3a[i]);            
-
-}
-void implBondedTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
-        dstype* x, dstype *q, dstype* param, Int nparam)
-{    
-    common.bondtype = 1; // non-bonded interaction
-    for (int i = 0; i < common.npot3b; i++)
-        implTripletEnergy(e, nb, common, app, tmp, x, q, param, &app.rcutsq3b[i], 
-            nb.atomtype, nparam, common.atom3b[3*i], common.atom3b[1+3*i], common.atom3b[2+3*i], common.decomposition, common.pot3b[i]);                
-}
-
-void implBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
-        dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int typek, Int decomp, Int potnum)
-{        
-    for (Int b=0; b<common.nba; b++) {
-        Int e1 = common.ablks[b];
-        Int e2 = common.ablks[b+1];            
-        Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
-        Int ncq = common.ncq;
-        Int dim = common.dim;
-                
-        Int *ilist = &tmp.intmem[0]; //na     
-        if (typei>0) {               
-            Int *olist = &tmp.intmem[na]; //na        
-            cpuArrayFill(olist, e1, na);        
-
-            Int *t0 = &tmp.intmem[2*na]; //na        
-            Int *t1 = &tmp.intmem[3*na]; //na        
-            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
-        }
-        else {
-            cpuArrayFill(ilist, e1, na);        
-        }
-        
-        Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum       
-        if (typej == typei) {
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
-        }
-        else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
-
-        //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1    
-        cpuCumsum(pairnumsum, pairnum, na+1);                                         
-        int npairs = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
-                
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // npairs    
-        Int *aj = &tmp.intmem[1+3*na+npairs+na*jnum]; // npairs        
-        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs        
-        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs        
-        dstype *eij = &tmp.tmpmem[0]; // npairs
-        dstype *xij = &tmp.tmpmem[npairs*(1)]; // npairs*dim
-        dstype *qi = &tmp.tmpmem[npairs*(1+dim)]; // npairs*ncq
-        dstype *qj = &tmp.tmpmem[npairs*(1+dim+ncq)]; // npairs*ncq
-        dstype *du = &tmp.tmpmem[npairs*(1+dim+2*ncq)]; // npairs
-        cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
-                                        
-        cpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
-                nparam, common.neta, common.nkappa, npairs, potnum, 3);
-        
-        // (ilist, pairnum, pairlist, pairnumsum, ai, aj)                 
-        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs
-        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs*jnum        
-        cpuNeighTripletList(tripletnum, tripletlist, x, rcutsq, pairnum, pairnumsum, pairlist, atomtype, ilist, nb.alist, nb.neighlist, 
-                nb.neighnum, na, jnum, typek, dim);                
-                        
-        //a list contains the starting positions of the first neighbor 
-        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*jnum]; // npairs+1        
-        cpuCumsum(tripletnumsum, tripletnum, npairs+1);                                         
-        int ntuples = IntArrayGetValueAtIndex(tripletnumsum, npairs, common.backend);     
-        
-        // (ilist, pairnum, pairlist, pairnumsum, ai, aj, tripletnum, tripletnumsum, tripletlist)         
-        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum]; // ntuples        
-        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples]; // ntuples   
-        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples]; // ntuples   
-        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+3*ntuples]; // ntuples        
-        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+4*ntuples]; // ntuples        
-        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+5*ntuples]; // ntuples        
-        dstype *x3ij = &tmp.tmpmem[npairs*(1)]; // ntuples*dim
-        dstype *x3ik = &tmp.tmpmem[npairs*(1)+ntuples*dim]; // ntuples*dim
-        dstype *q3i = &tmp.tmpmem[npairs*(1)+2*ntuples*dim]; // ntuples*ncq
-        dstype *q3j = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+ncq)]; // ntuples*ncq
-        dstype *q3k = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+2*ncq)]; // ntuples*ncq
-        cpuNeighTriplets(x3ij, x3ik, q3i, q3j, q3k, x, q, a3i, a3j, a3k, t3i, t3j, t3k, tripletnum, tripletlist, tripletnumsum, 
-                nb.alist, atomtype, jnum, npairs, ncq, dim);                      
-        
-        dstype *e3ijk = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+3*ncq)]; // ntuples
-        cpuTriplet(e3ijk, x3ij, x3ik, q3i, q3j, q3k, t3i, t3j, t3k, a3i, a3j, a3k,
-                       param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
-        
-        dstype *h3ij = &tmp.tmpmem[npairs*(1)]; // npairs        
-        dstype *c3ij = &tmp.tmpmem[npairs*(2)]; // npairs
-        cpuElectronDensity(h3ij, e3ijk, tripletnum, tripletnumsum, npairs);
-        opuTripletcDensity(c3ij, h3ij, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, npairs, potnum);
-                
-        for (int i=0; i<npairs; i++) 
-            eij[i] = eij[i]*c3ij[i];
-                    
-        // pairnum, pairnumsum, pairlist, tripletnum, tripletlist, tripletnumsum, t3i, t3j, t3k -> ai, aj, a3i, a3j, a3k
-        for (int i=0; i<npairs; i++) {
-            tmp.intmem[i] = tmp.intmem[1+3*na+na*jnum+i]; // ai
-            tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*jnum+i]; // aj
-        }
-                
-        if (decomp==0)
-            cpuHalfNeighPairDecomposition(e, eij, ai, aj, npairs, dim);
-        else {
-            cpuCenterAtomPairDecomposition(e, eij, ilist, pairnumsum, na, dim);   
-            Int *jlist = &tmp.intmem[2*npairs]; //npairs  
-            Int *bnumsum = &tmp.intmem[3*npairs]; //npairs  
-            Int *index = &tmp.intmem[4*npairs]; // npairs
-            Int *p0 = &tmp.intmem[5*npairs]; // npairs       
-            Int *p1 = &tmp.intmem[6*npairs]; // npairs       
-            Int *p2 = &tmp.intmem[7*npairs]; // npairs       
-            Int *p3 = &tmp.intmem[8*npairs]; // npairs                   
-            Int naj = cpuUniqueSort(jlist, bnumsum, index, p0, aj, p1, p2, p3, npairs);
-            cpuNeighborAtomPairDecomposition(e, eij, jlist, bnumsum, index, naj, dim);                 
-        }        
-    }        
-}
-void implBoTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
-        dstype* x, dstype *q, dstype* param, Int nparam)
-{    
-    common.bondtype = 2; // non-bonded interaction
-    for (int i = 0; i < common.npot3c; i++)
-        implBO3Energy(e, nb, common, app, tmp, x, q, param, &app.rcutsq3c[i], nb.atomtype, nparam, 
-                common.atom3c[3*i], common.atom3c[1+3*i], common.atom3c[2+3*i], common.decomposition, common.pot3c[i]);                    
-}
-
-void implQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, dstype* x, 
-        dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int typek, Int typel, Int decomp, Int potnum)
-{        
-    for (Int b=0; b<common.nba; b++) {
-        Int e1 = common.ablks[b];
-        Int e2 = common.ablks[b+1];            
-        Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
-        Int ncq = common.ncq;
-        Int dim = common.dim;
-                
-        Int *ilist = &tmp.intmem[0]; //na     
-        if (typei>0) {               
-            Int *olist = &tmp.intmem[na]; //na        
-            cpuArrayFill(olist, e1, na);        
-
-            Int *t0 = &tmp.intmem[2*na]; //na        
-            Int *t1 = &tmp.intmem[3*na]; //na        
-            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
-        }
-        else {
-            cpuArrayFill(ilist, e1, na);        
-        }
-                
-        Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum    
-        if ((typej>0) && (typek>0) && (typel>0))
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, typel, dim);
-        else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
-        
-        Int *quadrupletnum = &tmp.intmem[na]; // na        
-        for (int ii=0; ii<na; ii++)
-            quadrupletnum[ii] = (pairnum[ii]-2)*(pairnum[ii]-1)*pairnum[ii]/6;       
-                        
-        //a list contains the starting positions of the first neighbor 
-        Int *quadrupletnumsum = &tmp.intmem[2*na]; // na+1        
-        cpuCumsum(quadrupletnumsum, quadrupletnum, na+1);                                         
-        int ntuples = IntArrayGetValueAtIndex(quadrupletnumsum, na, common.backend);     
-                
-// void cpuNeighQuadrupletList(int *quadrupletlist, int *quadrupletnumsum, int *pairnum, 
-//         int *pairlist, int *ilist, int *alist, int inum, int jnum)
-        
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
-        cpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
-        Int *quadrupletlist = &tmp.intmem[1 + 3*na]; // 3*ntuples    (ilist, quadrupletnum, quadrupletnumsum, quadrupletlist)            
-        cpuArrayCopy(quadrupletlist, temp, 3*ntuples);
-        
-        Int *ai = &tmp.intmem[1 + 3*na + 3*ntuples]; // ntuples        
-        Int *aj = &tmp.intmem[1 + 3*na + 4*ntuples]; // ntuples   
-        Int *ak = &tmp.intmem[1 + 3*na + 5*ntuples]; // ntuples   
-        Int *al = &tmp.intmem[1 + 3*na + 6*ntuples]; // ntuples   
-        Int *ti = &tmp.intmem[1 + 3*na + 7*ntuples]; // ntuples        
-        Int *tj = &tmp.intmem[1 + 3*na + 8*ntuples]; // ntuples        
-        Int *tk = &tmp.intmem[1 + 3*na + 9*ntuples]; // ntuples        
-        Int *tl = &tmp.intmem[1 + 3*na + 10*ntuples]; // ntuples                   
-        dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
-        dstype *xik = &tmp.tmpmem[ntuples*dim]; // ntuples*dim
-        dstype *xil = &tmp.tmpmem[2*ntuples*dim]; // ntuples*dim
-        dstype *qi = &tmp.tmpmem[3*ntuples*dim]; // ntuples*ncq
-        dstype *qj = &tmp.tmpmem[ntuples*(3*dim+ncq)]; // ntuples*ncq
-        dstype *qk = &tmp.tmpmem[ntuples*(3*dim+2*ncq)]; // ntuples*ncq
-        dstype *ql = &tmp.tmpmem[ntuples*(3*dim+3*ncq)]; // ntuples*ncq        
-        cpuNeighQuadruplets(xij, xik, xil, qi, qj, qk, ql, x, q, ai, aj, ak, al, ti, tj, tk, tl,
-                quadrupletnum, quadrupletlist, quadrupletnumsum, ilist, nb.alist, atomtype, na, ncq, dim);       
-        
-        dstype *eijkl = &tmp.tmpmem[ntuples*(4*dim+3*ncq)]; // ntuples
-        cpuQuadruplet(eijkl, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
-                param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);                                
-
-        if (decomp==0)
-            cpuQuadrupletDecomposition(e, eijkl,  ai, aj, ak, al, ntuples, dim);
-        else {
-            cpuCenterAtomQuadrupletDecomposition(e, eijkl, ilist, quadrupletnumsum, na, dim);   
-            Int *jlist = &tmp.intmem[0];  // ntuples       
-            Int *bnumsum = &tmp.intmem[ntuples]; // ntuples       
-            Int *index = &tmp.intmem[2*ntuples]; // ntuples       
-            Int *t0 = &tmp.intmem[1 + 3*na + 7*ntuples]; // ntuples       
-            Int *t1 = &tmp.intmem[1 + 3*na + 8*ntuples]; // ntuples       
-            Int *t2 = &tmp.intmem[1 + 3*na + 9*ntuples]; // ntuples       
-            Int *t3 = &tmp.intmem[1 + 3*na + 10*ntuples]; // ntuples       
-            Int naj = cpuUniqueSort(jlist, bnumsum, index, t0, aj, t1, t2, t3, ntuples);
-            cpuNeighborAtomQuadrupletDecomposition(e, eijkl, jlist, bnumsum, index, naj, dim);
-            Int nak = cpuUniqueSort(jlist, bnumsum, index, t0, ak, t1, t2, t3, ntuples);
-            cpuNeighborAtomQuadrupletDecomposition(e, eijkl, jlist, bnumsum, index, nak, dim);                
-            Int nal = cpuUniqueSort(jlist, bnumsum, index, t0, al, t1, t2, t3, ntuples);
-            cpuNeighborAtomQuadrupletDecomposition(e, eijkl, jlist, bnumsum, index, nal, dim);
-        }        
-    }        
-}
-void implNonbondedQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
-        dstype* x, dstype *q, dstype* param, Int nparam)
-{    
-    common.bondtype = 0; // non-bonded interaction    
-    for (int i = 0; i < common.npot4a; i++)
-        implQuadrupletEnergy(e, nb, common, app, tmp, x, q, param, &app.rcutsq4a[i], 
-            nb.atomtype, nparam, 0, 0, 0, 0, common.decomposition, common.pot4a[i]);            
-
-}
-void implBondedQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
-        dstype* x, dstype *q, dstype* param, Int nparam)
-{    
-    common.bondtype = 1; // non-bonded interaction
-    for (int i = 0; i < common.npot4b; i++)
-        implQuadrupletEnergy(e, nb, common, app, tmp, x, q, param, &app.rcutsq4b[i], nb.atomtype, nparam, 
-           common.atom4b[4*i], common.atom4b[1+4*i], common.atom4b[2+4*i], common.atom4b[3+4*i], common.decomposition, common.pot4b[i]);                
-}
-
-void implEmpiricalPotentialDescriptors(dstype *ei, neighborstruct &nb, commonstruct &common, 
+void implEmpiricalPotentialDescriptors(dstype *e, neighborstruct &nb, commonstruct &common, 
         appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
 {    
     int inum = common.inum;
-    int dim = common.dim;        
-            
+    int dim = common.dim;
     int m = 0;
     if (common.npot1a > 0)
-        implNonbondedSingleEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+        implNonbondedSingleEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
 
     m += common.npot1a*inum;
     if (common.npot1b > 0)
-        implBondedSingleEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+        implBondedSingleEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
 
     m += common.npot1b*inum;
     if (common.npot2a > 0)
-        implNonbondedPairEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+        implNonbondedPairEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
 
     m += common.npot2a*inum;
     if (common.npot2b > 0)
-        implBondedPairEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+        implBondedPairEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
 
-    m += common.npot2b*inum;
-    if (common.npot2c > 0)    
-        implBoPairEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
- 
-    m += common.npot2c*inum;
-    if (common.npot3a > 0)    
-        implNonbondedTripletEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
-    
-    m += common.npot3a*inum;
-    if (common.npot3b > 0)
-        implBondedTripletEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
-
-    m += common.npot3b*inum;
-    if (common.npot3c > 0)    
-        implBoTripletEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
-
-    m += common.npot3c*inum;
-    if (common.npot4a > 0)
-        implNonbondedQuadrupletEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
-
-    m += common.npot4a*inum;
-    if (common.npot4b > 0)
-        implBondedQuadrupletEnergy(&ei[m], nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
-    
-//     dstype *onevec =  &tmp.tmpmem[0];  
-//     ArraySetValue(onevec, 1.0, inum, common.backend);
-//     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                            
+//     m += common.npot2b*inum;
+//     if (common.npot2c > 0)    
+//         implBoPairEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+// 
+//     m += common.npot2c*inum;
+//     if (common.npot3a > 0)    
+//         implNonbondedTripletEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+//     
+//     m += common.npot3a*inum;
+//     if (common.npot3b > 0)
+//         implBondedTripletEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+// 
+//     m += common.npot3b*inum;
+//     if (common.npot3c > 0)    
+//         implBoTripletEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+// 
+//     m += common.npot3c*inum;
+//     if (common.npot4a > 0)
+//         implNonbondedQuadrupletEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+// 
+//     m += common.npot4a*inum;
+//     if (common.npot4b > 0)
+//         implBondedQuadrupletEnergy(&e[m], nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
 }
-
 
 #endif
 

@@ -302,15 +302,16 @@ struct commonstruct {
     Int dim;     // physical dimensions
     Int nconfigs; // number of configurations        
     Int natomtypes;     // number of atom types     
-    Int nmoletypes;     // number of molecule types     
-    Int K;       // order of radial basis functions
-    Int L;       // order of spherical harmonics             
+    Int nmoletypes;     // number of molecule types         
+    Int K=0;       // order of radial basis functions
+    Int L=0;       // order of spherical harmonics      
+    Int M=0;       // total number of potentials 
     Int Nub;     // number of unique bispectrum components
     Int Npower; // number of power spectrum components
     Int Nbispectrum; // number of bispectrum components
     Int Nbf=0;    // Nbf = Npower+Nbispectrum
-    Int Ncoeff; // number of descriptors coefficients
-    Int Ncg;// the total number of non-zero Clebsch-Gordan coefficients 
+    Int Ncoeff=0; // number of machine learning descriptors coefficients
+    Int Ncg=0;// the total number of non-zero Clebsch-Gordan coefficients 
     Int descriptor;   // descriptor flag: 0 -> Spherical Harmonics Bessel
     Int spectrum;     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     Int training;     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
@@ -347,6 +348,7 @@ struct commonstruct {
     Int nmu3c;
     Int nmu4a;
     Int nmu4b;    
+    Int Nempot=0; // number of empirical potentials
     Int npot1a;
     Int npot1b;
     Int npot2a;
@@ -414,6 +416,11 @@ struct commonstruct {
     Int *atom3c=NULL;
     Int *atom4b=NULL; 
     
+    Int *traininglist;
+    Int *validatelist;
+    Int trainingnum=0;
+    Int validatenum=0;
+            
 //     dstype pi = M_PI; // Pi  number
      
     cudaEvent_t eventHandle;
@@ -441,7 +448,9 @@ struct commonstruct {
         CPUFREE(atom2c);
         CPUFREE(atom3b);
         CPUFREE(atom3c);
-        CPUFREE(atom4b);                                
+        CPUFREE(atom4b); 
+        CPUFREE(traininglist); 
+        CPUFREE(validatelist); 
     }                         
 };
 
@@ -730,12 +739,13 @@ struct neighborstruct {
 struct sysstruct {        
     dstype *x=NULL;    // cartesian coordinates of local atoms in processor mpiRank        
     dstype *v=NULL;    // velocities of local atoms in processor mpiRank        
-    dstype *e=NULL;    // atomic energies of local atoms in processor mpiRank        
+    dstype *e=NULL;    // per-atom energies 
+    dstype *ee=NULL;   // per-atom energies for empirical descriptors
     dstype *f=NULL;    // atomic forces of local atoms in processor mpiRank        
     dstype *q=NULL;    // atomic charges of local atoms in processor mpiRank               
-    dstype *s=NULL;    // stresses
-    dstype *d=NULL;    // basis functions
-    dstype *dd=NULL;   // derivatives of basis functions
+    dstype *s=NULL;    // stresses    
+    dstype *d=NULL;    // descriptors
+    dstype *dd=NULL;   // derivatives of descriptors
     dstype *c=NULL;    // vector of coeffcients associated with the basis functions            
     dstype *A=NULL;    // Regression matrix A 
     dstype *b=NULL;    // Regression vector b
@@ -746,6 +756,7 @@ struct sysstruct {
             CPUFREE(x); 
             CPUFREE(v); 
             CPUFREE(e); 
+            CPUFREE(ee); 
             CPUFREE(f); 
             CPUFREE(q); 
             CPUFREE(s);             
@@ -760,6 +771,7 @@ struct sysstruct {
             GPUFREE(x);
             GPUFREE(v);   
             GPUFREE(e); 
+            GPUFREE(ee); 
             GPUFREE(f);
             GPUFREE(q);
             GPUFREE(s);

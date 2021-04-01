@@ -27,6 +27,22 @@ void CCalculation::SetConfiguration(Int ci)
     if (common.K > 0)
         InitSphericalHarmonics(sh, common);            
     implSetTempStruct(tmp, common);  
+    
+    int M = common.Ncoeff + common.Nempot;
+    TemplateMalloc(&sys.c, M, common.backend);  
+    TemplateMalloc(&sys.d, M, common.backend);   
+    TemplateMalloc(&sys.ee, common.Nempot*common.inummax, common.backend);  
+    if (common.dftdata > 1)
+        TemplateMalloc(&sys.dd, common.dim*common.inummax*M, common.backend);   
+    else
+        TemplateMalloc(&sys.dd, common.dim*common.inummax*common.Nempot, common.backend);       
+    
+    if (common.potential==0)
+        common.M = common.Nempot;
+    else if (common.potential==1)
+        common.M = common.Ncoeff;
+    else if (common.potential==2)
+        common.M = M;
 }
 
 void CCalculation::GetPositions(dstype *x, Int ci)
@@ -59,6 +75,105 @@ void CCalculation::NeighborList(dstype* x)
     implNeighborList(nb, common, app, tmp, x, common.inum);    
 }
 
+void CCalculation::EmpiricalPotentialDescriptors(dstype *e, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    implEmpiricalPotentialDescriptors(sys.ee, nb, common, app, tmp, x, q, param, nparam);    
+    
+    dstype *onevec =  &tmp.tmpmem[0];  
+    ArraySetValue(onevec, 1.0, common.inum, common.backend);
+    PGEMTV(common.cublasHandle, common.inum, common.Nempot, &one, sys.ee, common.inum, onevec, inc1, &one, e, inc1, common.backend);                                    
+}
+
+void CCalculation::EmpiricalPotentialDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    ArraySetValue(sys.ee, 0.0, common.inum*common.Nempot, common.backend);  
+    implEmpiricalPotentialDescriptors(sys.ee, f, nb, common, app, tmp, x, q, param, nparam);              
+    
+    dstype *onevec =  &tmp.tmpmem[0];  
+    ArraySetValue(onevec, 1.0, common.inum, common.backend);
+    PGEMTV(common.cublasHandle, common.inum, common.Nempot, &one, sys.ee, common.inum, onevec, inc1, &one, e, inc1, common.backend);                                        
+}
+
+void CCalculation::EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{        
+    implEmpiricalPotentialEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);       
+}
+
+void CCalculation::EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype* x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
+{        
+    Int dim = common.dim;
+    Int inum = common.inum;
+    Int Nempot = common.Nempot;    
+    
+    ArraySetValue(sys.ee, 0.0, inum*Nempot, common.backend);  
+    ArraySetValue(sys.dd, 0.0, dim*inum*Nempot, common.backend);  
+    implEmpiricalPotentialDescriptors(sys.ee, sys.dd, nb, common, app, tmp, x, q, param, nparam);       
+    
+    PGEMNV(common.cublasHandle, inum, Nempot, &one, sys.ee, inum, coeff, inc1, &zero, e, inc1, common.backend);    
+    PGEMNV(common.cublasHandle, dim*inum, Nempot, &minusone, sys.dd, dim*inum, coeff, inc1, &zero, f, inc1, common.backend);    
+}
+
+void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype* x, dstype *q, dstype *param, Int nparam) 
+{        
+    if ((common.descriptor==0) && (common.K > 0))
+       implSphericalHarmonicBesselDescriptors(e, nb, common, app, tmp, sh, x, q, param, nparam);              
+}
+
+void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
+{        
+    if ((common.descriptor==0) && (common.K > 0))
+       implSphericalHarmonicBesselDescriptors(e, f, nb, common, app, tmp, sh, x, q, param, nparam);                         
+}
+
+void CCalculation::RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype* x, dstype *coeff, dstype *q, dstype *param, Int nparam) 
+{    
+    if ((common.descriptor==0) && (common.K > 0))
+        implSphericalHarmonicBesselEnergyForce(e, f, nb, common, app, tmp, sh, x, coeff, q, param, nparam);              
+}
+
+void CCalculation::PotentialDescriptors(dstype *e, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    if (common.potential == 0)
+        this->EmpiricalPotentialDescriptors(e, x, q, param, nparam);              
+    else if (common.potential == 1)
+        this->RadialSphericalHarmonicDescriptors(e, x, q, param, 0);            
+    else if (common.potential == 2) {
+        this->EmpiricalPotentialDescriptors(e, x, q, param, nparam);              
+        this->RadialSphericalHarmonicDescriptors(&e[common.Nempot], x, q, param, 0);                    
+    }    
+    else
+        error("Potential is not implemented");    
+}
+
+void CCalculation::PotentialDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    if (common.potential == 0)
+        this->EmpiricalPotentialDescriptors(e, f, x, q, param, nparam);              
+    else if (common.potential == 1)
+        this->RadialSphericalHarmonicDescriptors(e, f, x, q, param, 0);            
+    else if (common.potential == 2) {
+        this->EmpiricalPotentialDescriptors(e, f, x, q, param, nparam);              
+        this->RadialSphericalHarmonicDescriptors(&e[common.Nempot], &f[common.Nempot*common.dim*common.inum], x, q, param, 0);                    
+    }    
+    else
+        error("Potential is not implemented");    
+}
+
+void CCalculation::PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
+{    
+    if (common.potential == 0)
+        this->EmpiricalPotentialEnergyForce(e, f, x, coeff, q, param, nparam);              
+    else if (common.potential == 1)
+        this->RadialSphericalHarmonicEnergyForce(e, f, x, coeff, q, param, 0);            
+    else if (common.potential == 2) {
+        this->EmpiricalPotentialEnergyForce(e, f, x, coeff, q, param, nparam);              
+        this->RadialSphericalHarmonicEnergyForce(e, f, x, &coeff[common.Nempot], q, param, 0);                    
+    }    
+    else
+        error("Potential is not implemented");        
+}
+
+
 // void CCalculation::NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
 // {    
 //     implNonbondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
@@ -69,10 +184,10 @@ void CCalculation::NeighborList(dstype* x)
 //     implBondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
 // }
 // 
-void CCalculation::NonbondedPairEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-{    
-    implNonbondedPairEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-}
+// void CCalculation::NonbondedPairEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
+// {    
+//     implNonbondedPairEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
+// }
 // 
 // void CCalculation::BondedPairEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
 // {    
@@ -108,29 +223,5 @@ void CCalculation::NonbondedPairEnergyForce(dstype *e, dstype *f, dstype* x, dst
 // {    
 //     implBondedQuadrupletEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
 // }
-
-void CCalculation::EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int *nparam) 
-{    
-    implEmpiricalPotentialEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-}
-
-void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype* x, dstype *q, dstype *param, Int nparam) 
-{        
-    if (common.descriptor==0)
-       implSphericalHarmonicBesselDescriptors(e, nb, common, app, tmp, sh, x, q, param, nparam);              
-}
-
-void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-{        
-    if (common.descriptor==0) 
-       implSphericalHarmonicBesselDescriptors(e, f, nb, common, app, tmp, sh, x, q, param, nparam);                         
-}
-
-void CCalculation::RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype* x, dstype *coeff, dstype *q, dstype *param, Int nparam) 
-{    
-    if (common.descriptor==0)
-        implSphericalHarmonicBesselEnergyForce(e, f, nb, common, app, tmp, sh, x, coeff, q, param, nparam);              
-}
-
 
 #endif        
