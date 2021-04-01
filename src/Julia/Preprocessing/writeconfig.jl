@@ -24,6 +24,8 @@ nsize[8] = length(config.x[:]);
 nsize[9] = length(config.q[:]); 
 nsize[10] = length(config.v[:]); 
 nsize[11] = length(config.f[:]);    
+nsize[12] = length(config.we[:]); 
+nsize[13] = length(config.wf[:]);    
 
 fileID = open(filename,"w");
 
@@ -40,6 +42,8 @@ write(fileID,Float64.(config.x));
 write(fileID,Float64.(config.q));    
 write(fileID,Float64.(config.v));    
 write(fileID,Float64.(config.f));        
+write(fileID,Float64.(config.we));        
+write(fileID,Float64.(config.wf));        
 close(fileID);
 
 end

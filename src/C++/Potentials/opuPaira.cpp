@@ -6,11 +6,8 @@ template <typename T> void opuPaira1(T *u, T *xij, T *qi, T *qj, int *ti, int *t
 		T xij1 = xij[0 + i*3];
 		T xij2 = xij[1 + i*3];
 		T xij3 = xij[2 + i*3];
-		T t2 = xij1*xij1;
-		T t3 = xij2*xij2;
-		T t4 = xij3*xij3;
-		T t5 = t2+t3+t4;
-		u[i] = -mu2*1.0/(t5*t5*t5)+mu1*1.0/(t5*t5*t5*t5*t5*t5);
+		T x0 = pow(xij1, 2) + pow(xij2, 2) + pow(xij3, 2);
+		u[i] = mu1/pow(x0, 6) - mu2/pow(x0, 3);
 	}
 }
 

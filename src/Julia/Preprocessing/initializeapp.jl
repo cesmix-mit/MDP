@@ -14,12 +14,17 @@ mutable struct APPStruct
     gpuflags::String;    # options for GGU compiler
     potentialfile::String;# APP model file name
     configfile::String;# APP model file name
+    weightfile::String;# APP model file name
     model::String;# used to indicate APP model
     modelfile::String;# APP model file name    
     modelnumber::Int64;    
     preprocessmode::Int64; # preprocessing mode
     configmode::Int64;
+    weightmode::Int64;
     mpiprocs::Int64; # number of MPI ranks
+
+    traininglist::Array{Int64,2}; # a list of configurations for training the potential
+    validatelist::Array{Int64,2}; # a list of configurations for validating the potential
 
     dim::Int64; # physical dimension
     nconfigs::Int64; # number of configurations
@@ -41,6 +46,7 @@ mutable struct APPStruct
     time::Int64;       # initial time
     dt::Int64;         # time step
     
+    coeff::Array{Float64,2};   # coefficients for the potential
     rcutsqmax::Float64;  # square of maximum cutoff radius
     boxoffset::Array{Float64,2}; # offset for simulation box to account for periodic boundary conditions   
     bcs::Array{Int64,2}; # boundary conditions
@@ -179,12 +185,17 @@ function initializeapp(sourcepath,version)
     app.gpuflags = "-lcudart -lcublas";
     app.potentialfile = "";
     app.configfile = "";
-    app.preprocessmode = 1;
-    app.mpiprocs = 1;
-    
-    app.dim = 3;         # physical dimension
-    app.nconfigs = 1;    # number of configurations
     app.configmode = 4;
+    app.weightfile = "";    
+    app.weightmode = 0;
+    app.preprocessmode = 1;
+    app.mpiprocs = 1;        
+
+    app.traininglist = reshape([], 0, 2);
+    app.validatelist = reshape([], 0, 2);
+
+    app.dim = 3;         # physical dimension
+    app.nconfigs = 1;    # number of configurations    
     app.maxnumneighbors = 10; # maximum number of neighbors allowed
     app.ntimesteps = 0;  # number of time steps
     app.nab = 4096;      # number of atoms per block
@@ -204,6 +215,7 @@ function initializeapp(sourcepath,version)
     app.rcutsqmax = 0.0;  # square of maximum cutoff radius
     app.boxoffset = [0.0 0.0 0.0]; # offset for simulation box to account for periodic boundary conditions
     
+    app.coeff = reshape([], 0, 2);
     app.bcs = [0 0 0 0 0 0]; # boundary conditions
     app.pbc = [1 1 1];       # periodic boundary conditions
     

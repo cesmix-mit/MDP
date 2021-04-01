@@ -15,12 +15,14 @@ mutable struct CONFIGStruct
     b::Array{Float64,2}; # the 2nd principal vector of the simulation box
     c::Array{Float64,2}; # the 3rd principal vector of the simulation box
     e::Array{Float64,2};  # energies for all configurations
+    we::Array{Float64,2};  # energies weights for all configurations
     
     t::Array{Int64,2};   # atom types for all configurations
     x::Array{Float64,2}; # atom positions for all configurations
     q::Array{Float64,2}; # atom charges for all configurations
     v::Array{Float64,2}; # atom velocities for all configurations
     f::Array{Float64,2}; # atom forces for all configurations    
+    wf::Array{Float64,2}; # atom forces weights for all configurations    
 
     CONFIGStruct() = new();
 end
@@ -51,12 +53,14 @@ function initializeconfig(app)
     config.b = zeros(dim, nconfigs); # the 2nd principal vector of the simulation box
     config.c = zeros(dim, nconfigs); # the 3rd principal vector of the simulation box
     config.e = ones(nce, nconfigs);  # energies for all configurations
+    config.we = ones(1, nconfigs);  # energies weights for all configurations
 
     config.t = zeros(1, config.natomall);   # atom types for all configurations
     config.x = zeros(ncx, config.natomall); # atom positions for all configurations
     config.q = zeros(ncq, config.natomall); # atom charges for all configurations
     config.v = zeros(ncv, config.natomall); # atom velocities for all configurations
     config.f = zeros(ncf, config.natomall); # atom forces for all configurations
+    config.wf = zeros(1, nconfigs); # atom forces weights for all configurations
 
     return config;
 end

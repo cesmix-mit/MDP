@@ -10,6 +10,7 @@ include("initializeapp.jl");
 include("initializeconfig.jl");
 include("initializemdp.jl");
 include("readconfig.jl");
+include("readweight.jl");
 include("writeapp.jl");
 include("writeconfig.jl");
 include("checkconfig.jl");
@@ -143,6 +144,13 @@ for i = 1:config.nconfigs
     n = config.natom[i];
     config.x[:,m:(m+n-1)] = checkconfig(config.x[:,m:(m+n-1)], ximages, B2C, C2B);    
     m = m + n;
+end
+
+if app.training == 0
+    config.we = reshape([],0,2);
+    config.wf = reshape([],0,2);
+else
+    config = readweight(app, config);
 end
 
 writeapp(app, app.appname * "app.bin");

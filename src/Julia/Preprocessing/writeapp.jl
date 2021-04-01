@@ -1,6 +1,6 @@
 function writeapp(app,filename)
 
-    nsize = zeros(50,1);
+    nsize = zeros(60,1);
     nsize[1] = length(app.ndims[:]);
     nsize[2] = length(app.flag[:]);  
     nsize[3] = length(app.bcs[:]); 
@@ -50,8 +50,9 @@ function writeapp(app,filename)
     nsize[47] = length(app.atom3b[:]);
     nsize[48] = length(app.atom3c[:]);
     nsize[49] = length(app.atom4b[:]);
-
-
+    nsize[51] = length(app.traininglist[:]);
+    nsize[52] = length(app.validatelist[:]);
+    
     #app.nsize = nsize;
     fileID = open(filename,"w");
     write(fileID,Float64(length(nsize[:])));
@@ -105,6 +106,8 @@ function writeapp(app,filename)
     write(fileID,Float64.(app.atom3b[:]));
     write(fileID,Float64.(app.atom3c[:]));
     write(fileID,Float64.(app.atom4b[:]));
+    write(fileID,Float64.(app.traininglist[:]));
+    write(fileID,Float64.(app.validatelist[:]));
 
     close(fileID);
 

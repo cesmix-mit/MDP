@@ -113,8 +113,8 @@ fwrite(fileID,app.atom2c(:),'double',endian);
 fwrite(fileID,app.atom3b(:),'double',endian);
 fwrite(fileID,app.atom3c(:),'double',endian);
 fwrite(fileID,app.atom4b(:),'double',endian);
-fwrite(fileID,app.traininglist(:)-1,'double',endian);
-fwrite(fileID,app.validatelist(:)-1,'double',endian);
+fwrite(fileID,app.traininglist(:),'double',endian);
+fwrite(fileID,app.validatelist(:),'double',endian);
 
 fclose(fileID);
 
