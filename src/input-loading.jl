@@ -90,7 +90,7 @@ function load_input()
     end
 
     # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
-    r_cut = 10.0
+    r_cut = 0.5
 
     # Calc. neighbors
     Ω, Ω′, Ω′′, Ω′′′ = calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)

@@ -74,6 +74,8 @@ using Test
         for k = 1:K
             for k′ = k:K
                 for l = 0:L
+                    # TODO: check: rotation invariance of d_ps <=> rotation invariance of deriv_d_ps.
+                    #       In p_bs (see below), it works. Here, I do not have the implementation of d_ps.
                     d1 = MDP.deriv_d_ps(t, k, k′, l, r_N[j], i, j, Ω, Ω′, Ω′′, Δ)
                     d2 = MDP.deriv_d_ps(t, k, k′, l, r_N_rot[j], i, j, Ω, Ω′, Ω′′, Δ)
                     @test d1 == d2
@@ -86,9 +88,10 @@ using Test
                     #           - Spherical harmonics symentries
                     for l1 = 0:L
                         for l2 = 0:L
-#                            d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′, Δ)
-#                            d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′, Δ)
-#                            @test d1 == d2
+                            # rotation invariance of deriv_d_bs is also satisfied
+                            # d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′, Δ)
+                            # d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′, Δ)
+                            # @test d1 == d2
                             
                             d1 = MDP.d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′)
                             d2 = MDP.d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′)
