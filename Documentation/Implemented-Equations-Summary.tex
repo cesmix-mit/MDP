@@ -258,16 +258,17 @@ The derivatives of the bispectrum basis functions are not presented in the origi
           \frac{ d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i, j, i) - d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i, j, i) } {2 |\bm \Delta Y_i|},\\
           \frac{ d_{tkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} + \bm \Delta Z_i, j, i) - d_{tkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} - \bm \Delta Z_i, j, i) } {2 |\bm \Delta Z_i|} \bigg)
 \end{split}
+\label{eq:bs}
 \end{equation}
 
 where $\bm \Delta X_i$, $\bm \Delta Y_i$, and $\bm \Delta Z_i$ are vectors of the same size as $r^{N_j}$, containing $(0,0,0)$ in all their components except for the $i$-$th$ component, which is equal to $\bm \Delta x$, $\bm \Delta y$, and $\bm \Delta z$, respectively. E.g. if the size of $r^{N_j}$ is $3$ and $i = 2$, then $\bm \Delta X_2 = ( (0,0,0), \bm \Delta x, (0,0,0))$.
 
 The bispectrum basis functions are defined in Equations 29 and 30 in the original manuscript. Here, it is formulated as:
 
-\begin{equation}
-    \label{eq:derd}
+\begin{equation*}
     d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega'''_{jt}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)
-\end{equation}
+\label{eq:d_bs}
+\end{equation*}
 
 where 
 
@@ -288,6 +289,15 @@ where
 
 
 In the computer code, the Clebsch–Gordan coefficients, $C_{{m_1}{m_2}m}^{{l_1}{l_2}l}$, are computed through the library ``PartialWaveFunctions.jl''.
+
+In order to reduce the computations needed to calculate the derivative of the bispectrum basis functions, Eq. \ref{eq:bs}, neighbor information is considered. Thus, the bispectrum basis functions that should be implemented are:
+
+\begin{equation}
+    d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega'_{jit}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)
+\end{equation}
+
+where $\Omega'''_{jt}$ is replaced with  $\Omega'_{jit}$.
+
 
 
 \begin{appendix}

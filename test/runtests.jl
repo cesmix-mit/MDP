@@ -77,22 +77,31 @@ using Test
                     d2 = MDP.deriv_d_ps(t, k, k′, l, r_N_rot[j], i, j, Ω, Ω′, Ω′′, Δ)
                     @test d1 == d2
                     
-                    for l1 = 0:L
-                        for l2 = 0:L
-                            d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′′′, Δ)
-                            d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′′′, Δ)
-                            @test d1 == d2
-                        end
-                    end
+                    # TODO: optimize bs function. 
+                    #       Currently it is optimized regarding:
+                    #           - Clebsch–Gordan coefficients fast calculation using PartialWaveFunctions.jl
+                    #           - Neighbor information
+                    #       Needs optimization regarding:
+                    #           - Spherical harmonics symentries
+#                    for l1 = 0:L
+#                        for l2 = 0:L
+#                            d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′, Δ)
+#                            d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′, Δ)
+#                            @test d1 == d2
+#                            
+#                            d1 = MDP.d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′)
+#                            d2 = MDP.d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′)
+#                            @test d1 == d2
+#                        end
+#                    end
                 end
             end
         end
         
     end
-
 end
 
-# Test rotation
+# Test rotation function
 @testset "Rotation" begin
     I =  @SMatrix [1.0 0.0 0.0
                    0.0 1.0 0.0
