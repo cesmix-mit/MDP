@@ -108,16 +108,21 @@ f_ps(i, j, c, r, NZ, K, L, Ω, Ω′, Ω′′, Ω′′′, Δ, m = 0) =
 """
 a_bs(i, k, l, m, r, j, Ω) =
     sum([u(k, l, m, r[s] - r[i]) for s in Ω[j][i]])
-    
 
 """
     `b(t, k, k′, l, r, i, j)`
     Eq. 16 in summary. Eq. 29 in original manuscript.
 """
+# TODO: Ask Valentin how to implicitly optimize the code below:
+#b_bs(s, k, k′, l, l1, l2, r, j, i, Ω) =
+#    sum([ CG(l1,l2,m1,m2,l,m) * conj(a_bs(s, k, l, m, r, j, Ω)) *
+#         a_bs(s, k', l1, m1, r, j, Ω) * a_bs(s, k', l2, m2, r, j, Ω)
+#         for m = -l:l for m1 = -l1:l1 for m2 = -l2:l2])
 b_bs(s, k, k′, l, l1, l2, r, j, i, Ω) =
-    sum([conj(a_bs(s, k, l, m, r, j, Ω)) * CG(l1,l2,m1,m2,l,m) *
-         a_bs(s, k', l1, m1, r, j, Ω) * a_bs(s, k', l2, m2, r, j, Ω)
-         for m = -l:l for m1 = -l1:l1 for m2 = -l2:l2])
+    sum([ (CG(l1,l2,m1,m2,l,m) == 0.0 ? 0.0 : conj(a_bs(s, k, l, m, r, j, Ω)) *
+            a_bs(s, k', l1, m1, r, j, Ω) * a_bs(s, k', l2, m2, r, j, Ω))
+            for m = -l:l for m1 = -l1:l1 for m2 = -l2:l2])
+
 
 """
     `d_bs(k, k′, l, l1, l2, r, j, i, Ω′′′, r)`: bispectrum basis functions
