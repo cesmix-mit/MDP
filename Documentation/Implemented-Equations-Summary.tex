@@ -141,7 +141,6 @@ The atomic force calculated through the power basis functions $d_{tkk'l}(\bm r^{
     \label{eq:force}
 \end{equation}
 
-
 On the other hand, the atomic force calculated through the bispectrum basis functions $d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)$ is formulated as follows:
 
 \begin{equation}
@@ -159,7 +158,6 @@ On the other hand, the atomic force calculated through the bispectrum basis func
 
 Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$ and $ \frac{\partial d_{tkk'l{l_1}{l_2}}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$
  are the gradient vectors of $d_{tkk'l}$ and $d_{jkk'l{l_1}{l_2}}$, respectively, varying with respect to the position of the $i$-th atom in the $j$-configuration, i.e. $f$ is a vector quantity.
-
 
 Returning to equation \ref{eq:min1}, current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ and $c_{jkk'l{l_1}{l_2}}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$, or $j$,$k$,$k'$,$l$,$l_1$,$l_2$. Therefore, $c \in \mathbb{R}^M$.
 
