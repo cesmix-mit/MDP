@@ -399,9 +399,13 @@ The bispectrum basis functions are formulated as:
    	 \item Translation
 \end{itemize}
 \pause
+\item Use automatic differentiation packages in Julia.
+\pause
 \item ML potentials
 \pause
 \item Integration with NBodysimulator and LAMMPS
+\pause
+\item Compare C++ implementation about descriptors and force calculation with this Julia implementation.
 \end{itemize}
 
 
@@ -497,80 +501,6 @@ Dynamics with Transition to LAMMPS''. MIT PSAAP-3 Team. 2021.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%\begin{frame}
-% \frametitle{Computational Science: Challenges}
-
-% Software tools
-% \begin{itemize}
-% \item Private Software Packages
-%         \begin{itemize}
-%     	\item COMSOL, ANSyS Fluent
-%     	\end{itemize}
-% \item Open Source Packages
-%         \begin{itemize}
-%     	\item OpenFoam, Matlab
-%     	\end{itemize}
-% \end{itemize}
-
-% \end{frame}
-
-
-
-
-% It would be good to get something merged here. I think some of the internals need to converge with @KirillZubov 's PINN extensions https://nextjournal.com/kirill_zubov/physics-informed-neural-networks-pinns-solver-on-julia-gsoc-2020-final-report so this project is falling a bit behind. Also, it needs to start taking into account the boundary changes coming in SciML/ModelingToolkit.jl#526
-
-%I was thinking that it might be good to get a publication together for DiffEqOperators. It's almost a 1000 commit repo now where most of the work was done by different students over the years, so I think all it needs is someone to really finish up the project and it's an easy paper. If you wanted to take that and be first author I think it could be an easy 6 months paper. It can highlight some of the stuff like automatic GPU capability with cudnn handling, multithreading, etc. The last step to finishing the repo is getting the multidimensional BCs working (which is something you might run into in the next PR). So feel free to take it to first author. 
-
-%I think DiffEqOperators may need to be finished first, since the auto-discretization is going to rely on those operators, which will have an issue with the higher dimensional boundary conditions. FWIW it should only be a month or two of work, and I think Dan should get hired soon and he should be helping finish it as well.
-
-
-
-% ------
-
-% in order to handle "all" PDEs... we have to go symbolic
-% enter ModelingToolkit.jl
-% ModelingToolkit.jl: an open source compiler + IR for Models and Transformations 
-%     automated acceleration of numerical methods
-%         generation of jacobian and hessians
-%         model order reduction
-%         automated heterogeneus paralellism
-%     transformation into "solvable forms"
-%         pantelides algorithm
-%         lamperti transform
-%     target other compilation
-%         task-based decomposition
-%         embedded outputs
-%     define partial differential equations
-    
-% A structured and documented IR for describing models
-% "Model transforms" are compiler passes IR -> IR
-% Extendable high level "context" system
-% Let other write domain specific languages on top
-%     DSLs should not have to define simplification, differentiation, etc
-    
-% ModelToolkit is a symbolic framework where you can define your derivative terms, your parameters, you define an ODE system, and then you can do transformation on top of it. It is build to do automatic code optimization, and handle differential algebraic equations.
-% You can use this symbolic system to represent PDEs
-
-% Typically you take your derivatives, discretized them and the at the bottom you end up with a loop. But this means that you can reuse your code. 
-
-% Method of Lines Finite Difference: you tell the which dimension is your time dimension and you are gonna discretize everything except your time dimension, and it gives you out an ODE problem. Then you solve the problem with DifferentialEquation.jl
-
-% The porpuse of discretization is not to solve the problem but is to give you a solvable problem
-
-% Here and abstract description of the PDE system
-
-
-% - Mathematics is the language of science
-% - Julia is the new mathematics
-
-% Ergo, Julia is the new language of science
-
-% Toda ciencia tiene de ciencia lo que tiene de matemáticas Poincaré (1854 1912)
-
-% - Mathematical modeling is a fundamental tool for describing, predicting and optimizing complex phenomena.
-
-% mathematical modeling is a fundamental tool for describing, predicting and optimizing EP-based methodologies.
 
 
 % \section{Introduction}
