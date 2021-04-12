@@ -33,7 +33,11 @@ using Test
     Δ['x'] = MDP.Cartesian(h, 0.0, 0.0)
     Δ['y'] = MDP.Cartesian(0.0, h, 0.0)
     Δ['z'] = MDP.Cartesian(0.0, 0.0, h)
+    
+    # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
+    r_cut = 0.5
 
+    count = 0
     for L = 1:8
         K = L + 1
         
@@ -59,9 +63,6 @@ using Test
             r_N_rot[j] = positions_j_rot
         end
         
-        # `r_cut`: Cut radius needed to calculate the neighbors of each atom. 
-        r_cut = rand()
-        
         # Calc. neighbors
         Ω, Ω′, Ω′′, Ω′′′ = MDP.calc_neighbors(J, N, NZ, Z, T, r_N, r_cut)
         
@@ -73,14 +74,27 @@ using Test
         for k = 1:K
             for k′ = k:K
                 for l = 0:L
+                    # TODO: check: rotation invariance of d_ps <=> rotation invariance of deriv_d_ps.
+                    #       In p_bs (see below), it works. Here, I do not have the implementation of d_ps.
                     d1 = MDP.deriv_d_ps(t, k, k′, l, r_N[j], i, j, Ω, Ω′, Ω′′, Δ)
                     d2 = MDP.deriv_d_ps(t, k, k′, l, r_N_rot[j], i, j, Ω, Ω′, Ω′′, Δ)
                     @test d1 == d2
                     
+                    # TODO: optimize bs function. 
+                    #       Currently it is optimized regarding:
+                    #           - Clebsch–Gordan coefficients fast calculation using PartialWaveFunctions.jl
+                    #           - Neighbor information
+                    #       Needs optimization regarding:
+                    #           - Spherical harmonics symentries
                     for l1 = 0:L
                         for l2 = 0:L
-                            d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′′′, Δ)
-                            d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′′′, Δ)
+                            # rotation invariance of deriv_d_bs is also satisfied
+                            # d1 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′, Δ)
+                            # d2 = MDP.deriv_d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′, Δ)
+                            # @test d1 == d2
+                            
+                            d1 = MDP.d_bs(t, k, k′, l, l1, l2, r_N[j], j, i, Ω, Ω′)
+                            d2 = MDP.d_bs(t, k, k′, l, l1, l2, r_N_rot[j], j, i, Ω, Ω′)
                             @test d1 == d2
                         end
                     end
@@ -89,10 +103,9 @@ using Test
         end
         
     end
-
 end
 
-# Test rotation
+# Test rotation function
 @testset "Rotation" begin
     I =  @SMatrix [1.0 0.0 0.0
                    0.0 1.0 0.0

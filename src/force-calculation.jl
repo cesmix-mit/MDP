@@ -108,50 +108,55 @@ f_ps(i, j, c, r, NZ, K, L, Ω, Ω′, Ω′′, Ω′′′, Δ, m = 0) =
 """
 a_bs(i, k, l, m, r, j, Ω) =
     sum([u(k, l, m, r[s] - r[i]) for s in Ω[j][i]])
-    
 
 """
     `b(t, k, k′, l, r, i, j)`
     Eq. 16 in summary. Eq. 29 in original manuscript.
 """
+# TODO: Ask Valentin how to implicitly optimize the code below:
+#b_bs(s, k, k′, l, l1, l2, r, j, i, Ω) =
+#    sum([ CG(l1,l2,m1,m2,l,m) * conj(a_bs(s, k, l, m, r, j, Ω)) *
+#         a_bs(s, k', l1, m1, r, j, Ω) * a_bs(s, k', l2, m2, r, j, Ω)
+#         for m = -l:l for m1 = -l1:l1 for m2 = -l2:l2])
 b_bs(s, k, k′, l, l1, l2, r, j, i, Ω) =
-    sum([conj(a_bs(s, k, l, m, r, j, Ω)) * CG(l1,l2,m1,m2,l,m) *
-         a_bs(s, k', l1, m1, r, j, Ω) * a_bs(s, k', l2, m2, r, j, Ω)
-         for m = -l:l for m1 = -l1:l1 for m2 = -l2:l2])
+    sum([ (CG(l1,l2,m1,m2,l,m) == 0.0 ? 0.0 : CG(l1,l2,m1,m2,l,m) * conj(a_bs(s, k, l, m, r, j, Ω)) *
+            a_bs(s, k', l1, m1, r, j, Ω) * a_bs(s, k', l2, m2, r, j, Ω))
+            for m = -l:l for m1 = -l1:l1 for m2 = -l2:l2])
+
 
 """
     `d_bs(k, k′, l, l1, l2, r, j, i, Ω′′′, r)`: bispectrum basis functions
     Eq. 15 in summary. Eq. 30 in original manuscript.
 """
-d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′) =
-    sum([b_bs(s, k, k′, l, l1, l2, r, j, i, Ω) for s in Ω′′′[j][t]])
+d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′) =
+    sum([b_bs(s, k, k′, l, l1, l2, r, j, i, Ω) for s in Ω′[j][i][t]])
 
 """
     `deriv_d_bs(t, k, k′, l, r, j, i)`: partial derivatives of the basis function.
     Eq. 14 in summary. Eq. 23 and 24 in original manuscript.
 """
-function deriv_d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′, Δ)
+function deriv_d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′, Δ)
     res = [0.0+0.0im, 0.0+0.0im, 0.0+0.0im]
     # d(d_bs)/dx
     h = norm(Δ['x'])
     r[i].x = r[i].x + h
-    a = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′)
+    a = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′)
     r[i].x = r[i].x - 2.0 * h
-    b = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′)
+    b = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′)
     res[1] = (a - b) / (2.0 * h)
     # d(d_bs)/dy
     h = norm(Δ['y'])
     r[i].y = r[i].y + h
-    a = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′)
+    a = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′)
     r[i].y = r[i].y - 2.0 * h
-    b = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′)
+    b = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′)
     res[2] = (a - b) / (2.0 * h)
     # d(d_bs)/dz
     h = norm(Δ['z'])
     r[i].z = r[i].z + h
-    a = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′)
+    a = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′)
     r[i].z = r[i].z - 2.0 * h
-    b = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′)
+    b = d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′)
     res[3] = (a - b) / (2.0 * h)
     # res = (d(d_bs)/dx, d(d_bs)/dy, d(d_bs)/dz)
     return res
@@ -164,7 +169,7 @@ end
      Eq. 3 in summary. Eq. 4 and 5 in original manuscript.
 """
 f_bs(i, j, c, r, NZ, K, L, Ω, Ω′, Ω′′, Ω′′′, Δ, m = 0) =
-     Cartesian((sum([c[m+=1] * deriv_d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′′′, Δ)
+     Cartesian((sum([c[m+=1] * deriv_d_bs(t, k, k′, l, l1, l2, r, j, i, Ω, Ω′, Δ)
                      for t = 1:NZ for k = 1:K for k′ = k:K for l = 0:L for l1 = 0:L for l2 = 0:L]))...)
 
 

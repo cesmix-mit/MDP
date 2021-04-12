@@ -141,7 +141,6 @@ The atomic force calculated through the power basis functions $d_{tkk'l}(\bm r^{
     \label{eq:force}
 \end{equation}
 
-
 On the other hand, the atomic force calculated through the bispectrum basis functions $d_{jkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)$ is formulated as follows:
 
 \begin{equation}
@@ -159,7 +158,6 @@ On the other hand, the atomic force calculated through the bispectrum basis func
 
 Note that $ \frac{\partial d_{tkk'l}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$ and $ \frac{\partial d_{tkk'l{l_1}{l_2}}(\bm r^{N^j}, j, i)}{\partial \bm r_i}$
  are the gradient vectors of $d_{tkk'l}$ and $d_{jkk'l{l_1}{l_2}}$, respectively, varying with respect to the position of the $i$-th atom in the $j$-configuration, i.e. $f$ is a vector quantity.
-
 
 Returning to equation \ref{eq:min1}, current Julia implementation uses ``GalacticOptim'' package to perform the optimization. In the computational implementation $c_{tkk'l}$ and $c_{jkk'l{l_1}{l_2}}$ had to be linearized due to interface compatibility with the optimization library. The new coefficient is $c_{m}$, where the index $m$ is just a one-dimension unrolling of the tuple index $t$,$k$,$k'$,$l$, or $j$,$k$,$k'$,$l$,$l_1$,$l_2$. Therefore, $c \in \mathbb{R}^M$.
 
@@ -258,16 +256,17 @@ The derivatives of the bispectrum basis functions are not presented in the origi
           \frac{ d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} + \bm \Delta Y_i, j, i) - d_{tkk'l{l_1}{l_2}}(\bm r^{N_j} - \bm \Delta Y_i, j, i) } {2 |\bm \Delta Y_i|},\\
           \frac{ d_{tkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} + \bm \Delta Z_i, j, i) - d_{tkk'l{l_1}{l_2}, j, i}(\bm r^{N_j} - \bm \Delta Z_i, j, i) } {2 |\bm \Delta Z_i|} \bigg)
 \end{split}
+\label{eq:bs}
 \end{equation}
 
 where $\bm \Delta X_i$, $\bm \Delta Y_i$, and $\bm \Delta Z_i$ are vectors of the same size as $r^{N_j}$, containing $(0,0,0)$ in all their components except for the $i$-$th$ component, which is equal to $\bm \Delta x$, $\bm \Delta y$, and $\bm \Delta z$, respectively. E.g. if the size of $r^{N_j}$ is $3$ and $i = 2$, then $\bm \Delta X_2 = ( (0,0,0), \bm \Delta x, (0,0,0))$.
 
 The bispectrum basis functions are defined in Equations 29 and 30 in the original manuscript. Here, it is formulated as:
 
-\begin{equation}
-    \label{eq:derd}
+\begin{equation*}
     d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega'''_{jt}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)
-\end{equation}
+\label{eq:d_bs}
+\end{equation*}
 
 where 
 
@@ -288,6 +287,15 @@ where
 
 
 In the computer code, the Clebsch–Gordan coefficients, $C_{{m_1}{m_2}m}^{{l_1}{l_2}l}$, are computed through the library ``PartialWaveFunctions.jl''.
+
+In order to reduce the computations needed to calculate the derivative of the bispectrum basis functions, Eq. \ref{eq:bs}, neighbor information is considered. Thus, the bispectrum basis functions that should be implemented are:
+
+\begin{equation}
+    d_{tkk'l{l_1}{l_2}}(\bm r^{N_j}, j, i) = \sum_{s \in \Omega'_{jit}} b_{skk'l{l_1}{l_2}}(\bm r^{N_j}, j, i)
+\end{equation}
+
+where $\Omega'''_{jt}$ is replaced with  $\Omega'_{jit}$.
+
 
 
 \begin{appendix}
