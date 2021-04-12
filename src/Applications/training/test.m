@@ -20,7 +20,7 @@ app.maxnumneighbors = 100; % maximum number of neighbors allowed
 app.runMD = 0;        % 0 no MD simulation, 1 -> run MD simulation
 app.training = 1;     % 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
 app.dftdata = 3;      % 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
-app.potentialform = 1;% 0 -> empirical potential, 1 -> ML potential, 2 -> hybrid empirical+ML potential    
+app.potentialform = 2;% 0 -> empirical potential, 1 -> ML potential, 2 -> hybrid empirical+ML potential    
 app.neighpair = 0;    % 0 -> full neighbor list, 1 -> half neighbor list for pair potentials
 app.neighcell = 0;    % 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
 app.decomposition = 0;% 0 -> force decomposition, 1 -> atom decomposition
@@ -54,6 +54,9 @@ app.rcut2a = [8.5];  % cut-off radius
 
 % train and validate the potential
 app = mdp(app);
+
+% get validation data
+valid = validate(app);
 
 
 

@@ -1,6 +1,7 @@
 #ifndef __GPUNEIGHBORLIST
 #define __GPUNEIGHBORLIST
 
+//template <typename T> void cpuGhostAtoms2D(int *glistnum, int *inside, T *x, T *pimages, T *wc, T *s2rmap, int n, int pnum, int dim)
 template <typename T>
 __global__ void gpuKernelGhostAtoms2D(int *glistnum, T *x, T *pimages, T *wc, T *B2C, int n, int m, int dim)
 {

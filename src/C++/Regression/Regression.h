@@ -13,7 +13,10 @@ public:
     void LinearRegression(CCalculation &CCal);
     void GaussianRegression(CCalculation &CCal);
     void NeuralNetRegression(CCalculation &CCal);
+    
+    void ValidateLinearRegression(CCalculation &CCal, dstype *x, dstype *e, dstype *f, dstype *q);
 };
+
 
 
 #endif        

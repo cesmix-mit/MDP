@@ -18,6 +18,8 @@ app.configmode = 0;
 app.weightmode = 0;
 app.preprocessmode = 1;
 app.mpiprocs = 1;
+app.traininglist = []; % a list of configurations for training the potential
+app.validatelist = []; % a list of configurations for validating the potential
 
 app.dim = 3;         % physical dimension
 app.nconfigs = 1;    % number of configurations

@@ -19,16 +19,21 @@ for i = 1:8
     compilerstr{i} = "";
 end
 
-delete('../Core/cpuCore.a');
-delete('../Core/libcpuCore.so');
-compilerstr{1} = cpucompiler + " -fPIC -std=c++11 -ffast-math -O3 -c ../Core/cpuCore.cpp -o ../Core/cpuCore.o";
-compilerstr{2} = cpucompiler + " --shared ../Core/cpuCore.o -o ../Core/libcpuCore.so";
-compilerstr{3} = "ar rvs ../Core/cpuCore.a ../Core/cpuCore.o";
-compilerstr{4} = cpucompiler + " -std=c++11 main.cpp -o cpuMDP ../Core/cpuCore.a -ffast-math -O3 " + cpuflags;
-for i = 1:4
+compilerstr{1} = cpucompiler + " -std=c++11 main.cpp -o cpuMDP -ffast-math -O3 " + cpuflags;
+for i = 1:1
     eval(char("!" + compilerstr{i}));
 end
-delete('../Core/cpuCore.o');
+
+% delete('../Core/cpuCore.a');
+% delete('../Core/libcpuCore.so');
+% compilerstr{1} = cpucompiler + " -fPIC -std=c++11 -ffast-math -O3 -c ../Core/cpuCore.cpp -o ../Core/cpuCore.o";
+% compilerstr{2} = cpucompiler + " --shared ../Core/cpuCore.o -o ../Core/libcpuCore.so";
+% compilerstr{3} = "ar rvs ../Core/cpuCore.a ../Core/cpuCore.o";
+% compilerstr{4} = cpucompiler + " -std=c++11 main.cpp -o cpuMDP ../Core/cpuCore.a -ffast-math -O3 -lm" + cpuflags;
+% for i = 1:4
+%     eval(char("!" + compilerstr{i}));
+% end
+% delete('../Core/cpuCore.o');
 
 if ~isempty(gpucompiler)
     delete('../Core/gpuCore.a');

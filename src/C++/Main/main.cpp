@@ -45,7 +45,9 @@ using std::scientific;
 #include "../Common/common.h"     // declaration of variables and structs
 #include "../Common/core.h"       // interface to core libraries
 #include "../Common/pblas.h"      // wrappers for blas libaries and MPI     
+#include "../Common/cpuApp.h"      // wrappers for blas libaries and MPI     
 
+#include "../Core/cpuCore.cpp"       // interface to core libraries
 #include "../Configuration/Configuration.cpp" // read and preprocess input files 
 #include "../Potentials/Potentials.cpp" // empirical potentials
 #include "../Descriptors/Descriptors.cpp"   // nonparameteric potentials 
@@ -139,13 +141,7 @@ int main(int argc, char** argv)
     
     // set up configuration and allocate memory
     CCal.SetConfiguration(0);
-        
-    dstype *x, *e, *f, *q;
-    x = &CCal.sys.x[0];
-    e = &CCal.sys.e[0];
-    f = &CCal.sys.f[0];
-    q = &CCal.sys.q[0];
-                
+                        
     // construct regression object
     CRegression CReg(CCal);
     
@@ -159,39 +155,50 @@ int main(int argc, char** argv)
     do {
        cout <<"Training is done! Press RETURN key to validate the potential.";
     } while (std::cin.get() != '\n');
-        
-    // check linear regression errors
-    for (int i=0; i<CCal.common.validatenum; i++) { // loop over each configuration             
-        int ci = CCal.common.validatelist[i]; // configuration ci
-        int N = CCal.common.dim*CCal.common.inum;
-        
-        // get atom positions for configuration ci   
-        CCal.GetPositions(x, ci);   
 
-        // get atom types for configuration ci
-        CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
-
-        // form neighbor list
-        CCal.NeighborList(x);
-
-        // Calculate energies and forces using ML potential
-        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
-        ArraySetValue(f, 0.0, N, CCal.common.backend);  
-        CCal.PotentialEnergyForce(e, f, x, CCal.sys.c, q, CCal.app.muep, CCal.common.nmu); 
-                
-        // check errors
-        CCal.GetForces(x, ci);
-        cout<<"Configuration # "<<ci+1<<": "<<cpuArraySum(e, CCal.common.inum)<<"  "<<CCal.config.e[ci]<<endl;
-        //printArray2D(f, CCal.common.dim, 10, CCal.common.backend);
-        //printArray2D(x, CCal.common.dim, 10, CCal.common.backend);                
-        dstype energyerror = fabs((cpuArraySum(e, CCal.common.inum)-CCal.config.e[ci])/CCal.config.e[ci]);
-        cout<<"Relative error in energy : "<<energyerror<<endl;        
-        dstype normf = PNORM(CCal.common.cublasHandle, N, x, CCal.common.backend);
-        ArrayAXPBY(f, f, x, one, minusone, N, CCal.common.backend);    
-        dstype norme = PNORM(CCal.common.cublasHandle, N, f, CCal.common.backend);
-        dstype forceerror = norme/normf;
-        cout<<"Relative error in forces : "<<forceerror<<endl;        
-    }            
+    // Validate linear regression potential
+    dstype *x, *e, *f, *q;
+    x = &CCal.sys.x[0];
+    e = &CCal.sys.e[0];
+    f = &CCal.sys.f[0];
+    q = &CCal.sys.q[0];    
+    CReg.ValidateLinearRegression(CCal, x, e, f, q);
+    
+    
+    
+    
+//     // check linear regression errors
+//     for (int i=0; i<CCal.common.validatenum; i++) { // loop over each configuration             
+//         int ci = CCal.common.validatelist[i]; // configuration ci
+//         int N = CCal.common.dim*CCal.common.inum;
+//         
+//         // get atom positions for configuration ci   
+//         CCal.GetPositions(x, ci);   
+// 
+//         // get atom types for configuration ci
+//         CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+// 
+//         // form neighbor list
+//         CCal.NeighborList(x);
+// 
+//         // Calculate energies and forces using ML potential
+//         ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
+//         ArraySetValue(f, 0.0, N, CCal.common.backend);  
+//         CCal.PotentialEnergyForce(e, f, x, CCal.sys.c, q, CCal.app.muep, CCal.common.nmu); 
+//                 
+//         // check errors
+//         CCal.GetForces(x, ci);
+//         cout<<"Configuration # "<<ci+1<<": "<<cpuArraySum(e, CCal.common.inum)<<"  "<<CCal.config.e[ci]<<endl;
+//         //printArray2D(f, CCal.common.dim, 10, CCal.common.backend);
+//         //printArray2D(x, CCal.common.dim, 10, CCal.common.backend);                
+//         dstype energyerror = fabs((cpuArraySum(e, CCal.common.inum)-CCal.config.e[ci])/CCal.config.e[ci]);
+//         cout<<"Relative error in energy : "<<energyerror<<endl;        
+//         dstype normf = PNORM(CCal.common.cublasHandle, N, x, CCal.common.backend);
+//         ArrayAXPBY(f, f, x, one, minusone, N, CCal.common.backend);    
+//         dstype norme = PNORM(CCal.common.cublasHandle, N, f, CCal.common.backend);
+//         dstype forceerror = norme/normf;
+//         cout<<"Relative error in forces : "<<forceerror<<endl;        
+//     }            
         
     
 //     // LJ potential

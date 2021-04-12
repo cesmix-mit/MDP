@@ -163,6 +163,58 @@ void CRegression::LinearRegression(CCalculation &CCal)
     writearray2file("coefficients.bin", c, M, backend);        
 }
 
+void CRegression::ValidateLinearRegression(CCalculation &CCal, dstype *x, dstype *e, dstype *f, dstype *q)
+{
+    string filename = "validation.bin";
+    ofstream out(filename.c_str(), ios::out | ios::binary);    
+    if (!out) {
+        error("Unable to open file " + filename);
+    }    
+    writedouble(out, (double) CCal.common.validatenum);        
+            
+    // check linear regression errors
+    for (int i=0; i<CCal.common.validatenum; i++) { // loop over each configuration             
+        int ci = CCal.common.validatelist[i]; // configuration ci
+        int N = CCal.common.dim*CCal.common.inum;
+                        
+        // get atom positions for configuration ci   
+        CCal.GetPositions(x, ci);   
+        
+        // get atom types for configuration ci
+        CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+
+        // form neighbor list
+        CCal.NeighborList(x);
+
+        // Calculate energies and forces using ML potential
+        ArraySetValue(e, 0.0, CCal.common.inum, CCal.common.backend);  
+        ArraySetValue(f, 0.0, N, CCal.common.backend);  
+        CCal.PotentialEnergyForce(e, f, x, CCal.sys.c, q, CCal.app.muep, CCal.common.nmu);                 
+        dstype energy = cpuArraySum(e, CCal.common.inum);
+        
+        writedouble(out, (double) ci);    
+        writedouble(out, (double) N);                   
+        writearray(out, x, N, CCal.common.backend);        
+        writearray(out, f, N, CCal.common.backend);
+        writedouble(out, energy); 
+        
+        // check errors
+        CCal.GetForces(x, ci);
+        cout<<"Configuration # "<<ci+1<<": "<<cpuArraySum(e, CCal.common.inum)<<"  "<<CCal.config.e[ci]<<endl;
+        //printArray2D(f, CCal.common.dim, 10, CCal.common.backend);
+        //printArray2D(x, CCal.common.dim, 10, CCal.common.backend);                
+        dstype energyerror = fabs((cpuArraySum(e, CCal.common.inum)-CCal.config.e[ci])/CCal.config.e[ci]);
+        cout<<"Relative error in energy : "<<energyerror<<endl;        
+        dstype normf = PNORM(CCal.common.cublasHandle, N, x, CCal.common.backend);
+        ArrayAXPBY(f, f, x, one, minusone, N, CCal.common.backend);    
+        dstype norme = PNORM(CCal.common.cublasHandle, N, f, CCal.common.backend);
+        dstype forceerror = norme/normf;
+        cout<<"Relative error in forces : "<<forceerror<<endl;        
+    }                
+    
+    out.close();
+}
+
 void CRegression::GaussianRegression(CCalculation &CCal)
 {
 }

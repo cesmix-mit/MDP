@@ -266,6 +266,11 @@ void writeiarraytodouble(ofstream &out, Int *a, Int N)
     }
 }
 
+void writedouble(ofstream &out, double b)
+{        
+    out.write( reinterpret_cast<char*>( &b ), sizeof(double) );    
+}
+
 bool fileexists(string filename) 
 {
     ifstream ifile(filename.c_str());
@@ -337,6 +342,27 @@ template <typename T> void writearray2file(string filename, T *a, Int N)
         out.write( reinterpret_cast<char*>( &a[0] ), sizeof(T) * N );
 
         out.close();
+    }
+}
+
+template <typename T> void writearray(ofstream &out, T *a, Int N, Int backend)
+{
+    if (N>0) {        
+        if (backend==2) { //GPU
+#ifdef  HAVE_CUDA                        
+            T *a_host;            
+            a_host = (T*) malloc (sizeof (T)*N);            
+            
+            // transfer data from GPU to CPU to save in a file
+            cudaMemcpy(&a_host[0], &a[0], N*sizeof(T), cudaMemcpyDeviceToHost);    
+            
+            out.write( reinterpret_cast<char*>( &a_host[0] ), sizeof(T) * N );
+            
+            free(a_host);
+#endif            
+        }
+        else 
+            out.write( reinterpret_cast<char*>( &a[0] ), sizeof(T) * N );                            
     }
 }
 
