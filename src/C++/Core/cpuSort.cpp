@@ -123,7 +123,7 @@ int cpuUniqueElements(int *b, int *c, int *e, int *t, int *p, int *q, int n)
 int cpuUniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, int *q, int n)
 {       
     // a  (input): an array of n integer elements
-    // b (putput): unique elements of the original array a
+    // b (output): unique elements of the original array a
     // c (output): the number of counts for each element of the output array b
     // d (output): sorted indices of the original array a
     // e (output): sorted elements of the original array a

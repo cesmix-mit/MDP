@@ -42,6 +42,31 @@ else
     stropu = stropu * tmpopu;
     strcpu = strcpu * tmpcpu;
     strgpu = strgpu * tmpgpu;    
+
+    # here
+    if pot==1
+        tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_xi,");   
+        tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_xi,");   
+        tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*");   
+        tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*");      
+    elseif pot==2
+        tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_xij,");   
+        tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_xij,");   
+        tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*");   
+        tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*");   
+    elseif pot==3
+        tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_xij, T *u_xik,");   
+        tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_xij, u_xik,");   
+        tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*, double*");   
+        tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*, float*");      
+    elseif pot==4       
+        tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_xij, T *u_xik, T *u_xil,");   
+        tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_xij, u_xik, u_xil,");   
+        tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*, double*, double*");   
+        tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*, float*, float*");      
+    end
+    strgpu = strgpu * "\n" * tmpgpu;  
+
     cppfiles(foldername, filename, stropu, strcpu, strgpu, 0);
 end    
 

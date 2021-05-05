@@ -18,6 +18,8 @@ template <typename T> void cpuArrayPlusXAtIndex(T *y, T *x, int *ind, int n);
 template <typename T> void cpuArrayMinusXAtIndex(T *y, T *x, int *ind, int n);
 template <typename T> void cpuArrayAXPYAtIndex(T *y, T *x, T a, int *ind, int n);
 
+void cpuQuadrupletnum(int *a, int *b, int n);
+void cpuTripletnum(int *a, int *b, int n);
 void cpuArrayFill(int *a, int start, int n);
 template <typename T> T cpuArrayMaxError(T *a, T *b, int n);
 template <typename T> T cpuArrayMin(T *a, int n);
@@ -216,7 +218,6 @@ template <typename T> void cpuQuadrupletDecomposition(T *e, T *eijkl, int *ai, i
 template <typename T> void cpuCenterAtomQuadrupletDecomposition(T *e, T *eijkl, int *ilist, int *anumsum, int inum, int dim);
 template <typename T> void cpuNeighborAtomQuadrupletDecomposition(T *e, T *eij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
 
-
 template <typename T> void cpuSingleDecomposition(T *e, T *f, T *ei, T *fi, int *ai, int inum, int dim);
 template <typename T> void cpuCenterAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *ilist, int *anumsum, int inum, int dim);
 template <typename T> void cpuNeighborAtomPairDecomposition(T *e, T *f, T *eij, T *fij, int *jlist, int *bnumsum, int *index, int jnum, int dim);
@@ -308,6 +309,8 @@ template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *x, T *y,
                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuSphericalHarmonicsBessel(T *Sr, T *Si, T *xij,
                 T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsBesselJ(T *Sr, T *Si, T *xij,
+                T *x0, T *P, T *tmp, T *f, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuSphericalHarmonicsAtomSum(T *Ylmr, T *Ylmi, T *x, T *y, T *z, 
                 T *P, T *tmp, T *fac, T pi, int L, int N);
 template <typename T> void cpuSphericalHarmonicsSum(T *Sr, T *Si, T *Ylmr, T *Ylmi, int L, int N);
@@ -319,6 +322,8 @@ template <typename T> void cpuSphericalHarmonicsBesselDeriv(T *Srx, T *Six, T *S
 template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *x, T *y, T *z, 
                 T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuSphericalHarmonicsBesselWithDeriv(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *xij, 
+                T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
+template <typename T> void cpuSphericalHarmonicsBesselJWithDeriv(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *xij, 
                 T *x0, T *P, T *tmp, T *f, T *dP, T *dtmp, T *df, T *fac, T pi, int L, int K, int N);
 template <typename T> void cpuRadialSphericalHarmonicsPower(T *p, T *ar, T *ai, int *indk, int L, int K);
 template <typename T> void cpuRadialSphericalHarmonicsPowerDeriv(T *px, T *py, T *pz, T *ar, T *ai, 

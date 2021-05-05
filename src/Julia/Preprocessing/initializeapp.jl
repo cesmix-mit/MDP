@@ -12,6 +12,8 @@ mutable struct APPStruct
     mpirun::String;      # Path to MPI run command and MPI run options
     cpuflags::String;    # options for CPU compiler
     gpuflags::String;    # options for GGU compiler
+    cpumacros::String;    # options for CPU compiler
+    gpumacros::String;    # options for GGU compiler
     potentialfile::String;# APP model file name
     configfile::String;# APP model file name
     weightfile::String;# APP model file name
@@ -52,6 +54,9 @@ mutable struct APPStruct
     bcs::Array{Int64,2}; # boundary conditions
     pbc::Array{Int64,2};  # periodic boundary conditions
     
+    we::Float64;  # energy weight
+    wf::Float64;  # force weight
+
     # atom types
     natomtype::Int64;  # number of atom types
     atommasses::Array{Float64,2};
@@ -183,6 +188,8 @@ function initializeapp(sourcepath,version)
     app.mpirun = "mpirun";
     app.cpuflags = "-O2 -ldl -lm -lblas -llapack";
     app.gpuflags = "-lcudart -lcublas";
+    app.cpumacros = "";
+    app.gpumacros = "";
     app.potentialfile = "";
     app.configfile = "";
     app.configmode = 4;
@@ -219,6 +226,9 @@ function initializeapp(sourcepath,version)
     app.bcs = [0 0 0 0 0 0]; # boundary conditions
     app.pbc = [1 1 1];       # periodic boundary conditions
     
+    app.we = 1.0; # energy weight
+    app.wf = 1.0; # force weight
+
     # atom types
     app.natomtype = 0;  # number of atom types
     app.atommasses = reshape([], 0, 2);

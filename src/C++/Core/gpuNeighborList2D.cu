@@ -1,13 +1,16 @@
 #ifndef __GPUNEIGHBORLIST2D
 #define __GPUNEIGHBORLIST2D
 
+#include "cub112/device/device_radix_sort.cuh"
+
 template <typename T>
-__global__ void gpuKernelGhostAtoms2D(int *glistnum, int *inside, T *x, T *pimages, T *wc, T *s2rmap, int n, int m, int dim)
+__global__ void gpuKernelGhostAtoms2D(int *glistnum, int *inside, T *x, T *pimages, T *wc, 
+    T *s2rmap, int inum, int pnum, int dim)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    while (i < n) {
+    while (i < inum) {
         glistnum[i] = 0; // set the number of ghost atoms for atom i to 0
-        for (int j=1; j<m; j++) { // loop over each periodic image of atom i
+        for (int j=1; j<pnum; j++) { // loop over each periodic image of atom i
             T xj0 = x[i*dim+0] + pimages[j*dim+0];  // periodic image of x      
             T xj1 = x[i*dim+1] + pimages[j*dim+1];        
             T xc0 = s2rmap[0]*xj0 + s2rmap[2]*xj1;        // map it to the unit square      
@@ -27,14 +30,14 @@ __global__ void gpuKernelGhostAtoms2D(int *glistnum, int *inside, T *x, T *pimag
 
 template <typename T>
 __global__ void gpuKernelAtomList2D(int *alist, int *inside, int *glistnumsum,
-        T *x, T *pimages, int n, int m, int dim)
+        T *x, T *pimages, int inum, int pnum, int dim)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    while (i < n) {
+    while (i < inum) {
         alist[i] = i;         // add atom i to the list
-        int q = n + glistnumsum[i]; // offset the starting position by n
+        int q = inum + glistnumsum[i]; // offset the starting position by n
         int k = 0;            
-        for (int j=1; j<m; j++) { // loop over each periodic image of atom i            
+        for (int j=1; j<pnum; j++) { // loop over each periodic image of atom i            
             /// check if the mapped point is inside the bounding box
             if (inside[j-1 + i*(pnum-1)]) {  
                 x[dim*(q+k)+0] = x[i*dim+0] + pimages[j*dim+0]; // add the periodic image as a ghost atom
@@ -55,19 +58,18 @@ template <typename T> void gpuAtomList2D(int *alist,  int *inside, int *glistnum
     gridDim = (gridDim>1024)? 1024 : gridDim;
     
     // a list of ghost atoms
-    gpuGhostAtoms2D<<<gridDim, blockDim>>>(glistnum, inside, x, pimages, wc, s2rmap, inum, pnum, dim);
+    gpuKernelGhostAtoms2D<<<gridDim, blockDim>>>(glistnum, inside, x, pimages, wc, s2rmap, inum, pnum, dim);
     
     // a list contains the starting position of the ghost atom of every atom i
-    gpuCumsum(glistnumsum, glistnum, d_sums, d_incr, n+1); 
+    gpuCumsum(glistnumsum, glistnum, d_sums, d_incr, inum+1); 
 
-    gpuKernelAtomList2D<<<gridDim, blockDim>>>(alist, inside, glistnumsum, atomtype, x, pimages, 
-            wc, s2rmap, inum, pnum, dim);
+    gpuKernelAtomList2D<<<gridDim, blockDim>>>(alist, inside, glistnumsum, x, pimages, inum, pnum, dim);
 }
 template void gpuAtomList2D(int*, int*, int*, int*, int*, int*, double*, double*, double*, double*, int, int, int);
 template void gpuAtomList2D(int*, int*, int*, int*, int*, int*, float*, float*, float*, float*, int, int, int);
 
 template <typename T>
-__global__ void gpuKernelCellList2D(int *clist, T *xi, T *eta1, T *eta2, T *eta3, T *s2rmap, 
+__global__ void gpuKernelCellList2D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
         int *nc, int inum, int natom, int dim)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -103,7 +105,7 @@ template <typename T> void gpuCellList2D(int *clist, T *xi, T *eta1, T *eta2, T 
 template void gpuCellList2D(int*, double*, double*, double*, double*, double*, int*, int, int, int);
 template void gpuCellList2D(int*, float*, float*, float*, float*, float*, int*, int, int, int);
 
-__global__ void gpugetcellcounts(int *cellcounts, int* cell, int natom, int ncell)
+__global__ void gpuKernelCellCounts(int *cellcounts, int* cell, int natom, int ncell)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     while (i < natom) {              
@@ -133,13 +135,27 @@ __global__ void gpugetcellcounts(int *cellcounts, int* cell, int natom, int ncel
     }
 }
         
-void gpuCell2AtomList(int *c2alist, int *c2anumsum, int *c2anum, int *clist, int natom, int ncell)
+void gpuCellCounts(int *cellcounts, int* cell, int natom, int ncell)
+{        
+    int blockDim = 256;
+    int gridDim = (natom + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelCellCounts<<<gridDim, blockDim>>>(cellcounts, cell, natom, ncell);
+}
+
+void gpuCell2AtomList(int *c2alist, int *c2anumsum, int *c2anum, int *clist, int *d_temp, int natom, int ncell)
 {           
     // sort atom-to-cell list    
-    gpuMergeSort(c2anum, c2alist, clist, natom); // c2alist store indices
-    
+    size_t  temp_storage_bytes  = 0;
+    void  *d_temp_storage = NULL;
+    cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, clist, c2anum, c2anumsum, c2alist, natom);
+            
+    //cudaMalloc( (void**)&d_temp_storage, temp_storage_bytes);
+    gpuIndexInit(c2anumsum, natom);
+    cub::DeviceRadixSort::SortPairs((void*) d_temp, temp_storage_bytes, clist, c2anum, c2anumsum, c2alist, natom);
+
     // count number of atoms for every cell
-    gpugetcellcounts(c2anumsum, c2anum, natom, ncell);     
+    gpuCellCounts(c2anumsum, c2anum, natom, ncell);     
 }
 
 template <typename T> 

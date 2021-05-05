@@ -82,7 +82,9 @@ void InitSphericalHarmonics(shstruct &sh, commonstruct &common)
         for (int l=0; l<(L+1); l++)
             x0[k*(L+1) + l] = bzeros[k*25 + l]/common.rcutml;
     
-    //printArray2D(x0, 1, K*(1+L), backend);    
+    
+    //printArray2D(x0, (1+L), K, backend);    
+    //cout<<common.rcutml<<endl;
     //sh.freememory(backend);
          
     // allocate memory for sh struct
@@ -180,32 +182,34 @@ void SphericalHarmonicBesselDescriptors(dstype *e, neighborstruct &nb, commonstr
         Int na = e2 - e1; // number of atoms in this block
         Int jnum = common.jnum;
         Int dim = common.dim;
+        Int backend = common.backend;
                 
         Int *ilist = &tmp.intmem[0]; //na     
         if (typei>0) {               
             Int *olist = &tmp.intmem[na]; //na        
-            cpuArrayFill(olist, e1, na);        
+            ArrayFill(olist, e1, na, backend);        
 
             Int *t0 = &tmp.intmem[2*na]; //na        
             Int *t1 = &tmp.intmem[3*na]; //na        
-            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+            na = FindAtomType(ilist, olist, atomtype, t0, t1, typei, na, backend);
         }
         else {
-            cpuArrayFill(ilist, e1, na);        
-        }
+            ArrayFill(ilist, e1, na, backend);        
+        }                
         
         Int *pairnum = &tmp.intmem[na]; // na
         Int *pairlist = &tmp.intmem[2*na]; // na*jnum
         if (typej>0)
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim, backend);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim, backend);        
                 
         //a list contains the starting positions of the first neighbor 
         Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1        
-        cpuCumsum(pairnumsum, pairnum, na+1);                                         
-        int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
-                
+        //cpuCumsum(pairnumsum, pairnum, na+1);                                         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
+        
         Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
         Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
         Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
@@ -215,19 +219,19 @@ void SphericalHarmonicBesselDescriptors(dstype *e, neighborstruct &nb, commonstr
         dstype *xij = &tmp.tmpmem[2*na*nbasis+ntuples*(2*nbasis)]; // ntuples*dim
         dstype *qi;
         dstype *qj;
-        cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+        NeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, jnum, ncq, dim, backend);       
                                                 
         dstype *cr =  &tmp.tmpmem[0];         // na*nbasis
         dstype *ci =  &tmp.tmpmem[na*nbasis]; // na*nbasis              
         dstype *sr =  &tmp.tmpmem[2*na*nbasis]; // ntuples*nbasis
         dstype *si =  &tmp.tmpmem[2*na*nbasis+ntuples*(1*nbasis)]; // ntuples*nbasis                       
-        cpuSphericalHarmonicsBessel(sr, si, xij, sh.x0, sh.P, sh.tmp, sh.f, 
-                sh.fac, M_PI, common.L, common.K, ntuples);
+        SphericalHarmonicsBessel(sr, si, xij, sh.x0, sh.P, sh.tmp, sh.f, 
+                sh.fac, M_PI, common.L, common.K, ntuples, backend);
                                 
         dstype *ei = &tmp.tmpmem[2*na*nbasis+ntuples*(2*nbasis)]; // na * Nbf
-        cpuRadialSphericalHarmonicsSpectrum(ei, cr, ci, sr, si, sh.cg, sh.indk, sh.indl, sh.indm, 
-                sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);
+        RadialSphericalHarmonicsSpectrum(ei, cr, ci, sr, si, sh.cg, sh.indk, sh.indl, sh.indm, 
+                sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum, backend);
         
         // ei : na x Nbf,  onevec : na x 1, e : Nbf x 1
         // e = e + ei^T*onevec        
@@ -275,30 +279,34 @@ void SphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb
         Int na = e2 - e1; // number of atoms in this block
         Int jnum = common.jnum;
         Int dim = common.dim;
-                
+        Int backend = common.backend;
+        
         Int *ilist = &tmp.intmem[0]; //na     
         if (typei>0) {               
             Int *olist = &tmp.intmem[na]; //na        
-            cpuArrayFill(olist, e1, na);        
+            ArrayFill(olist, e1, na, backend);        
 
             Int *t0 = &tmp.intmem[2*na]; //na        
             Int *t1 = &tmp.intmem[3*na]; //na        
-            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+            na = FindAtomType(ilist, olist, atomtype, t0, t1, typei, na, backend);
         }
         else {
-            cpuArrayFill(ilist, e1, na);        
-        }
-        
+            ArrayFill(ilist, e1, na, backend);        
+        }                
+                
         Int *pairnum = &tmp.intmem[na]; // na
         Int *pairlist = &tmp.intmem[2*na]; // na*jnum
         if (typej>0)
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim, backend);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim, backend);        
                 
+                        //printArray2D(nb.neighnum, 1, na, common.backend);
+        
         //a list contains the starting positions of the first neighbor 
         Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1        
-        cpuCumsum(pairnumsum, pairnum, na+1);                                         
+        //cpuCumsum(pairnumsum, pairnum, na+1);         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
         Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
@@ -310,9 +318,9 @@ void SphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb
         dstype *xij = &tmp.tmpmem[2*na*nbasis+ntuples*(8*nbasis)]; // ntuples*dim
         dstype *qi;
         dstype *qj;
-        cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
-                                                
+        NeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, jnum, ncq, dim, backend);                                                               
+                        
         dstype *cr =  &tmp.tmpmem[0];         // na*nbasis
         dstype *ci =  &tmp.tmpmem[na*nbasis]; // na*nbasis                        
         dstype *srx = &tmp.tmpmem[2*na*nbasis]; // ntuples*nbasis
@@ -323,95 +331,113 @@ void SphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb
         dstype *siz = &tmp.tmpmem[2*na*nbasis+ntuples*(5*nbasis)]; // ntuples*nbasis         
         dstype *sr =  &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)]; // ntuples*nbasis
         dstype *si =  &tmp.tmpmem[2*na*nbasis+ntuples*(7*nbasis)]; // ntuples*nbasis               
-        cpuSphericalHarmonicsBesselWithDeriv(sr, si, srx, six, sry, siy, srz, siz, xij,
-                 sh.x0, sh.P, sh.tmp, sh.f, sh.dP, sh.dtmp, sh.df, sh.fac, M_PI, common.L, common.K, ntuples);
-                
-#ifdef CHECK  // check              
-        dstype epsil = 1e-6;
-        dstype *sr1 =  new dstype[ntuples*nbasis];
-        dstype *si1 =  new dstype[ntuples*nbasis]; 
-        dstype *xi1 =  new dstype[ntuples*dim]; 
-        dstype *xii =  new dstype[ntuples*dim]; 
-        dstype *ei1 =  new dstype[na*Nbf]; 
-        dstype *onev =  new dstype[na]; 
-        dstype *et =  new dstype[Nbf]; 
-        cpuArrayCopy(xii, xij, dim*ntuples);
-        cpuArrayCopy(xi1, xij, dim*ntuples);
-        ArraySetValue(onev, 1.0, na, common.backend);
+        SphericalHarmonicsBesselWithDeriv(sr, si, srx, six, sry, siy, srz, siz, xij,
+                 sh.x0, sh.P, sh.tmp, sh.f, sh.dP, sh.dtmp, sh.df, sh.fac, M_PI, common.L, common.K, ntuples, backend);
         
-        cpuArrayRowkAXPB(xi1, xij, 1.0, epsil, dim, ntuples, 0);
-        cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
-                 sh.fac, M_PI, common.L, common.K, ntuples);
-        cpuArrayAXPBY(sr1, sr1, sr, 1.0/epsil, -1.0/epsil, ntuples*nbasis);
-        cpuArrayAXPBY(sr1, sr1, srx, 1.0, -1.0, ntuples*nbasis);
-        cpuArrayAbs(sr1, sr1, ntuples*nbasis);        
-        cout<<"Maximum absolute error: "<<cpuArrayMax(sr1, ntuples*nbasis)<<endl;        
+//         string fn0 = (common.backend == 2) ? "srgpu.bin" : "srcpu.bin";
+//         writearray2file(fn0, sr, ntuples*nbasis, common.backend); 
+//         fn0 = (common.backend == 2) ? "sigpu.bin" : "sicpu.bin";
+//         writearray2file(fn0, si, ntuples*nbasis, common.backend); 
+//         fn0 = (common.backend == 2) ? "xijgpu.bin" : "xijcpu.bin";
+//         writearray2file(fn0, xij, ntuples*dim, common.backend); 
         
-        cpuArrayCopy(xi1, xij, dim*ntuples);
-        cpuArrayRowkAXPB(xi1, xij, 1.0, epsil, dim, ntuples, 1);
-        cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
-                 sh.fac, M_PI, common.L, common.K, ntuples);
-        cpuArrayAXPBY(sr1, sr1, sr, 1.0/epsil, -1.0/epsil, ntuples*nbasis);
-        cpuArrayAXPBY(sr1, sr1, sry, 1.0, -1.0, ntuples*nbasis);
-        cpuArrayAbs(sr1, sr1, ntuples*nbasis);        
-        cout<<"Maximum absolute error: "<<cpuArrayMax(sr1, ntuples*nbasis)<<endl;         
-        
-        cpuArrayCopy(xi1, xij, dim*ntuples);
-        cpuArrayRowkAXPB(xi1, xij, 1.0, epsil, dim, ntuples, 2);
-        cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
-                 sh.fac, M_PI, common.L, common.K, ntuples);
-        cpuArrayAXPBY(sr1, sr1, sr, 1.0/epsil, -1.0/epsil, ntuples*nbasis);
-        cpuArrayAXPBY(sr1, sr1, srz, 1.0, -1.0, ntuples*nbasis);
-        cpuArrayAbs(sr1, sr1, ntuples*nbasis);        
-        cout<<"Maximum absolute error: "<<cpuArrayMax(sr1, ntuples*nbasis)<<endl;    
-#endif        
+// #ifdef HAVE_CHECK  // check              
+//         dstype epsil = 1e-6;
+//         dstype *sr1 =  new dstype[ntuples*nbasis];
+//         dstype *si1 =  new dstype[ntuples*nbasis]; 
+//         dstype *xi1 =  new dstype[ntuples*dim]; 
+//         dstype *xii =  new dstype[ntuples*dim]; 
+//         dstype *ei1 =  new dstype[na*Nbf]; 
+//         dstype *onev =  new dstype[na]; 
+//         dstype *et =  new dstype[Nbf]; 
+//         cpuArrayCopy(xii, xij, dim*ntuples);
+//         cpuArrayCopy(xi1, xij, dim*ntuples);
+//         ArraySetValue(onev, 1.0, na, common.backend);
+//         
+//         cpuArrayRowkAXPB(xi1, xij, 1.0, epsil, dim, ntuples, 0);
+//         cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
+//                  sh.fac, M_PI, common.L, common.K, ntuples);
+//         cpuArrayAXPBY(sr1, sr1, sr, 1.0/epsil, -1.0/epsil, ntuples*nbasis);
+//         cpuArrayAXPBY(sr1, sr1, srx, 1.0, -1.0, ntuples*nbasis);
+//         cpuArrayAbs(sr1, sr1, ntuples*nbasis);        
+//         cout<<"Maximum absolute error: "<<cpuArrayMax(sr1, ntuples*nbasis)<<endl;        
+//         
+//         cpuArrayCopy(xi1, xij, dim*ntuples);
+//         cpuArrayRowkAXPB(xi1, xij, 1.0, epsil, dim, ntuples, 1);
+//         cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
+//                  sh.fac, M_PI, common.L, common.K, ntuples);
+//         cpuArrayAXPBY(sr1, sr1, sr, 1.0/epsil, -1.0/epsil, ntuples*nbasis);
+//         cpuArrayAXPBY(sr1, sr1, sry, 1.0, -1.0, ntuples*nbasis);
+//         cpuArrayAbs(sr1, sr1, ntuples*nbasis);        
+//         cout<<"Maximum absolute error: "<<cpuArrayMax(sr1, ntuples*nbasis)<<endl;         
+//         
+//         cpuArrayCopy(xi1, xij, dim*ntuples);
+//         cpuArrayRowkAXPB(xi1, xij, 1.0, epsil, dim, ntuples, 2);
+//         cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
+//                  sh.fac, M_PI, common.L, common.K, ntuples);
+//         cpuArrayAXPBY(sr1, sr1, sr, 1.0/epsil, -1.0/epsil, ntuples*nbasis);
+//         cpuArrayAXPBY(sr1, sr1, srz, 1.0, -1.0, ntuples*nbasis);
+//         cpuArrayAbs(sr1, sr1, ntuples*nbasis);        
+//         cout<<"Maximum absolute error: "<<cpuArrayMax(sr1, ntuples*nbasis)<<endl;    
+// #endif                                      
         
         dstype *ei = &tmp.tmpmem[2*na*nbasis+ntuples*(8*nbasis)]; // na * Nbf
-        cpuRadialSphericalHarmonicsSpectrum(ei, cr, ci, sr, si, sh.cg, sh.indk, sh.indl, sh.indm, 
-                sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);
+        RadialSphericalHarmonicsSpectrum(ei, cr, ci, sr, si, sh.cg, sh.indk, sh.indl, sh.indm, 
+                sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum, backend);
         
         // ei : na x Nbf,  onevec : na x 1, e : Nbf x 1
         // e = e + ei^T*onevec        
         dstype *onevec =  &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)];  // na
-        ArraySetValue(onevec, 1.0, na, common.backend);
-        PGEMTV(common.cublasHandle, na, Nbf, &one, ei, na, onevec, inc1, &one, e, inc1, common.backend);        
-                
-        dstype *fij = &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)]; // dim * ntuples * Nbf
-        cpuRadialSphericalHarmonicsSpectrumDeriv(fij, cr, ci, srx, six, sry, siy, srz, siz, sh.cg, sh.indk, 
-                sh.indl, sh.indm, sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);                        
+        ArraySetValue(onevec, one, na, common.backend);
+        PGEMTV2(common.cublasHandle, na, Nbf, &one, ei, na, onevec, inc1, &one, e, inc1, common.backend);        
+             
+//         string fn1 = (common.backend == 2) ? "eigpu.bin" : "eicpu.bin";
+//         writearray2file(fn1, ei, na*Nbf, common.backend);              
+//         fn1 = (common.backend == 2) ? "egpu.bin" : "ecpu.bin";
+//         writearray2file(fn1, e, Nbf, common.backend); 
+        //fn1 = (common.backend == 2) ? "ogpu.bin" : "ocpu.bin";
+        //writearray2file(fn1, onevec, na, common.backend); 
         
-#ifdef CHECK    // check        
-        for (int i = 0; i<dim*ntuples; i++) {
-            cpuArrayCopy(xi1, xii, dim*ntuples);  
-            xi1[i] = xi1[i] + epsil;
-            cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
-                     sh.fac, M_PI, common.L, common.K, ntuples);
-                                 
-            cpuRadialSphericalHarmonicsSpectrum(ei1, cr, ci, sr1, si1, sh.cg, sh.indk, sh.indl, sh.indm, 
-                    sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);
-            
-            PGEMTV(common.cublasHandle, na, Nbf, &one, ei1, na, onev, inc1, &zero, et, inc1, common.backend);                    
-            printArray2D(e, 1, Nbf, common.backend);
-            printArray2D(et, 1, Nbf, common.backend);
-            for (int j=0; j<Nbf; j++) 
-                et[j] = fabs((et[j]-e[j])/epsil - fij[i + dim*ntuples*j]);
-            cout<<"Maximum absolute error: "<<cpuArrayMax(et, Nbf)<<endl;      
-        }
-        delete[] sr1;
-        delete[] si1;
-        delete[] xi1;
-        delete[] xii;
-        delete[] ei1;
-        delete[] onev;
-        delete[] et;        
-        error("here");            
-#endif
+        dstype *fij = &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)]; // dim * ntuples * Nbf
+        RadialSphericalHarmonicsSpectrumDeriv(fij, cr, ci, srx, six, sry, siy, srz, siz, sh.cg, sh.indk, 
+            sh.indl, sh.indm, sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum, backend);                        
+                
+//         fn1 = (common.backend == 2) ? "fijgpu.bin" : "fijcpu.bin";
+//         writearray2file(fn1, fij, dim*ntuples*Nbf, common.backend); 
+//         error("here");
+
+// #ifdef HAVE_CHECK    // check        
+//         for (int i = 0; i<dim*ntuples; i++) {
+//             cpuArrayCopy(xi1, xii, dim*ntuples);  
+//             xi1[i] = xi1[i] + epsil;
+//             cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
+//                      sh.fac, M_PI, common.L, common.K, ntuples);
+//                                  
+//             cpuRadialSphericalHarmonicsSpectrum(ei1, cr, ci, sr1, si1, sh.cg, sh.indk, sh.indl, sh.indm, 
+//                     sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);
+//             
+//             PGEMTV(common.cublasHandle, na, Nbf, &one, ei1, na, onev, inc1, &zero, et, inc1, common.backend);                    
+//             printArray2D(e, 1, Nbf, common.backend);
+//             printArray2D(et, 1, Nbf, common.backend);
+//             for (int j=0; j<Nbf; j++) 
+//                 et[j] = fabs((et[j]-e[j])/epsil - fij[i + dim*ntuples*j]);
+//             cout<<"Maximum absolute error: "<<cpuArrayMax(et, Nbf)<<endl;      
+//         }
+//         delete[] sr1;
+//         delete[] si1;
+//         delete[] xi1;
+//         delete[] xii;
+//         delete[] ei1;
+//         delete[] onev;
+//         delete[] et;        
+//         error("here");            
+// #endif
                 
         if (decomp==0)
-            cpuForceDecomposition(f, fij, ai, aj, common.inum, ntuples, Nbf);
+            ForceDecomposition(f, fij, ai, aj, common.inum, ntuples, Nbf, backend);
         else {
-            cpuCenterAtomDecomposition(f, fij, ilist, pairnumsum, common.inum, ntuples, na, Nbf);
-            cpuArrayCopy(tmp.intmem, aj, ntuples);
+            CenterAtomDecomposition(f, fij, ilist, pairnumsum, common.inum, ntuples, na, Nbf, backend);
+            ArrayCopy(tmp.intmem, aj, ntuples, backend);
             Int *jlist = &tmp.intmem[ntuples];   
             Int *bnumsum = &tmp.intmem[2*ntuples]; 
             Int *index = &tmp.intmem[3*ntuples]; // ntuples       
@@ -419,10 +445,19 @@ void SphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb
             Int *p1 = &tmp.intmem[5*ntuples]; // ntuples       
             Int *p2 = &tmp.intmem[6*ntuples]; // ntuples       
             Int *p3 = &tmp.intmem[7*ntuples]; // ntuples       
-            Int naj = cpuUniqueSort(jlist, bnumsum, index, p0, tmp.intmem, p1, p2, p3, ntuples);                        
-            cpuNeighborAtomDecomposition(f, fij, jlist, bnumsum, index, common.inum, ntuples, naj, Nbf);
-        }        
-    }        
+            Int naj = UniqueSort(jlist, bnumsum, index, p0, tmp.intmem, p1, p2, p3, ntuples, backend);                        
+            NeighborAtomDecomposition(f, fij, jlist, bnumsum, index, common.inum, ntuples, naj, Nbf, backend);
+        }                        
+    }     
+    
+#ifdef HAVE_DEBUG                      
+    string fn = (common.backend == 2) ? "dgpu.bin" : "dcpu.bin";
+    writearray2file(fn, e, Nbf, common.backend); 
+    fn = (common.backend == 2) ? "ddgpu.bin" : "ddcpu.bin";
+    writearray2file(fn, f, common.inum*Nbf, common.backend);
+    //error("here");    
+#endif                                
+
 }
 
 void implSphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb, commonstruct &common, 
@@ -463,32 +498,33 @@ void SphericalHarmonicBesselEnergyForce(dstype *e, dstype *f, neighborstruct &nb
         Int na = e2 - e1; // number of atoms in this block
         Int jnum = common.jnum;
         Int dim = common.dim;
+        Int backend = common.backend;
                 
         Int *ilist = &tmp.intmem[0]; //na     
         if (typei>0) {               
             Int *olist = &tmp.intmem[na]; //na        
-            cpuArrayFill(olist, e1, na);        
+            ArrayFill(olist, e1, na, backend);        
 
             Int *t0 = &tmp.intmem[2*na]; //na        
             Int *t1 = &tmp.intmem[3*na]; //na        
-            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+            na = FindAtomType(ilist, olist, atomtype, t0, t1, typei, na, backend);
         }
         else {
-            cpuArrayFill(ilist, e1, na);        
-        }
-        
+            ArrayFill(ilist, e1, na, backend);        
+        }                
+                        
         Int *pairnum = &tmp.intmem[na]; // na
         Int *pairlist = &tmp.intmem[2*na]; // na*jnum
         if (typej>0)
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim, backend);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
-                        
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim, backend);        
+                                                
         //a list contains the starting positions of the first neighbor 
         Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1        
-        cpuCumsum(pairnumsum, pairnum, na+1);                                         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
-                
+        
         Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
         Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
         Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
@@ -498,9 +534,16 @@ void SphericalHarmonicBesselEnergyForce(dstype *e, dstype *f, neighborstruct &nb
         dstype *xij = &tmp.tmpmem[2*na*nbasis+ntuples*(8*nbasis)]; // ntuples*dim
         dstype *qi;
         dstype *qj;
-        cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
-                                
+        NeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, jnum, ncq, dim, backend);       
+        
+// #ifdef HAVE_CHECK         
+//         dstype *xi1 =  new dstype[ntuples*dim]; 
+//         dstype *xii =  new dstype[ntuples*dim];         
+//         cpuArrayCopy(xii, xij, dim*ntuples);
+//         cpuArrayCopy(xi1, xij, dim*ntuples);
+// #endif
+        
         dstype *cr =  &tmp.tmpmem[0];         // na*nbasis
         dstype *ci =  &tmp.tmpmem[na*nbasis]; // na*nbasis                        
         dstype *srx = &tmp.tmpmem[2*na*nbasis]; // ntuples*nbasis
@@ -511,31 +554,73 @@ void SphericalHarmonicBesselEnergyForce(dstype *e, dstype *f, neighborstruct &nb
         dstype *siz = &tmp.tmpmem[2*na*nbasis+ntuples*(5*nbasis)]; // ntuples*nbasis         
         dstype *sr =  &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)]; // ntuples*nbasis
         dstype *si =  &tmp.tmpmem[2*na*nbasis+ntuples*(7*nbasis)]; // ntuples*nbasis                       
-        cpuSphericalHarmonicsBesselWithDeriv(sr, si, srx, six, sry, siy, srz, siz, xij,
-                 sh.x0, sh.P, sh.tmp, sh.f, sh.dP, sh.dtmp, sh.df, sh.fac, M_PI, common.L, common.K, ntuples);
-                
+        SphericalHarmonicsBesselWithDeriv(sr, si, srx, six, sry, siy, srz, siz, xij,
+                 sh.x0, sh.P, sh.tmp, sh.f, sh.dP, sh.dtmp, sh.df, sh.fac, M_PI, common.L, common.K, ntuples, backend);
+                        
         dstype *di = &tmp.tmpmem[2*na*nbasis+ntuples*(8*nbasis)]; // na * Nbf                
-        cpuRadialSphericalHarmonicsSpectrum(di, cr, ci, sr, si, sh.cg, sh.indk, 
-                sh.indl, sh.indm, sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);
+        RadialSphericalHarmonicsSpectrum(di, cr, ci, sr, si, sh.cg, sh.indk, 
+                sh.indl, sh.indm, sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum, backend);
 
         // di : na x Nbf,  coeff : Nbf x 1, ei : na x 1
         // ei = di*coeff                        
         dstype *ei = &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)]; // na         
         PGEMNV(common.cublasHandle, na, Nbf, &one, di, na, coeff, inc1, &zero, ei, inc1, common.backend);                
-        cpuCenterAtomDecomposition(e, ei, ilist, na);
+        CenterAtomDecomposition(e, ei, ilist, na, backend);
         
         dstype *dd = &tmp.tmpmem[2*na*nbasis+ntuples*(6*nbasis)]; // dim * ntuples * Nbf
-        cpuRadialSphericalHarmonicsSpectrumDeriv(dd, cr, ci, srx, six, sry, siy, srz, siz, sh.cg, sh.indk, 
-                sh.indl, sh.indm, sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);                
+        RadialSphericalHarmonicsSpectrumDeriv(dd, cr, ci, srx, six, sry, siy, srz, siz, sh.cg, sh.indk, 
+                sh.indl, sh.indm, sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum, backend);                
         
         dstype *fij = &tmp.tmpmem[0]; // dim * ntuples 
         PGEMNV(common.cublasHandle, dim*ntuples, Nbf, &minusone, dd, dim*ntuples, coeff, inc1, &zero, fij, inc1, common.backend);    
-        
+
+// #ifdef HAVE_CHECK    
+//         dstype en = cpuArraySum(e, na);
+//         dstype epsil = 1e-6;        
+//         dstype *sr1 =  new dstype[ntuples*nbasis];
+//         dstype *si1 =  new dstype[ntuples*nbasis]; 
+//         dstype *cr1 =  new dstype[na*nbasis]; 
+//         dstype *ci1 =  new dstype[na*nbasis]; 
+//         dstype *ei1 =  new dstype[na*Nbf]; 
+//         dstype *onev =  new dstype[na]; 
+//         dstype *et =  new dstype[Nbf]; 
+//         ArraySetValue(onev, 1.0, na, common.backend);                
+//         for (int i = 0; i<dim*ntuples; i++) {
+//             cpuArrayCopy(xi1, xii, dim*ntuples);  
+//             xi1[i] = xi1[i] + epsil;
+//             
+//             cpuSphericalHarmonicsBessel(sr1, si1, xi1, sh.x0, sh.P, sh.tmp, sh.f, 
+//                      sh.fac, M_PI, common.L, common.K, ntuples);
+//                                                          
+//             cpuRadialSphericalHarmonicsSpectrum(ei1, cr1, ci1, sr1, si1, sh.cg, sh.indk, sh.indl, sh.indm, 
+//                     sh.rowm, pairnumsum, common.Nub, common.Ncg, na, common.L, common.K, common.spectrum);
+//                         
+//             PGEMTV(common.cublasHandle, na, Nbf, &one, ei1, na, onev, inc1, &zero, et, inc1, common.backend);                    
+// 
+//             dstype em = 0.0;
+//             for (int j=0; j<Nbf; j++)
+//                 em += et[j]*coeff[j];                                    
+//             dstype emax = fabs((en-em)/epsil - fij[i]);   
+//                         
+//             cout<<"Maximum absolute error: "<<emax<<endl;      
+//         }
+//         delete[] sr1;
+//         delete[] si1;
+//         delete[] cr1;
+//         delete[] ci1;
+//         delete[] xi1;
+//         delete[] xii;
+//         delete[] ei1;
+//         delete[] onev;
+//         delete[] et;        
+//         error("here");            
+// #endif
+                        
         if (decomp==0)
-            cpuForceDecomposition(f, fij, ai, aj, ntuples);        
+            ForceDecomposition(f, fij, ai, aj, ntuples, backend);        
         else {
-            cpuCenterAtomDecomposition(f, fij, ilist, pairnumsum, na);            
-            cpuArrayCopy(tmp.intmem, aj, ntuples);
+            CenterAtomDecomposition(f, fij, ilist, pairnumsum, na, backend);            
+            ArrayCopy(tmp.intmem, aj, ntuples, backend);
             Int *jlist = &tmp.intmem[ntuples];   
             Int *bnumsum = &tmp.intmem[2*ntuples]; 
             Int *index = &tmp.intmem[3*ntuples]; // ntuples       
@@ -543,8 +628,8 @@ void SphericalHarmonicBesselEnergyForce(dstype *e, dstype *f, neighborstruct &nb
             Int *p1 = &tmp.intmem[5*ntuples]; // ntuples       
             Int *p2 = &tmp.intmem[6*ntuples]; // ntuples       
             Int *p3 = &tmp.intmem[7*ntuples]; // ntuples       
-            Int naj = cpuUniqueSort(jlist, bnumsum, index, p0, tmp.intmem, p1, p2, p3, ntuples);                        
-            cpuNeighborAtomDecomposition(f, fij, jlist, bnumsum, index, naj);            
+            Int naj = UniqueSort(jlist, bnumsum, index, p0, tmp.intmem, p1, p2, p3, ntuples, backend);                        
+            NeighborAtomDecomposition(f, fij, jlist, bnumsum, index, naj, backend);            
         }
     }        
 }

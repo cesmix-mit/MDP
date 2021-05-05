@@ -6,7 +6,23 @@
 // constructor 
 CCalculation::CCalculation(string filein, string fileout, Int mpiprocs, Int mpirank, Int backend) 
 {
-    implReadInputFiles(app, config, common, filein, fileout, mpiprocs, mpirank, backend);    
+    if (backend == 2) {
+        appstruct happ; 
+        implReadInputFiles(happ, config, common, filein, fileout, mpiprocs, mpirank, backend);    
+        implSetAppStruct(app, happ, backend);  
+#ifdef HAVE_CUDA            
+        // create cuda event handle
+        CHECK(cudaEventCreate(&common.eventHandle));
+
+        // create cublas handle
+        CHECK_CUBLAS(cublasCreate(&common.cublasHandle));
+        CHECK_CUBLAS(cublasSetPointerMode(common.cublasHandle, CUBLAS_POINTER_MODE_HOST));                     
+        //     CHECK_CUBLAS(cublasSetPointerMode(common.cublasHandle, CUBLAS_POINTER_MODE_DEVICE)); 
+#endif        
+    }
+    else
+        implReadInputFiles(app, config, common, filein, fileout, mpiprocs, mpirank, backend);    
+    
 }
 
 // destructor        
@@ -23,7 +39,7 @@ CCalculation::~CCalculation()
 
 void CCalculation::SetConfiguration(Int ci)
 {
-    implSetConfiguration(nb, tmp, sys, app, config, common, ci);      
+    implSetConfiguration(nb, tmp, sys, app, config, common, ci);    
     if (common.K > 0)
         InitSphericalHarmonics(sh, common);            
     implSetTempStruct(tmp, common);  
@@ -107,8 +123,8 @@ void CCalculation::EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype* x
     
     ArraySetValue(sys.ee, 0.0, inum*Nempot, common.backend);  
     ArraySetValue(sys.dd, 0.0, dim*inum*Nempot, common.backend);  
-    implEmpiricalPotentialDescriptors(sys.ee, sys.dd, nb, common, app, tmp, x, q, param, nparam);       
     
+    implEmpiricalPotentialDescriptors(sys.ee, sys.dd, nb, common, app, tmp, x, q, param, nparam);       
     PGEMNV(common.cublasHandle, inum, Nempot, &one, sys.ee, inum, coeff, inc1, &zero, e, inc1, common.backend);    
     PGEMNV(common.cublasHandle, dim*inum, Nempot, &minusone, sys.dd, dim*inum, coeff, inc1, &zero, f, inc1, common.backend);    
 }
@@ -120,7 +136,7 @@ void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype* x, dsty
 }
 
 void CCalculation::RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-{        
+{            
     if ((common.descriptor==0) && (common.K > 0))
        implSphericalHarmonicBesselDescriptors(e, f, nb, common, app, tmp, sh, x, q, param, nparam);                         
 }
@@ -148,7 +164,7 @@ void CCalculation::PotentialDescriptors(dstype *e, dstype* x, dstype *q, dstype 
 void CCalculation::PotentialDescriptors(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int *nparam) 
 {    
     if (common.potential == 0)
-        this->EmpiricalPotentialDescriptors(e, f, x, q, param, nparam);              
+        this->EmpiricalPotentialDescriptors(e, f, x, q, param, nparam);        
     else if (common.potential == 1)
         this->RadialSphericalHarmonicDescriptors(e, f, x, q, param, 0);            
     else if (common.potential == 2) {
@@ -156,18 +172,18 @@ void CCalculation::PotentialDescriptors(dstype *e, dstype *f, dstype* x, dstype 
         this->RadialSphericalHarmonicDescriptors(&e[common.Nempot], &f[common.Nempot*common.dim*common.inum], x, q, param, 0);                    
     }    
     else
-        error("Potential is not implemented");    
+        error("Potential is not implemented");            
 }
 
 void CCalculation::PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
-{    
+{     
     if (common.potential == 0)
         this->EmpiricalPotentialEnergyForce(e, f, x, coeff, q, param, nparam);              
     else if (common.potential == 1)
         this->RadialSphericalHarmonicEnergyForce(e, f, x, coeff, q, param, 0);            
     else if (common.potential == 2) {
-        this->EmpiricalPotentialEnergyForce(e, f, x, coeff, q, param, nparam);              
-        this->RadialSphericalHarmonicEnergyForce(e, f, x, &coeff[common.Nempot], q, param, 0);                    
+        this->EmpiricalPotentialEnergyForce(e, f, x, coeff, q, param, nparam);   
+        this->RadialSphericalHarmonicEnergyForce(e, f, x, &coeff[common.Nempot], q, param, 0);  
     }    
     else
         error("Potential is not implemented");        

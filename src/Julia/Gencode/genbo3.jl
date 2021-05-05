@@ -60,6 +60,13 @@ else
     strcpu = strcpu * tmpcpu * "\n";
     strgpu = strgpu * tmpgpu * "\n";    
     
+    # here
+    tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_xij, T *u_xik,");   
+    tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_xij, u_xik,");   
+    tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*, double*");   
+    tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*, float*");      
+    strgpu = strgpu * "\n" * tmpgpu; 
+
     sp0, sp1, sp2, sp3 = getpotstr(2);
     sp0 = replace(sp0, "int ng)" => "int ng, int potnum)");
     sp1 = replace(sp1, "int);" => "int, int);");
@@ -69,6 +76,13 @@ else
     strcpu = strcpu * tmpcpu * "\n";
     strgpu = strgpu * tmpgpu * "\n";    
     
+    # here
+    tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_xij,");   
+    tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_xij,");   
+    tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*");   
+    tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*");   
+    strgpu = strgpu * "\n" * tmpgpu;  
+
     sp0, sp1, sp2, sp3 = getpotstr(0);
     sp0 = replace(sp0, "int ng)" => "int ng, int potnum)");
     sp1 = replace(sp1, "int);" => "int, int);");
@@ -78,6 +92,13 @@ else
     strcpu = strcpu * tmpcpu;
     strgpu = strgpu * tmpgpu;    
     
+    # here
+    tmpgpu = replace(tmpgpu, "(T *u," => "Gradient(T *u, T *du, T *u_rho,");   
+    tmpgpu = replace(tmpgpu, "(u," => "Gradient(u, du, u_rho,");   
+    tmpgpu = replace(tmpgpu, "(double *" => "Gradient(double *, double *, double*");   
+    tmpgpu = replace(tmpgpu, "(float *" => "Gradient(float *, float *, float*");   
+    strgpu = strgpu * "\n" * tmpgpu;  
+
     cppfiles(foldername, filename, stropu, strcpu, strgpu, 0);
 end    
 

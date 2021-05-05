@@ -16,6 +16,7 @@ function Paira(xij, qi, qj, ti, tj, mu, eta, kappa)
     r4 = r2*r2;
     r6 = r2*r4;
     r12 = r6*r6;
+    r10 = r6*r4;
     A = mu[1];
     B = mu[2];
     u = (A/r12 - B/r6); 
@@ -27,6 +28,11 @@ function Pairb(xij, qi, qj, ti, tj, mu, eta, kappa)
     u = 0.0;        
     return u;
 end
+
+# MDP.jl evaluate f = Force(x) in C++ code
+# NbodySimulator call MDP.jl to update new postiion x
+
+# Implement Force(x) using julia.h 
 
 # two-body bond order potentials (EAM-like potentials)
 function Pairc(xij, qi, qj, ti, tj, rho, mu, eta, kappa)

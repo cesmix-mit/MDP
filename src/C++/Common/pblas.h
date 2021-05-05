@@ -142,7 +142,7 @@ static void gpuComputeInverse(cublasHandle_t handle, dstype* A, dstype *C, Int n
 #endif            
     
     // copy C to A
-    gpuArrayCopy(A, C, n*n*batchSize);
+    ArrayCopy(A, C, n*n*batchSize, 2);
             
     cudaFree(Ap_d); free(Ap_h);
     cudaFree(Cp_d); free(Cp_h);
@@ -349,12 +349,12 @@ static void PGEMTV(cublasHandle_t handle, Int m, Int n, dstype *alpha, dstype* A
 #ifdef HAVE_CUDA          
 #ifdef USE_FLOAT  
     if (backend == 2)     
-        cublasSgemv(handle, CUBLAS_OP_T, m, n, alpha, A, lda, x, incx,
-                             beta, ylocal, incy);        
+        CHECK_CUBLAS(cublasSgemv(handle, CUBLAS_OP_T, m, n, alpha, A, lda, x, incx,
+                             beta, ylocal, incy));        
 #else            
     if (backend == 2)  
-        cublasDgemv(handle, CUBLAS_OP_T, m, n, alpha, A, lda, x, incx,
-                             beta, ylocal, incy);
+        CHECK_CUBLAS(cublasDgemv(handle, CUBLAS_OP_T, m, n, alpha, A, lda, x, incx,
+                             beta, ylocal, incy));
 #endif        
 #endif                 
 }
@@ -393,6 +393,33 @@ static void PGEMTV(cublasHandle_t handle, Int m, Int n, dstype *alpha, dstype* A
 #else
     ArrayCopy(y, ylocal, n, backend);
 #endif    
+}
+
+static void PGEMTV2(cublasHandle_t handle, Int m, Int n, dstype *alpha, dstype* A, Int lda, 
+        dstype* x, Int incx, dstype *beta, dstype* ylocal, Int incy, Int backend) 
+{
+    /* y = alpha*A^T * x + beta y */
+#ifdef USE_FLOAT     
+    if (backend <= 1)
+        SGEMM(&chn, &chn, &incx, &n, &m, alpha, x, &incx, A, &lda, beta, ylocal, &incy);    
+        //SGEMV(&cht, &m, &n, alpha, A, &lda, x, &incx, beta, ylocal, &incy);
+#else   
+    if (backend <= 1) 
+        DGEMM(&chn, &chn, &incx, &n, &m, alpha, x, &incx, A, &lda, beta, ylocal, &incy);  
+        //DGEMV(&cht, &m, &n, alpha, A, &lda, x, &incx, beta, ylocal, &incy);
+#endif
+    
+#ifdef HAVE_CUDA          
+#ifdef USE_FLOAT  
+    if (backend == 2)     
+        CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, incx, n, m, 
+            alpha, x, incx, A, lda, beta, ylocal, incy));                    
+#else            
+    if (backend == 2)  
+        CHECK_CUBLAS(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, incx, n, m, 
+            alpha, x, incx, A, lda, beta, ylocal, incy));                    
+#endif        
+#endif                 
 }
 
 static void PGEMTV2(cublasHandle_t handle, Int m, Int n, dstype *alpha, dstype* A, Int lda, 

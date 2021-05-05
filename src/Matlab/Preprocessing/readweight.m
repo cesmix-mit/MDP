@@ -2,6 +2,8 @@ function config = readweight(app, config)
 
 if app.weightmode ==0
     tmp = ones(2*config.nconfigs,1);
+    tmp(1:config.nconfigs) = app.we;
+    tmp((config.nconfigs+1):2*config.nconfigs) = app.wf;
 elseif app.weightmode == 1 % binary    
     filename = app.weightfile;
     fileID = fopen(filename,'r');        

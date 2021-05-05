@@ -7,10 +7,12 @@ app.appname = "app";
 app.platform = "cpu";
 app.cpucompiler = "g++";
 app.mpicompiler = "mpicxx";
-app.gpucompiler = "nvcc";
+app.gpucompiler = "";
 app.mpirun = "mpirun";
 app.cpuflags = "-O2 -ldl -lm -lblas -llapack";
 app.gpuflags = "-lcudart -lcublas";
+app.cpumacros = "";
+app.gpumacros = "";
 app.potentialfile = "";
 app.configfile = "";
 app.weightfile = "";
@@ -44,6 +46,9 @@ app.boxoffset = [0.0 0.0 0.0]; % offset for simulation box to account for period
 
 app.bcs = [0 0 0 0 0 0]; % boundary conditions
 app.pbc = [1 1 1];       % periodic boundary conditions
+
+app.we = 1; % energy weight
+app.wf = 1; % force weight
 
 % atom types
 app.natomtype = 0;  % number of atom types

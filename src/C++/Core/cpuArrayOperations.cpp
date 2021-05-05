@@ -1,6 +1,17 @@
 #ifndef __CPUARRAYOPERATIONS
 #define __CPUARRAYOPERATIONS
 
+void cpuTripletnum(int* output, int* input, int length) 
+{	
+	for (int ii = 1; ii < length; ++ii)	
+		output[ii] = (input[ii]-1)*input[ii]/2;       
+}
+void cpuQuadrupletnum(int* output, int* input, int length) 
+{	
+	for (int ii = 1; ii < length; ++ii)	
+		output[ii] = (input[ii]-2)*(input[ii]-1)*input[ii]/6;       
+}
+
 void cpuCumsum(int* output, int* input, int length) 
 {
 	output[0] = 0; 

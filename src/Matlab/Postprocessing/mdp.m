@@ -7,13 +7,17 @@ function [app, config] = mdp(app)
 gencode(app);                      
 
 % compile code
-cd(app.sourcepath + "C++/Main");
+cd(char(app.sourcepath + "C++/Main"));
 compile(app);
 
 % run code
-eval("!./cpuMDP " + app.appname + " out");
+if app.platform == "cpu"
+    eval("!./cpuMDP " + app.appname + " out");
+elseif app.platform == "gpu"
+    eval("!./gpuMDP " + app.appname + " out");    
+end
 
-cd(app.currentdir);
+cd(char(app.currentdir));
 
 if app.training > 0
     filename = app.sourcepath + "C++/Main/coefficients.bin";

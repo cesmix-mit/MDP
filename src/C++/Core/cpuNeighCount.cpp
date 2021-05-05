@@ -17,8 +17,7 @@ int cpuFindAtomType(int *tlist, int* ilist, int *atomtype, int *p, int *q, int t
         if (p[ii] == 1)                     
             tlist[q[ii+1]-1] = ilist[ii];        
     
-    return q[inum];
-    
+    return q[inum];    
 }
 
 template <typename T> void cpuNeighSingles(T *xi, T *qi, T *x, T *q, int *ai, 

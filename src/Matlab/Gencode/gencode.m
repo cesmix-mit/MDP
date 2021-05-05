@@ -25,7 +25,7 @@ pot = potentialfile();
 potform = 1;
 filename = "Singlea";
 mu = sym('mu',[app.ncmu1a 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Singlea(xi, qi, ti, mu, eta, kappa);     
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -34,7 +34,7 @@ end
 
 filename = "Singleb";
 mu = sym('mu',[app.ncmu1b 1]);
-if isfield(pot, filename)        
+if isfield(pot, char(filename))        
     u = pot.Singleb(xi, qi, ti, mu, eta, kappa);    
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -44,7 +44,7 @@ end
 potform = 2;
 filename = "Paira";
 mu = sym('mu',[app.ncmu2a 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Paira(xij, qi, qj, ti, tj, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -53,7 +53,7 @@ end
 
 filename = "Pairb";
 mu = sym('mu',[app.ncmu2b 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Pairb(xij, qi, qj, ti, tj, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -63,7 +63,7 @@ end
 filename = "Pairc";
 mu = sym('mu',[app.ncmu2c 1]);
 rho = sym('rho',[1 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Pairc(xij, qi, qj, ti, tj, rho, mu, eta, kappa);    
     genbo2(filename, u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
 else
@@ -80,7 +80,7 @@ end
 potform = 3;
 filename = "Tripleta";
 mu = sym('mu',[app.ncmu3a 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Tripleta(xij, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -89,7 +89,7 @@ end
 
 filename = "Tripletb";
 mu = sym('mu',[app.ncmu3b 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Tripletb(xij, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -99,7 +99,7 @@ end
 filename = "Tripletc";
 mu = sym('mu',[app.ncmu3c 1]);
 rho = sym('rho',[1 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Tripletc(xij, xik, qi, qj, qk, ti, tj, tk, rho, mu, eta, kappa);
     genbo3(filename, u, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, rho, mu, eta, kappa, app.natomtype);
 else
@@ -119,7 +119,7 @@ end
 potform = 4;
 filename = "Quadrupleta";
 mu = sym('mu',[app.ncmu4a 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Quadrupleta(xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, mu,  eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
@@ -128,7 +128,7 @@ end
 
 filename = "Quadrupletb";
 mu = sym('mu',[app.ncmu4b 1]);
-if isfield(pot, filename)    
+if isfield(pot, char(filename))    
     u = pot.Quadrupletb(xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else

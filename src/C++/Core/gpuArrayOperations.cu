@@ -36,7 +36,70 @@
 //     gpuPrintArray3D<<<1, 1>>>(a, m, n, p);
 // }
 
+__global__ void gpuKernelTripletnum(int *output, int *input, int n)
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    while (tid < n) {
+        output[tid] = (input[tid]-1)*input[tid]/2;       
+        tid += blockDim.x * gridDim.x;
+    }
+}
+void gpuTripletnum(int *output, int *input, int n)
+{        
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelTripletnum<<<gridDim, blockDim>>>(output, input, n);
+}
 
+__global__ void gpuKernelQuadrupletnum(int *output, int *input, int n)
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    while (tid < n) {
+        output[tid] = (input[tid]-2)*(input[tid]-1)*input[tid]/6;       
+        tid += blockDim.x * gridDim.x;
+    }
+}
+void gpuQuadrupletnum(int *output, int *input, int n)
+{        
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelQuadrupletnum<<<gridDim, blockDim>>>(output, input, n);
+}
+
+__global__ void gpuKernelIndexInit(int *ind, int n)
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    while (tid < n) {
+        ind[tid] = tid;      
+        tid += blockDim.x * gridDim.x;
+    }
+}
+void gpuIndexInit(int *ind, int n)
+{        
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelIndexInit<<<gridDim, blockDim>>>(ind, n);
+}
+
+__global__ void gpuKernelArrayFill(int* output, int start, int n) 
+{	
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    while (tid < n) {
+        output[tid] = start + tid;
+        tid += blockDim.x * gridDim.x;
+    }		
+}
+void gpuArrayFill(int* output, int start, int n) 
+{        
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelArrayFill<<<gridDim, blockDim>>>(output, start, n);
+}
+ 
 template <typename T>
 __global__ void gpuTemplateGetArrayAtIndex(T *y, T *x, int *ind, int n)
 {
@@ -1029,7 +1092,6 @@ __global__ void gpuTemplateArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int *ro
         i += blockDim.x * gridDim.x;
     }            
 }
-
 template <typename T> void gpuArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int *rowent2elem, int nent, int npe)
 {        
     int blockDim = 256;
@@ -1037,6 +1099,26 @@ template <typename T> void gpuArrayDG2CG2(T *ucg, T *udg, int *colent2elem, int 
     gridDim = (gridDim>1024)? 1024 : gridDim;
     gpuTemplateArrayDG2CG2<<<gridDim, blockDim>>>(ucg, udg, colent2elem, rowent2elem, nent, npe);
 }
+
+template <typename T>
+__global__ void gpuTemplateArrayABPXYZ(T *fij, T *c3ij, T *eij, T *d3ij, T *g3ij, int dim, int n)
+{
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    while (i < n) {        
+        for (int j=0; j<dim; j++)
+            fij[j+3*i] = fij[j+3*i]*c3ij[i] + eij[i]*d3ij[i]*g3ij[j+3*i];  
+        i += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuArrayABPXYZ(T *fij, T *c3ij, T *eij, T *d3ij, T *g3ij, int dim, int n)
+{        
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuTemplateArrayABPXYZ<<<gridDim, blockDim>>>(fij, c3ij, eij, d3ij, g3ij, dim, n);
+}
+template void gpuArrayABPXYZ(double*, double*, double*, double*, double*, int, int);
+template void gpuArrayABPXYZ(float*, float*, float*, float*, float*, int, int);
 
 // template void gpuPrint2DArray(double*, int, int);
 // template void gpuPrint3DArray(double*, int, int, int);
@@ -1151,6 +1233,9 @@ template void gpuArrayGemmBatch(float*, float*, float*, int, int, int, int);
 template void gpuArrayGemmBatch1(float*, float*, float*, int, int, int, int);
 template void gpuArrayDG2CG(float*, float*, int*, int*, int);
 template void gpuArrayDG2CG2(float*, float*, int*, int*, int, int);
+
+template int gpuArrayGetValueAtIndex(int*, int);
+template void gpuArrayCopy(int*, int*, int);
 
 #endif
 

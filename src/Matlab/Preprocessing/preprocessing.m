@@ -93,7 +93,7 @@ if app.training == 0
     config.we = [];
     config.wf = [];
 else
-    config = readweight(app, config);
+    config = readweight(app, config);    
 end
 
 app = writeapp(app, app.appname + "app.bin");

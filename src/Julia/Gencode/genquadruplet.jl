@@ -23,11 +23,20 @@ if gen==0
     stropu = stropu * tmp;
     strcpu = replace(stropu, "opu" => "cpu");
     strgpu = replace(stropu, "opu" => "gpu");
+
+    #sp0 = "(T *u, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)\n";
+    tmp = strgpu;    
+    tmp = replace(tmp, "(T *u, T *xij, T *xik, T *xil," => "Gradient(T *u, T *du, T *u_xij, T *u_xik, T *u_xil, T *xij, T *xik, T *xil,");            
+    tmp = replace(tmp, "(double *," => "Gradient(double *, double *, double *, double *, double *,");            
+    tmp = replace(tmp, "(float *," => "Gradient(float *, float *, float *, float *, float *,");            
+    strgpu = strgpu * "\n" * tmp;            
 else
     stropu = "template <typename T> void " * opufile;
     strgpu = "template <typename T>  __global__  void kernel" * gpufile;
 
+    # here
     tmp = sp0;
+    st2 = strgpu * sp0 * "{\n";    
 
     stropu = stropu * tmp * "{\n";
     stropu = stropu * "\tfor (int i = 0; i <ng; i++) {\n";
@@ -98,6 +107,10 @@ else
 
     strgpu = strgpu * mystr * "\t\ti *= blockDim.x * gridDim.x;\n";
     strgpu = strgpu * "\t}\n" * "}\n\n";
+
+    # here
+    st1 = strgpu;    
+
     tmp = "template <typename T> void " * gpufile;
     tmp = tmp * sp0;
     tmp = tmp * "{\n";
@@ -107,6 +120,41 @@ else
     tmp = tmp * "\tkernel" * gpufile * "<<<gridDim, blockDim>>>" * sp3;
     tmp = tmp * "}\n\n";
     strgpu = strgpu * tmp;
+
+    # here
+    st1 = replace(st1, "__global__  void kernelgpu" => "__device__  void devicegpu");        
+    st1 = replace(st1, "T *" => "T *__restrict__ ");      
+    st1 = replace(st1, "int *" => "int *__restrict__ ");      
+    st2 = replace(st2, "(T *u, T *xij," => "Gradient(T *u, T *du, T *u_xij, T *u_xik, T *u_xil, T *xij,");                    
+    st2 = replace(st2, "*" => "*__restrict__ ");      
+    st3 = "\t__enzyme_autodiff((void*)devicegpu" * filename *  "<T>, \n";
+    st3 = st3 *  "\t\tenzyme_dup, u, du, \n";
+    st3 = st3 *  "\t\tenzyme_dup, xij, u_xij, \n";
+    st3 = st3 *  "\t\tenzyme_dup, xik, u_xik, \n";
+    st3 = st3 *  "\t\tenzyme_dup, xil, u_xil, \n";
+    st3 = st3 *  "\t\tenzyme_const, qi, \n";
+    st3 = st3 *  "\t\tenzyme_const, qj, \n";
+    st3 = st3 *  "\t\tenzyme_const, qk, \n";
+    st3 = st3 *  "\t\tenzyme_const, ql, \n";
+    st3 = st3 *  "\t\tenzyme_const, ti, \n";
+    st3 = st3 *  "\t\tenzyme_const, tj, \n";
+    st3 = st3 *  "\t\tenzyme_const, tk, \n";
+    st3 = st3 *  "\t\tenzyme_const, tl, \n";
+    st3 = st3 *  "\t\tenzyme_const, ai, \n";
+    st3 = st3 *  "\t\tenzyme_const, aj, \n";        
+    st3 = st3 *  "\t\tenzyme_const, ak, \n";      
+    st3 = st3 *  "\t\tenzyme_const, al, \n";      
+    st3 = st3 *  "\t\tenzyme_const, mu, \n";
+    st3 = st3 *  "\t\tenzyme_const, eta, \n";
+    st3 = st3 *  "\t\tenzyme_const, kappa, \n";
+    st3 = st3 *  "\t\tdim, ncq, nmu, neta, nkappa, ng); \n";      
+    st2 = st2 * st3 * "}\n";
+    st4 = tmp;
+    st4 = replace(st4, "(T *u, T *xij," => "Gradient(T *u, T *du, T *u_xij, T *xij,");   
+    st4 = replace(st4, "u, xij," => "u, du, u_xij, xij,");   
+    st4 = replace(st4, "<<<" => "Gradient<<<");   
+    st2 = st2 * "\n" * st4;
+    strgpu = strgpu * "\n" * st1 * "\n" * st2;    
 
     strcpu = replace(stropu, "opu" => "cpu");
     strcpu = replace(strcpu, "for (int i = 0; i <ng; i++) {" => "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");

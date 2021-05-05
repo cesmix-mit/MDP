@@ -23,11 +23,19 @@ if gen==0
     stropu = stropu + tmp;
     strcpu = strrep(stropu, "opu", "cpu");
     strgpu = strrep(stropu, "opu", "gpu");
+    
+    tmp = strgpu;    
+    tmp = strrep(tmp, "(T *u, T *xi,", "Gradient(T *u, T *du, T *u_xi, T *xi,");            
+    tmp = strrep(tmp, "(double *,", "Gradient(double *, double *, double *,");            
+    tmp = strrep(tmp, "(float *,", "Gradient(float *, float *, float *,");            
+    strgpu = strgpu + "\n" + tmp;
 else
     stropu = "template <typename T> void " + opufile;
     strgpu = "template <typename T>  __global__  void kernel" + gpufile;
 
+    % here
     tmp = sp0;
+    st2 = strgpu + sp0 + "{\n";    
 
     stropu = stropu + tmp + "{\n";
     stropu = stropu + "\tfor (int i = 0; i <ng; i++) {\n";
@@ -65,6 +73,10 @@ else
 
     strgpu = strgpu + mystr + "\t\ti += blockDim.x * gridDim.x;\n";
     strgpu = strgpu + "\t}\n" + "}\n\n";
+    
+    % here
+    st1 = strgpu;    
+    
     tmp = "template <typename T> void " + gpufile;
     tmp = tmp + sp0;
     tmp = tmp + "{\n";
@@ -75,6 +87,30 @@ else
     tmp = tmp + "}\n";
     strgpu = strgpu + tmp;
 
+    % here
+    st1 = strrep(st1, "__global__  void kernelgpu", "__device__  void devicegpu");     
+    st1 = strrep(st1, "T *", "T *__restrict__ ");      
+    st1 = strrep(st1, "int *", "int *__restrict__ ");      
+    st2 = strrep(st2, "(T *u, T *xij,", "Gradient(T *u, T *du, T *u_xi, T *xi,");                    
+    st2 = strrep(st2, "*", "*__restrict__ ");      
+    st3 = "\t__enzyme_autodiff((void*)devicegpu" + filename +  "<T>, \n";
+    st3 = st3 +  "\t\tenzyme_dup, u, du, \n";
+    st3 = st3 +  "\t\tenzyme_dup, xi, u_xi, \n";
+    st3 = st3 +  "\t\tenzyme_const, qi, \n";
+    st3 = st3 +  "\t\tenzyme_const, ti, \n";
+    st3 = st3 +  "\t\tenzyme_const, ai, \n";
+    st3 = st3 +  "\t\tenzyme_const, mu, \n";
+    st3 = st3 +  "\t\tenzyme_const, eta, \n";
+    st3 = st3 +  "\t\tenzyme_const, kappa, \n";
+    st3 = st3 +  "\t\tdim, ncq, nmu, neta, nkappa, ng); \n";      
+    st2 = st2 + st3 + "}\n";
+    st4 = tmp;
+    st4 = strrep(st4, "(T *u, T *xij,", "Gradient(T *u, T *du, T *u_xi, T *xi,");   
+    st4 = strrep(st4, "u, xij,", "u, du, u_xi, xi,");   
+    st4 = strrep(st4, "<<<", "Gradient<<<");   
+    st2 = st2 + "\n" + st4;
+    strgpu = strgpu + "\n" + st1 + "\n" + st2;    
+    
     strcpu = strrep(stropu, 'opu', "cpu");
     strcpu = strrep(strcpu, "for (int i = 0; i <ng; i++) {", "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");
 end

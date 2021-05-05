@@ -2,12 +2,13 @@
 #define __GPUNEIGHBORLIST3D
 
 template <typename T>
-__global__ void gpuKernelGhostAtoms3D(int *glistnum, int *inside, T *x, T *pimages, T *wc, T *s2rmap, int n, int m, int dim)
+__global__ void gpuKernelGhostAtoms3D(int *glistnum, int *inside, T *x, T *pimages, 
+    T *wc, T *s2rmap, int inum, int pnum, int dim)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    while (i < n) {
+    while (i < inum) {
         glistnum[i] = 0; // set the number of ghost atoms for atom i to 0
-        for (int j=1; j<m; j++) { // loop over each periodic image of atom i
+        for (int j=1; j<pnum; j++) { // loop over each periodic image of atom i
             T xj0 = x[i*dim+0] + pimages[j*dim+0];    // periodic image of x          
             T xj1 = x[i*dim+1] + pimages[j*dim+1];        
             T xj2 = x[i*dim+2] + pimages[j*dim+2];        
@@ -28,14 +29,14 @@ __global__ void gpuKernelGhostAtoms3D(int *glistnum, int *inside, T *x, T *pimag
 
 template <typename T>
 __global__ void gpuKernelAtomList3D(int *alist, int *inside, int *glistnumsum, 
-        T *x, T *pimages, int n, int m, int dim)
+        T *x, T *pimages, int inum, int pnum, int dim)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    while (i < n) {
+    while (i < inum) {
         alist[i] = i;         // add atom i to the list
-        int q = n + glistnumsum[i]; // offset the starting position by n
+        int q = inum + glistnumsum[i]; // offset the starting position by n
         int k = 0;            
-        for (int j=1; j<m; j++) { // loop over each periodic image of atom i
+        for (int j=1; j<pnum; j++) { // loop over each periodic image of atom i
             if (inside[j-1 + i*(pnum-1)]) {      
                 x[dim*(q+k)+0] = x[i*dim+0] + pimages[j*dim+0]; // add the periodic image as a ghost atom
                 x[dim*(q+k)+1] = x[i*dim+1] + pimages[j*dim+1]; //
@@ -56,19 +57,18 @@ template <typename T> void gpuAtomList3D(int *alist,  int *inside, int *glistnum
     gridDim = (gridDim>1024)? 1024 : gridDim;
     
     // a list of ghost atoms
-    gpuGhostAtoms3D<<<gridDim, blockDim>>>(glistnum, inside, x, pimages, wc, s2rmap, inum, pnum, dim);
+    gpuKernelGhostAtoms3D<<<gridDim, blockDim>>>(glistnum, inside, x, pimages, wc, s2rmap, inum, pnum, dim);
     
     // a list contains the starting position of the ghost atom of every atom i
-    gpuCumsum(glistnumsum, glistnum, d_sums, d_incr, n+1); 
+    gpuCumsum(glistnumsum, glistnum, d_sums, d_incr, inum+1); 
 
-    gpuKernelAtomList3D<<<gridDim, blockDim>>>(alist, inside, glistnumsum, atomtype, x, pimages, 
-            wc, s2rmap, inum, pnum, dim);
+    gpuKernelAtomList3D<<<gridDim, blockDim>>>(alist, inside, glistnumsum, x, pimages, inum, pnum, dim);
 }
 template void gpuAtomList3D(int*, int*, int*, int*, int*, int*, double*, double*, double*, double*, int, int, int);
 template void gpuAtomList3D(int*, int*, int*, int*, int*, int*, float*, float*, float*, float*, int, int, int);
 
 template <typename T>
-__global__ void gpuKernelCellList3D(int *clist, T *xi, T *eta1, T *eta2, T *eta3, T *s2rmap, 
+__global__ void gpuKernelCellList3D(int *clist, T *x, T *eta1, T *eta2, T *eta3, T *s2rmap, 
         int *nc, int inum, int natom, int dim)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;

@@ -1,252 +1,77 @@
 #ifndef __GPUSORT
 #define __GPUSORT
 
+#include "cub112/device/device_radix_sort.cuh"
+#include "cub112/device/device_run_length_encode.cuh"
+#include "cub112/device/device_scan.cuh"
+#include "cub112/device/device_reduce.cuh"
 
-void merge_serial(int *output, int *index, int *input, int lo, int mid, int hi) 
-{
-    int i = lo, j = mid + 1;
+template <typename T> T gpuArraySum(T *a, T *b, int n)
+{       
+    size_t  temp_storage_bytes  = 0;
+    void  *d_temp_storage = NULL;
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, a, b, n);                
+    cub::DeviceReduce::Sum((void*) &b[1], temp_storage_bytes, a, b, n);
 
-    for (int k = lo; k <= hi; k++) {
-        output[k] = index[k];
-    }
-
-    for (int k = lo; k <= hi; k++) {
-        if (i > mid) {
-            index[k] = output[j++];
-        } else if (j > hi) {
-            index[k] = output[i++];
-        } else if (input[output[i]] <= input[output[j]]) {
-            index[k] = output[i++];
-        } else {
-            index[k] = output[j++];
-        }
-    }
+    return gpuArrayGetValueAtIndex(b, 0);    
 }
+template int gpuArraySum(int*, int*,  int);
+template float gpuArraySum(float*, float*,  int);
+template double gpuArraySum(double*, double*, int);
 
-void mergesort_serial(int *output, int *index, int *input, int n, int chunk){
-    int chunk_id;
-    for(chunk_id=0; chunk_id*chunk<=n; chunk_id++){
-        int start = chunk_id * chunk, end, mid;
-        if(start >= n) return;
-        mid = min(start + chunk/2, n);
-        end = min(start + chunk, n);
-        merge_serial(output, index, input, start, mid, end);
-    }
-}
-
-
-void mergeSort(int *output, int *index, int *input, int lo, int hi) 
-{
-    if (hi <= lo)
-        return;
-    int mid = (hi + lo) / 2;
-    mergeSort(output, index, input, lo, mid);
-    mergeSort(output, index, input, mid + 1, hi);
-    merge(output, index, input, lo, mid, hi);
-}
-
-void cpuMergeSort(int *output, int *index, int *input, int length) 
-{
-    mergeSort(output, index, input, 0, length-1);
-    for (int i=0; i<length; i++)
-        output[i] = input[index[i]];
-}
-
-/// Sequential Merge Sort for GPU when Number of Threads Required gets below 1 Warp Size
-void mergesort_gpu_seq(int *list, int *sorted, int n, int chunk){
-    int chunk_id;
-    for(chunk_id=0; chunk_id*chunk<=n; chunk_id++){
-        int start = chunk_id * chunk, end, mid;
-        if(start >= n) return;
-        mid = min(start + chunk/2, n);
-        end = min(start + chunk, n);
-        merge(list, sorted, start, mid, end);
-    }
-}
+//     static cudaError_t Sum(
+//         void                        *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+//         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+//         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
+//         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
+//         int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
+//         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+//         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
 
 
-__device__ void merge_gpu(int *a, int *temp, int *perm, int lo, int mid, int hi) 
-{
-    int i = lo, j = mid + 1;
+int gpuUniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, int *q, int n)
+{       
+    // a  (input): an array of n integer elements
+    // b (output): unique elements of the original array a
+    // c (output): the number of counts for each element of the output array b
+    // d (output): sorted indices of the original array a
+    // e (output): sorted elements of the original array a
+    // m (output): the length of the output array b
+    // Example: a = [9  0  6  2  2  3  1  5  9  3  5  6  7  4  8  9  7  2  7  1]
+    //          e = [0  1  1  2  2  2  3  3  4  5  5  6  6  7  7  7  8  9  9  9]
+    //          d = [1  6  19  3  4  17  5  9  13  7  10  2  11  12  16  18  14  0  8  15]
+    //          b = [0  1  2  3  4  5  6  7  8  9]
+    //          c = [1  2  3  2  1  2  2  3  1  3] -> c = [0  1  3  6  8  9  11  13  16  17  20]        
+    //          m = 10        
+    
+    // p = [0,1,2,...,n]        
+    gpuIndexInit(p, n);
+            
+    // sort array a
+    // e is the sorted array
+    // d is the sorted index        
+    size_t  temp_storage_bytes  = 0;
+    void  *d_temp_storage = NULL;
+    cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, a, e, p, d, n);                
+    cub::DeviceRadixSort::SortPairs((void*) q, temp_storage_bytes, a, e, p, d, n);
 
-    for (int k = lo; k <= hi; k++) {
-        temp[k] = perm[k];
-    }
+    // b contains unique elements of e
+    // p contains the counts for unique elements                
+    // t[0] is the number of unique elements            
+    temp_storage_bytes  = 0;
+    cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, e, b, p, t, n);                
+    cub::DeviceRunLengthEncode::Encode((void*) q, temp_storage_bytes, e, b, p, t, n);
 
-    for (int k = lo; k <= hi; k++) {
-        if (i > mid) {
-            perm[k] = temp[j++];
-        } else if (j > hi) {
-            perm[k] = temp[i++];
-        } else if (a[temp[i]] <= a[temp[j]]) {
-            perm[k] = temp[i++];
-        } else {
-            perm[k] = temp[j++];
-        }
-    }
-}
+    // number of unique elements
+    int m = gpuArrayGetValueAtIndex(t, 0);
+    gpuArraySetValueAtIndex(c, (int) 0, (int) 0);
 
-__device__ void merge_gpu(int *list, int *sorted, int start, int mid, int end)
-{
-    int k=start, i=start, j=mid;
-    while (i<mid || j<end)
-    {
-        if (j==end) sorted[k] = list[i++];
-        else if (i==mid) sorted[k] = list[j++];
-        else if (list[i]<list[j]) sorted[k] = list[i++];
-        else sorted[k] = list[j++];
-        k++;
-    }
-}
-
-__global__ void mergesort_gpu(int *list, int *sorted, int n, int chunk){
-
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    int start = tid * chunk;
-    if(start >= n) return;
-    int mid, end;
-
-    mid = min(start + chunk/2, n);
-    end = min(start + chunk, n);
-    merge_gpu(list, sorted, start, mid, end);
-}
-
-// Sequential Merge Sort for GPU when Number of Threads Required gets below 1 Warp Size
-void mergesort_gpu_seq(int *list, int *sorted, int n, int chunk){
-    int chunk_id;
-    for(chunk_id=0; chunk_id*chunk<=n; chunk_id++){
-        int start = chunk_id * chunk, end, mid;
-        if(start >= n) return;
-        mid = min(start + chunk/2, n);
-        end = min(start + chunk, n);
-        merge(list, sorted, start, mid, end);
-    }
-}
-
-
-int mergesort(int *list, int *sorted, int n){
-
-    int *list_d;
-    int *sorted_d;
-    int dummy;
-    bool flag = false;
-    bool sequential = false;
-
-    int size = n * sizeof(int);
-
-    cudaMalloc((void **)&list_d, size);
-    cudaMalloc((void **)&sorted_d, size);
-
-    cudaMemcpy(list_d, list, size, cudaMemcpyHostToDevice);
-    cudaError_t err = cudaGetLastError();
-    if(err!=cudaSuccess){
-        printf("Error_2: %s\n", cudaGetErrorString(err));
-        return -1;
-    }
-
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
-
-    int major = prop.major;
-    int minor = prop.minor;
-    if(major!=3 || minor!=5){
-        printf("The Program is Optimized only for sm_35 Compute Capability..May NOT Work for Other CCs\n");
-    }
-    // vaues for sm_35 compute capability
-    const int max_active_blocks_per_sm = 16;
-    const int max_active_warps_per_sm = 64;
-
-    int warp_size = prop.warpSize;
-    int max_grid_size = prop.maxGridSize[0];
-    int max_threads_per_block = prop.maxThreadsPerBlock;
-    int max_procs_count = prop.multiProcessorCount;
-
-    int max_active_blocks = max_active_blocks_per_sm * max_procs_count;
-    int max_active_warps = max_active_warps_per_sm * max_procs_count;
-
-    int chunk_size;
-    for(chunk_size=2; chunk_size<2*n; chunk_size*=2){
-        int blocks_required=0, threads_per_block=0;
-        int threads_required = (n%chunk_size==0) ? n/chunk_size : n/chunk_size+1;
-
-        if (threads_required<=warp_size*3 && !sequential){
-            sequential = true;
-            if(flag) cudaMemcpy(list, sorted_d, size, cudaMemcpyDeviceToHost);
-            else cudaMemcpy(list, list_d, size, cudaMemcpyDeviceToHost);
-            err = cudaGetLastError();
-            if(err!=cudaSuccess){
-                printf("ERROR_4: %s\n", cudaGetErrorString(err));
-                return -1;
-            }
-            cudaFree(list_d);
-            cudaFree(sorted_d);
-        }
-        else if (threads_required<max_threads_per_block){
-            threads_per_block = warp_size*4;
-            dummy = threads_required/threads_per_block;
-            blocks_required = (threads_required%threads_per_block==0) ? dummy : dummy+1;
-        }
-        else if(threads_required<max_active_blocks*warp_size*4){
-            threads_per_block = max_threads_per_block/2;
-            dummy = threads_required/threads_per_block;
-            blocks_required = (threads_required%threads_per_block==0) ? dummy : dummy+1;
-        }else{
-            dummy = threads_required/max_active_blocks;
-            // int estimated_threads_per_block = (dummy%warp_size==0) ? dummy : (dummy/warp_size + 1)*warp_size;
-            int estimated_threads_per_block = (threads_required%max_active_blocks==0) ? dummy : dummy+1;
-            if(estimated_threads_per_block > max_threads_per_block){
-                threads_per_block = max_threads_per_block;
-                dummy = threads_required/max_threads_per_block;
-                blocks_required = (threads_required%max_threads_per_block==0) ? dummy : dummy+1;
-            } else{
-                threads_per_block = estimated_threads_per_block;
-                blocks_required = max_active_blocks;
-            }
-        }
-
-        if(blocks_required>=max_grid_size){
-            printf("ERROR_2: Too many Blocks Required\n");
-            return -1;
-        }
-
-        if(sequential){
-            // struct timespec start, stop;
-            // clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-            mergesort_gpu_seq(list, sorted, n, chunk_size);
-            // clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
-            // double result = (stop.tv_sec - start.tv_sec) * 1e3 + (stop.tv_nsec - start.tv_nsec) / 1e6;
-            // printf("CHUNK SIZE:%d, ", chunk_size);
-            // printf("TOTAL THREADS REQUIRED:%d\n", threads_required);
-            // printf("TIME TAKEN: %fms\n", result);
-            // printf("####################################################\n");
-        }else{
-            // float time;
-            // cudaEvent_t start, stop;
-            // cudaEventCreate(&start);
-            // cudaEventCreate(&stop);
-            // cudaEventRecord(start, 0);
-            if(flag) mergesort_gpu<<<blocks_required, threads_per_block>>>(sorted_d, list_d, n, chunk_size);
-            else mergesort_gpu<<<blocks_required, threads_per_block>>>(list_d, sorted_d, n, chunk_size);
-            cudaDeviceSynchronize();
-            // cudaEventRecord(stop, 0);
-            // cudaEventSynchronize(stop);
-            // cudaEventElapsedTime(&time, start, stop);
-            //
-            // printf("CHUNK SIZE:%d, ", chunk_size);
-            // printf("TOTAL THREADS REQUIRED:%d, ", threads_required);
-            // printf("THREADS PER BLOCK:%d, ", threads_per_block);
-            // printf("BLOCKS REQUIRED:%d ", blocks_required);
-            // printf("TIME TAKEN: %fms\n", time);
-            // printf("####################################################\n");
-            err = cudaGetLastError();
-            if(err!=cudaSuccess){
-                printf("ERROR_3: %s\n", cudaGetErrorString(err));
-                return -1;
-            }
-            flag = !flag;
-        }
-    }
-    return 0;
+    // c is inclusive scan of p
+    temp_storage_bytes  = 0;
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, p, &c[1], m);                
+    cub::DeviceScan::InclusiveSum((void*) q, temp_storage_bytes, p, &c[1], m);
+    
+    return m;                          
 }
 
 #endif

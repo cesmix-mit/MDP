@@ -14,9 +14,12 @@
 #include "opuQuadrupleta.cpp"
 #include "opuQuadrupletb.cpp"
 
+#ifdef HAVE_ENZYME                
 template <typename... Args>
 void __enzyme_autodiff(void*, Args... args);
 int enzyme_const, enzyme_dup;
+#endif        
+
  
 // TO DO: Use Enzyme to calculate the potential derivatives
 template <typename T> void cpuSingle(T *__restrict__ u, 
@@ -57,6 +60,7 @@ template <typename T> void cpuComputeSingleEnergyForce(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, inum);
     cpuArraySetValue(u_x, (T) 0.0, dim*inum);
  
+#ifdef HAVE_ENZYME    
     __enzyme_autodiff((void*)cpuSingle<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xi, u_x,
@@ -67,7 +71,7 @@ template <typename T> void cpuComputeSingleEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, inum, potnum, bondtype);
-    //delete[] d_u;    
+#endif
 }
 template void cpuComputeSingleEnergyForce(double *, double *, double *, double *, double *, 
         int *, int *, double *, double *, int*, int, int, int, int, int, int, int, int);
@@ -130,6 +134,7 @@ template <typename T> void cpuComputePairEnergyForce(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, ijnum);
     cpuArraySetValue(u_x, (T) 0.0, dim*ijnum);
 
+#ifdef HAVE_ENZYME    
     __enzyme_autodiff((void*)cpuPair<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xij, u_x,
@@ -144,8 +149,7 @@ template <typename T> void cpuComputePairEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, ijnum, potnum, bondtype);  
-    
-    //delete[] d_u;    
+#endif        
 }
 template void cpuComputePairEnergyForce(double *, double *, double *, double *, double *, double *, 
         int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int, int);
@@ -213,7 +217,8 @@ template <typename T> void cpuComputeTripletEnergyForce(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, ijknum);
     cpuArraySetValue(u_xij, (T) 0.0, dim*ijknum);
     cpuArraySetValue(u_xik, (T) 0.0, dim*ijknum);
-    
+
+#ifdef HAVE_ENZYME    
     __enzyme_autodiff((void*)cpuTriplet<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xij, u_xij,
@@ -232,7 +237,7 @@ template <typename T> void cpuComputeTripletEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, ijknum, potnum, bondtype);  
-    //delete[] d_u;        
+#endif    
 }
 template void cpuComputeTripletEnergyForce(double *, double *, double *, double *, double *, double *, double *, 
         double *, double *, int *, int *, int *, int *, int *, int *, double *, double *, int*, int, int, 
@@ -311,6 +316,7 @@ template <typename T> void cpuComputeQuadrupletEnergyForce(T *__restrict__ u,
     cpuArraySetValue(u_xik, (T) 0.0, dim*ijklnum);
     cpuArraySetValue(u_xil, (T) 0.0, dim*ijklnum);
     
+#ifdef HAVE_ENZYME    
     __enzyme_autodiff((void*)cpuQuadruplet<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, xij, u_xij,
@@ -333,7 +339,7 @@ template <typename T> void cpuComputeQuadrupletEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, ijklnum, potnum, bondtype);  
-    //delete[] d_u;        
+#endif    
 }
 template void cpuComputeQuadrupletEnergyForce(double *, double *, double *, double *, double *, double *, 
         double *, double *, double *, double *, double *, double *, int *, int *, int *, int *, int *, 
@@ -343,18 +349,7 @@ template void cpuComputeQuadrupletEnergyForce(float *, float *, float *, float *
         int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
 
 
-void cpuElectronDensity(dstype *rhoi, dstype *rhoij, int *pairnum, int *pairnumsum, int inum) 
-{
-    for (int i=0; i<inum; i++) {
-        int jnum = pairnum[i];
-        int start = pairnumsum[i];
-        rhoi[i] = 0.0;
-        for (int j=0; j<jnum; j++) 
-            rhoi[i] += rhoij[start+j];        
-    }
-}
-
-template <typename T> void cpuPaircDensity(T *__restrict__ u,
+template <typename T> void cpuPaircDensityGradient(T *__restrict__ u,
                                     T *__restrict__ d_u,                     
                                     T *__restrict__ u_rho,   
                                     T *__restrict__ rho,   
@@ -368,32 +363,22 @@ template <typename T> void cpuPaircDensity(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, inum);
     cpuArraySetValue(u_rho, (T) 0.0, inum);    
     
+#ifdef HAVE_ENZYME    
     __enzyme_autodiff((void*)opuPaircDensity<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, rho, u_rho,                        
-                        // TODO can make this non const to get du/dmu
                         enzyme_const, mu,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         1, nmu, neta, nkappa, inum, potnum);  
-    //delete[] d_u;            
+#endif
 }
-template void cpuPaircDensity(double *, double *, double *, double *, double *, double *,
+template void cpuPaircDensityGradient(double *, double *, double *, double *, double *, double *,
         int*, int, int, int, int, int, int);
-template void cpuPaircDensity(float *, float *, float *, float *, float *, float *,
+template void cpuPaircDensityGradient(float *, float *, float *, float *, float *, float *,
         int *, int, int, int, int, int, int);
-
-void cpuEmbedingForce(dstype *fij, dstype *d_rhoi, int *pairnum, int *pairnumsum, int inum)
-{    
-    for (int i=0; i<inum; i++) {
-        int jnum = pairnum[i];
-        int start = pairnumsum[i];
-        for (int j=0; j<jnum; j++)             
-            fij[start+j] = d_rhoi[i]*fij[start+j];                
-    }        
-}
         
-template <typename T> void cpuTripletcDensity(T *__restrict__ u,
+template <typename T> void cpuTripletcDensityGradient(T *__restrict__ u,
                                     T *__restrict__ d_u,                             
                                     T *__restrict__ u_rho,   
                                     T *__restrict__ rho,   
@@ -407,22 +392,41 @@ template <typename T> void cpuTripletcDensity(T *__restrict__ u,
     cpuArraySetValue(d_u, (T) 1.0, inum);
     cpuArraySetValue(u_rho, (T) 0.0, inum);    
     
-    __enzyme_autodiff((void*)opuPaircDensity<T>, 
+#ifdef HAVE_ENZYME    
+    __enzyme_autodiff((void*)opuTripletcDensity<T>, 
                         enzyme_dup, u, d_u,
                         enzyme_dup, rho, u_rho,                        
-                        // TODO can make this non const to get du/dmu
                         enzyme_const, mu,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         1, nmu, neta, nkappa, inum, potnum);  
-    //delete[] d_u;            
+#endif    
 }
-template void cpuTripletcDensity(double *, double *, double *, double *, double *, double *,
+template void cpuTripletcDensityGradient(double *, double *, double *, double *, double *, double *,
         int*, int, int, int, int, int, int);
-template void cpuTripletcDensity(float *, float *, float *, float *, float *, float *,
+template void cpuTripletcDensityGradient(float *, float *, float *, float *, float *, float *,
         int *, int, int, int, int, int, int);
 
+void cpuElectronDensity(dstype *rhoi, dstype *rhoij, int *pairnum, int *pairnumsum, int inum) 
+{
+    for (int i=0; i<inum; i++) {
+        int jnum = pairnum[i];
+        int start = pairnumsum[i];
+        rhoi[i] = 0.0;
+        for (int j=0; j<jnum; j++) 
+            rhoi[i] += rhoij[start+j];        
+    }
+}
 
+void cpuEmbedingForce(dstype *fij, dstype *d_rhoi, int *pairnum, int *pairnumsum, int inum)
+{    
+    for (int i=0; i<inum; i++) {
+        int jnum = pairnum[i];
+        int start = pairnumsum[i];
+        for (int j=0; j<jnum; j++)             
+            fij[start+j] = d_rhoi[i]*fij[start+j];                
+    }        
+}
 
 // template <typename T> void primal_opuLJ1pot(T *__restrict__ u,
 //                                     T *__restrict__ xij,

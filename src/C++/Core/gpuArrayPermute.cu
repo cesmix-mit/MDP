@@ -1,12 +1,30 @@
 #ifndef __GPUARRAYPERMUTE
 #define __GPUARRAYPERMUTE
 
-template <typename T> __global__ void gpuTemplateKron(T *C, T *A, T *B, int M1, int N1, int M2, int N2)
+template <typename T> __global__ void gpuTemplateKron(T *C, T *A, T *B, 
+        int M1, int M2, int M)
+{                    
+    int idx = threadIdx.x + blockIdx.x * blockDim.x; // global thread index  
+    while (idx<M) {    
+        int ib = idx%M2;
+        int ia = (idx-ib)/M2;        
+        C[idx] += A[ia]*B[ib];      
+        idx += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuKron(T *C, T *A, T *B, int M1, int M2)
+{                
+    int M = M1*M2;    
+    int BLOCKDIM = 256;
+    int gridDim = (M + BLOCKDIM - 1) / BLOCKDIM;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuTemplateKron<<<gridDim, BLOCKDIM>>>(C, A, B, M1, M2, M);
+}
+
+template <typename T> __global__ void gpuTemplateKron(T *C, T *A, T *B, 
+        int M1, int N1, int M2, int N2, int M, int N, int P)
 {            
     int idx = threadIdx.x + blockIdx.x * blockDim.x; // global thread index  
-    int M = M1*M2;
-    int N = N1*N2;
-    int P = M*N;
     while (idx<P) {
         int i = idx%M;
         int j = (idx-i)/M;
@@ -18,13 +36,15 @@ template <typename T> __global__ void gpuTemplateKron(T *C, T *A, T *B, int M1, 
         idx += blockDim.x * gridDim.x;
     }
 }
-
 template <typename T> void gpuKron(T *C, T *A, T *B, int M1, int N1, int M2, int N2)
 {                
+    int M = M1*M2;
+    int N = N1*N2;
+    int P = M*N;    
     int BLOCKDIM = 256;
-    int gridDim = (M1*M2*N1*N2 + BLOCKDIM - 1) / BLOCKDIM;
+    int gridDim = (P + BLOCKDIM - 1) / BLOCKDIM;
     gridDim = (gridDim>1024)? 1024 : gridDim;
-    gpuTemplateKron<<<gridDim, BLOCKDIM>>>(C, A, B, M1, N1, M2, N2);
+    gpuTemplateKron<<<gridDim, BLOCKDIM>>>(C, A, B, M1, N1, M2, N2, M, N, P);
 }
 
 __global__ void gpuKernelIndexPermute12(int *index, int I1, int I2, int I3)
@@ -221,6 +241,9 @@ template <typename T> void gpuPermute23(T *B, T *A, int I1, int I2, int I3, int 
 //void gpuIndexPermute13(int*, int, int, int, int);
 //void gpuIndexPermute23(int*, int, int, int, int);
 
+template void gpuKron(double*, double*, double*, int, int);
+template void gpuKron(float*, float*, float*, int, int);
+        
 template void gpuKron(double*, double*, double*, int, int, int, int);
 template void gpuKron(float*, float*, float*, int, int, int, int);
 

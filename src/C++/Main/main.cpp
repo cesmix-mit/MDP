@@ -3,15 +3,24 @@
 #include <sstream>
 #include <iostream>
 #include <math.h>
+#include <sys/time.h>
 //#include <string.h>
 //#include <stdlib.h>
 //#include <sys/unistd.h>
 //#include <random>
 
+#ifdef _DEBUG
+#define HAVE_DEBUG
+#endif
+
 #ifdef _CUDA
 #define HAVE_CUDA
 #endif
-        
+      
+#ifdef _ENZYME
+#define HAVE_ENZYME
+#endif
+
 #ifdef _MPI
 #define HAVE_MPI
 #endif
@@ -49,7 +58,15 @@ using std::scientific;
 
 #include "../Core/cpuCore.cpp"       // interface to core libraries
 #include "../Configuration/Configuration.cpp" // read and preprocess input files 
-#include "../Potentials/Potentials.cpp" // empirical potentials
+
+//#include "../Potentials/Potentials.cpp" // empirical potentials
+#ifdef HAVE_CUDA    
+#include "../Configuration/gpuDeviceInfo.cpp" // read and preprocess input files 
+#include "../Potentials/gpuPotentials.cpp" // empirical potentials
+#else
+#include "../Potentials/cpuPotentials.cpp" // empirical potentials
+#endif
+
 #include "../Descriptors/Descriptors.cpp"   // nonparameteric potentials 
 #include "../Calculation/Calculation.cpp"  // calculate energy and forces
 #include "../Regression/Regression.cpp"  // perform linear/gaussian/dnn regressions 
@@ -123,8 +140,8 @@ int main(int argc, char** argv)
     
 #ifdef HAVE_CUDA            
     int device;    
-    cudaSetDevice(shmrank); 
-    //gpuDeviceInfo(shmrank);
+    //cudaSetDevice(shmrank); 
+    gpuDeviceInfo(shmrank);
     cudaGetDevice( &device );
     size_t available, total;
     cudaMemGetInfo(&available, &total);
@@ -145,9 +162,9 @@ int main(int argc, char** argv)
     // construct regression object
     CRegression CReg(CCal);
     
-    do {
-       cout <<"Initialization is done! Press RETURN key to train the potential.";
-    } while (std::cin.get() != '\n');
+//     do {
+//        cout <<"Initialization is done! Press RETURN key to train the potential.";
+//     } while (std::cin.get() != '\n');
     
     // train the potential using linear regression 
     CReg.LinearRegression(CCal);    

@@ -77,7 +77,7 @@ void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int 
     int n = 0;
     for (int i=13; i<=22; i++) 
         n += app.nsize[i];
-    TemplateMalloc(&app.muep, n, backend); 
+    TemplateMalloc(&app.muep, n, 0); 
     
     for (int i=0; i < app.nsize[13]; i++) 
         app.muep[i] = app.mu1a[i];
@@ -115,7 +115,7 @@ void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int 
 }
 
 void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
-{    
+{        
     /* Allocate memory on GPU */            
     TemplateMalloc(&app.nsize, happ.lsize[0], backend); 
     TemplateMalloc(&app.ndims, happ.nsize[0], backend); 
@@ -134,7 +134,7 @@ void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
     TemplateMalloc(&app.mu1a, happ.nsize[13], backend); 
     TemplateMalloc(&app.mu1b, happ.nsize[14], backend); 
     TemplateMalloc(&app.mu2a, happ.nsize[15], backend); 
-    TemplateMalloc(&app.mu2a, happ.nsize[16], backend); 
+    TemplateMalloc(&app.mu2b, happ.nsize[16], backend); 
     TemplateMalloc(&app.mu2c, happ.nsize[17], backend); 
     TemplateMalloc(&app.mu3a, happ.nsize[18], backend); 
     TemplateMalloc(&app.mu3b, happ.nsize[19], backend); 
@@ -190,7 +190,7 @@ void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
         CHECK( cudaMemcpy(app.kappa, happ.kappa, happ.nsize[11]*sizeof(Int), cudaMemcpyHostToDevice ) );   
         CHECK( cudaMemcpy(app.muml, happ.muml, happ.nsize[12]*sizeof(dstype), cudaMemcpyHostToDevice ) );              
         CHECK( cudaMemcpy(app.mu1a, happ.mu1a, happ.nsize[13]*sizeof(dstype), cudaMemcpyHostToDevice ) );              
-        CHECK( cudaMemcpy(app.mu1b, happ.mu1b, happ.nsize[14]*sizeof(dstype), cudaMemcpyHostToDevice ) );              
+        CHECK( cudaMemcpy(app.mu1b, happ.mu1b, happ.nsize[14]*sizeof(dstype), cudaMemcpyHostToDevice ) );    
         CHECK( cudaMemcpy(app.mu2a, happ.mu2a, happ.nsize[15]*sizeof(dstype), cudaMemcpyHostToDevice ) );              
         CHECK( cudaMemcpy(app.mu2b, happ.mu2b, happ.nsize[16]*sizeof(dstype), cudaMemcpyHostToDevice ) );              
         CHECK( cudaMemcpy(app.mu2c, happ.mu2c, happ.nsize[17]*sizeof(dstype), cudaMemcpyHostToDevice ) );              
@@ -268,7 +268,7 @@ void implReadConfigStruct(configstruct &config, string filein, Int mpiprocs, Int
                 
     TemplateMalloc(&config.natomssum, config.nsize[1]+1, 0); 
     cpuCumsum(config.natomssum, config.natoms, config.nsize[1]+1); 
-    
+        
     // Close file:
     in.close();            
 }
@@ -473,7 +473,7 @@ void implGetPositions(dstype *x, commonstruct &common, configstruct &config, Int
     }
     else {
 #ifdef HAVE_CUDA                        
-        CHECK( cudaMemcpy(x, &config.x[common.dim*start], common.dim*inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
+        CHECK( cudaMemcpy(x, &config.x[common.dim*start], common.dim*common.inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
 #endif    
     }
 }
@@ -486,7 +486,7 @@ void implGetVelocities(dstype *v, commonstruct &common, configstruct &config, In
     }
     else {
 #ifdef HAVE_CUDA                        
-        CHECK( cudaMemcpy(v, &config.v[common.dim*start], common.dim*inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
+        CHECK( cudaMemcpy(v, &config.v[common.dim*start], common.dim*common.inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
 #endif    
     }
 }
@@ -499,7 +499,7 @@ void implGetForces(dstype *f, commonstruct &common, configstruct &config, Int ci
     }
     else {
 #ifdef HAVE_CUDA                                
-        CHECK( cudaMemcpy(f, &config.f[common.dim*start], common.dim*inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
+        CHECK( cudaMemcpy(f, &config.f[common.dim*start], common.dim*common.inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
 #endif    
     }
 }
@@ -512,7 +512,7 @@ void implGetCharges(dstype *q, commonstruct &common, configstruct &config, Int c
     }
     else {
 #ifdef HAVE_CUDA                                
-        CHECK( cudaMemcpy(q, &config.q[common.dim*start], common.ncq*inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
+        CHECK( cudaMemcpy(q, &config.q[common.dim*start], common.ncq*common.inum*sizeof(dstype), cudaMemcpyHostToDevice ) );              
 #endif            
     }        
 }
@@ -615,8 +615,8 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     TemplateMalloc(&nb.neighlist, common.inum*common.jnum, common.backend);  
     TemplateMalloc(&nb.neighnum, common.inum, common.backend);      
     //TemplateMalloc(&nb.neighnumsum, common.inum+1, common.backend);      
-    for (Int i=0; i<common.inum*common.jnum; i++)
-        nb.neighlist[i] = 0;
+    //for (Int i=0; i<common.inum*common.jnum; i++)
+    //    nb.neighlist[i] = 0;
         
     if (common.backend <= 1) {
         for (Int i=0; i<dim; i++)
@@ -714,10 +714,12 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
     Int *inside = &tmp.intmem[0]; // inum*pnum
     Int *glistnum = &tmp.intmem[inum*common.pnum]; // inum
     Int *glistnumsum = &tmp.intmem[inum*common.pnum + inum]; // inum+1
-            
-    if (dim==2) {
-        cpuAtomList2D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
-            nb.s2rmap, inum, pnum, dim);
+    Int *d_sums = &tmp.intmem[inum*common.pnum + 2*inum+1]; // inum+1
+    Int *d_incr = &tmp.intmem[inum*common.pnum + 3*inum+2]; // inum+1
+    
+    if (dim==2) {        
+        AtomList2D(nb.alist, inside, glistnumsum, glistnum, d_sums, d_incr, x, nb.pimages, 
+                 nb.rbvertices, nb.s2rmap, inum, pnum, dim, common.backend);
         
         gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
         anum = inum + gnum;
@@ -725,62 +727,62 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         common.gnum = gnum;
         common.anum = anum;
         
-        if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list        
-            cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim);    
-//         printArray2D(nb.neighnum, 1, inum, common.backend);  
-//         printArray2D(nb.neighlist, jnum, inum, common.backend);  
-        }
-        else { // form neighbor list using cell list
-            Int *a2clist = &tmp.intmem[0]; //anum
-            Int *c2alist = &tmp.intmem[anum]; // anum
-            Int *c2anum = &tmp.intmem[2*anum]; // anum
-            Int *c2anumsum = &tmp.intmem[3*anum]; // cnum+1
-
-            cpuCellList2D(a2clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim);                
-            cpuCell2AtomList(c2alist, c2anumsum, c2anum, a2clist, anum, cnum);                              
-            cpuFullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, a2clist, 
-                    c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);              
-//         printArray2D(a2clist, 1, anum, common.backend);  
-//         printArray2D(c2anum, 1, anum, common.backend);  
-//         printArray2D(c2alist, 1, anum, common.backend);          
-//         printArray2D(c2anumsum, 1, cnum+1, common.backend);      
-//         printArray2D(nb.neighnum, 1, inum, common.backend);  
-//         printArray2D(nb.neighlist, jnum, inum, common.backend);  
-        }
-    }
-    else {
-        cpuAtomList3D(nb.alist, inside, glistnumsum, glistnum,  x, nb.pimages, nb.rbvertices, 
-            nb.s2rmap, inum, pnum, dim);
-        
-        gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
-        anum = inum + gnum;
-        common.inum = inum;
-        common.gnum = gnum;
-        common.anum = anum;
-        
-        //cout<<anum<<"  "<<common.anummax<<endl;
-        
-        if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list
-            cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim);    
-//             printArray2D(nb.neighnum, 1, inum, common.backend);  
-//             printArray2D(nb.neighlist, jnum, inum, common.backend);                  
+        if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list                    
+            FullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim, common.backend);                                    
         }
         else { // form neighbor list using cell list
             Int *clist = &tmp.intmem[0]; //anum
             Int *c2alist = &tmp.intmem[anum]; // anum
             Int *c2anum = &tmp.intmem[2*anum]; // anum
-            Int *c2anumsum = &tmp.intmem[2*anum+cnum]; // cnum+1
-
-            cpuCellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim);                
-            cpuCell2AtomList(c2alist, c2anumsum, c2anum, clist, anum, cnum);        
-            cpuFullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist, 
-                    c2alist, c2anumsum, nb.cellnum, inum, jnum, dim);           
-//             printArray2D(nb.neighnum, 1, inum, common.backend);  
-//             printArray2D(nb.neighlist, jnum, inum, common.backend);          
+            Int *c2anumsum = &tmp.intmem[3*anum]; // anum            
+            Int *dtemp = &tmp.intmem[4*anum]; 
+            
+            CellList2D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim, common.backend);  
+            Cell2AtomList(c2alist, c2anumsum, c2anum, clist, dtemp, anum, cnum, common.backend);                        
+            FullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist,   
+                       c2alist, c2anumsum, nb.cellnum, inum, jnum, dim, common.backend);                             
         }
     }
-    //cpuCumsum(nb.neighnumsum, nb.neighnum, inum+1);    
+    else {
+        AtomList3D(nb.alist, inside, glistnumsum, glistnum, d_sums, d_incr, x, nb.pimages, 
+                 nb.rbvertices, nb.s2rmap, inum, pnum, dim, common.backend);
+        
+        gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
+        anum = inum + gnum;
+        common.inum = inum;
+        common.gnum = gnum;
+        common.anum = anum;
+                       
+        if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list
+            FullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim, common.backend);                                    
+        }
+        else { // form neighbor list using cell list
+            Int *clist = &tmp.intmem[0]; //anum
+            Int *c2alist = &tmp.intmem[anum]; // anum
+            Int *c2anum = &tmp.intmem[2*anum]; // anum
+            Int *c2anumsum = &tmp.intmem[3*anum]; // anum            
+            Int *dtemp = &tmp.intmem[4*anum]; 
+            
+            CellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim, common.backend);  
+            Cell2AtomList(c2alist, c2anumsum, c2anum, clist, dtemp, anum, cnum, common.backend);                        
+            FullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist,   
+                       c2alist, c2anumsum, nb.cellnum, inum, jnum, dim, common.backend);                 
+        }
+    }
     
+// #ifdef HAVE_DEBUG                      
+//     //printArray2D(nb.neighnum, 1, inum, common.backend);  
+//     //printArray2D(nb.neighlist, jnum, inum, common.backend);              
+//     string fn = (common.backend == 2) ? "alistgpu.bin" : "alistcpu.bin";
+//     writearray2file(fn, nb.alist, anum, common.backend); 
+//     fn = (common.backend == 2) ? "neighnumgpu.bin" : "neighnumcpu.bin";
+//     writearray2file(fn, nb.neighnum, inum, common.backend);
+//     fn = (common.backend == 2) ? "neighlistgpu.bin" : "neighlistcpu.bin";
+//     writearray2file(fn, nb.neighlist, inum*jnum, common.backend);    
+// #endif                        
+    
+    //error("here");
+
     if (anum > common.anummax)
         error("Memory allocation for ghost atoms is insffucient");    
 }
@@ -790,12 +792,12 @@ void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &comm
 {
     implReadAppStruct(app, common, filein, mpiprocs, mpirank, backend);    
     implReadConfigStruct(config, filein, mpiprocs, mpirank, backend);            
-    implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);        
+    implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);          
 }
 
 void implSetConfiguration(neighborstruct &nb, tempstruct &tmp, sysstruct &sys, appstruct &app, configstruct &config, commonstruct &common, Int ci)
 {
-    implSetNeighborStruct(nb, common, config, ci);            
+    implSetNeighborStruct(nb, common, config, ci);         
     implSetSysStruct(sys, common, config, ci);       
     implSetAtomBlocks(common);    
 }

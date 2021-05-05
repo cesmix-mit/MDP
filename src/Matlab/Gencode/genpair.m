@@ -23,16 +23,25 @@ if gen==0
     stropu = stropu + tmp;
     strcpu = strrep(stropu, "opu", "cpu");
     strgpu = strrep(stropu, "opu", "gpu");
+    
+    %sp0 = "(T *u, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)\n";
+    tmp = strgpu;    
+    tmp = strrep(tmp, "(T *u, T *xij,", "Gradient(T *u, T *du, T *u_xij, T *xij,");            
+    tmp = strrep(tmp, "(double *,", "Gradient(double *, double *, double *,");            
+    tmp = strrep(tmp, "(float *,", "Gradient(float *, float *, float *,");            
+    strgpu = strgpu + "\n" + tmp;    
 else
     stropu = "template <typename T> void " + opufile;
     strgpu = "template <typename T>  __global__  void kernel" + gpufile;
 
+    % here
     tmp = sp0;
-
+    st2 = strgpu + sp0 + "{\n";    
+    
     stropu = stropu + tmp + "{\n";
-    stropu = stropu + "\tfor (int i = 0; i <ng; i++) {\n";
-
-    strgpu = strgpu + tmp + "{\n";
+    stropu = stropu + "\tfor (int i = 0; i <ng; i++) {\n";   
+    
+    strgpu = strgpu + tmp + "{\n";    
     strgpu = strgpu + "\tint i = threadIdx.x + blockIdx.x * blockDim.x;\n";
     strgpu = strgpu + "\twhile (i<ng) {\n";
         
@@ -74,6 +83,10 @@ else
 
     strgpu = strgpu + mystr + "\t\ti += blockDim.x * gridDim.x;\n";
     strgpu = strgpu + "\t}\n" + "}\n\n";
+    
+    % here
+    st1 = strgpu;    
+    
     tmp = "template <typename T> void " + gpufile;
     tmp = tmp + sp0;
     tmp = tmp + "{\n";
@@ -84,9 +97,73 @@ else
     tmp = tmp + "}\n";
     strgpu = strgpu + tmp;
 
+    % here
+    st1 = strrep(st1, "__global__  void kernelgpu", "__device__  void devicegpu");        
+    st1 = strrep(st1, "T *", "T *__restrict__ ");      
+    st1 = strrep(st1, "int *", "int *__restrict__ ");      
+    st2 = strrep(st2, "(T *u, T *xij,", "Gradient(T *u, T *du, T *u_xij, T *xij,");  
+    st2 = strrep(st2, "*", "*__restrict__ ");      
+    st3 = "\t__enzyme_autodiff((void*)devicegpu" + filename +  "<T>, \n";
+    st3 = st3 +  "\t\tenzyme_dup, u, du, \n";
+    st3 = st3 +  "\t\tenzyme_dup, xij, u_xij, \n";
+    st3 = st3 +  "\t\tenzyme_const, qi, \n";
+    st3 = st3 +  "\t\tenzyme_const, qj, \n";
+    st3 = st3 +  "\t\tenzyme_const, ti, \n";
+    st3 = st3 +  "\t\tenzyme_const, tj, \n";
+    st3 = st3 +  "\t\tenzyme_const, ai, \n";
+    st3 = st3 +  "\t\tenzyme_const, aj, \n";                        
+    st3 = st3 +  "\t\tenzyme_const, mu, \n";
+    st3 = st3 +  "\t\tenzyme_const, eta, \n";
+    st3 = st3 +  "\t\tenzyme_const, kappa, \n";
+    st3 = st3 +  "\t\tdim, ncq, nmu, neta, nkappa, ng); \n";      
+    st2 = st2 + st3 + "}\n";
+    st4 = tmp;
+    st4 = strrep(st4, "(T *u, T *xij,", "Gradient(T *u, T *du, T *u_xij, T *xij,");   
+    st4 = strrep(st4, "u, xij,", "u, du, u_xij, xij,");   
+    st4 = strrep(st4, "<<<", "Gradient<<<");   
+    st2 = st2 + "\n" + st4;
+    strgpu = strgpu + "\n" + st1 + "\n" + st2;    
+            
     strcpu = strrep(stropu, 'opu', "cpu");
     strcpu = strrep(strcpu, "for (int i = 0; i <ng; i++) {", "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");
 end
+
+% template <typename T> __global__ void gradient_gpuKernelLJ(T *u, T *d_u, T *xij, T *u_x, T *qi, T *qj, 
+%         int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, 
+%                 int nmu, int neta, int nkappa, int ng)
+% {
+%     __enzyme_autodiff((void*)gpuKernelLJ_device<T>, 
+%                         enzyme_dup, u, d_u,
+%                         enzyme_dup, xij, u_x,
+%                         enzyme_const, qi,
+%                         enzyme_const, qj,
+%                         enzyme_const, ti,
+%                         enzyme_const, tj,
+%                         enzyme_const, ai,
+%                         enzyme_const, aj,
+%                         // TODO can make this non const to get du/dmu
+%                         enzyme_const, mu,
+%                         enzyme_const, eta,
+%                         enzyme_const, kappa,
+%                         dim, ncq, nmu, neta, nkappa, ng);  
+%   //if (threadIdx.x == 0 && blockIdx.x == 0)
+%   //  printf("Called gpuGradient u_x[0]=%f d_u[0]=%f\n", u_x[0], d_u[0]);
+% 
+% }
+% template <typename T> void gpuGradientLJ(T *u, T *du, T *xij, T *u_x, T *qi, T *qj, int *ti, int *tj, 
+%         int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, 
+%                 int nmu, int neta, int nkappa, int ng)
+% {
+% 	int blockDim = 256;
+% 	int gridDim = (ng + blockDim - 1) / blockDim;
+% 	gridDim = (gridDim>1024)? 1024 : gridDim;
+% 	gradient_gpuKernelLJ<<<gridDim, blockDim>>>(u, du, xij, u_x, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+%             dim, ncq, nmu, neta, nkappa, ng);
+% }
+% template void gpuGradientLJ(double *, double *, double *, double *, double *, double *, int *, int *, 
+% int *, int *, double *, double *, int*, int, int, int, int, int, int);
+% template void gpuGradientLJ(float *, float *, float *, float *, float *, float *, int *, int *, 
+% int *, int *, float *, float *, int *, int, int, int, int, int, int);
 
 if ifile==1
     fid = fopen(foldername + "/" + opufile + ".cpp", 'w');
