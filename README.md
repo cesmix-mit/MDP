@@ -2,12 +2,12 @@
 
 
 # Dependency
-MDP requires Clang++/LLVM compiler, Enzyme, CUDA Toolkit, and Blas/Lapack libaries. 
+MDP requires Clang/LLVM compiler, Enzyme, CUDA Toolkit, and Blas/Lapack libaries. 
 
 
 # Installation
  
-On a Linux machine, open the terminal and go to the directory MDP.jl/src/enzyme
+On a Linux machine, open the terminal and go to the directory MDP.jl/src/enzyme, then install Clang comipler and Enzyme:
 
   sudo apt update
 
