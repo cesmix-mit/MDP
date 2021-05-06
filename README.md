@@ -2,7 +2,7 @@
 
 
 # Dependency
-MDP requires Clang/LLVM compiler, Enzyme, CUDA Toolkit, and Blas/Lapack libaries. 
+MDP requires Clang/LLVM compiler, Enzyme, Blas/Lapack libaries, and CUDA Toolkit (optional).
 
 
 # Installation
