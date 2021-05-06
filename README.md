@@ -2,7 +2,7 @@
 
 
 # Dependency
-MDP requires Clang/LLVM compiler, Enzyme, Blas/Lapack libaries, and CUDA Toolkit (optional). As MDP is optimized for GPUs, it is highly recommended to use MDP on GPUs. 
+MDP requires Clang/LLVM compiler, Enzyme, Blas/Lapack libaries, and CUDA Toolkit (optional). As MDP is optimized for GPUs, it is highly recommended to run MDP on GPUs. 
 
 # Installation
  
