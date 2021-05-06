@@ -23,5 +23,5 @@ On a MacOS computer, both LLVM and Enzyme can be installed using
 
     brew install enzyme
 
-Installing Enzyme will create two dynamic libaries LLVMEnzyme and ClangEnzyme. MDP will need the path to the Enzyme libarary ClangEnzyme in order to compile the code.  
+Installing Enzyme will create two dynamic libaries LLVMEnzyme and ClangEnzyme. MDP will need the path to the Enzyme library ClangEnzyme in order to compile the code.  
 
