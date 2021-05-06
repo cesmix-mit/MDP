@@ -19,9 +19,9 @@ On a Linux machine, open the terminal and go to the directory MDP.jl/src/enzyme,
  
 You can skip installing Clang/LLVM compiler, if it is already installed on your machine. Note that you need to know where LLVM is installed on your computer in order to link LLVM libarries located in /path/to/llvm/lib/cmake/llvm to Enzyme.  
  
-On a MacOS computer, both LLVM and Enzyme can be isntalled by 
+On a MacOS computer, both LLVM and Enzyme can be installed using 
 
-   brew install enzyme
+    brew install enzyme
 
 
 
