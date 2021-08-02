@@ -46,6 +46,8 @@ app.decomposition = 0;% 0 -> force decomposition, 1 -> atom decomposition
 app.energycal = 0;    % turns energy calculation on or off
 app.forcecal = 0;     % turns force calculation on or off
 app.stresscal = 0;    % turns stress calculation on or off
+app.unitstyle = 0;    % Default LJ unit style
+app.ensemblemode = 0; % 0 -> NVE, 1 -> limit NVE, 2 -> NVT
 app.time = 0.0;       % initial time
 app.dt = 0.0;         % time step
 app.rcutsqmax = 0.0;  % square of maximum cutoff radius
@@ -72,6 +74,7 @@ app.ndims = [];     % a list of integers indicating dimensions
 app.flag = [];      % a list of flags 
 app.simparam = []; % simulation parameters
 app.solparam = []; % solver parameters
+app.nvtparam = []; % NVT params
 
 % machine learning potentials
 app.muml = [];   % coefficients of ML potential

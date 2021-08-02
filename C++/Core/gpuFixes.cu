@@ -181,17 +181,14 @@ template <typename T> __global__ void gpuKernelFixAddForce3D(T *x, T *v, T *f, T
         f[i*dim+0] += fparam[0];
         f[i*dim+1] += fparam[1];
         f[i*dim+2] += fparam[2];            
-        int xbox = (image[i] & IMGMASK) - IMGMAX;
-        int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-        int zbox = (image[i] >> IMG2BITS) - IMGMAX;            
         if (triclinic == 0) {
-            y0 = x[0+i*dim] + xbox*box[0];
-            y1 = x[1+i*dim] + ybox*box[1];
-            y2 = x[2+i*dim] + zbox*box[2];
+            y0 = x[0+i*dim] + image[i*dim+0]*box[0];
+            y1 = x[1+i*dim] + image[i*dim+1]*box[1];
+            y2 = x[2+i*dim] + image[i*dim+2]*box[2];
         } else {
-            y0 = x[0+i*dim] + box[0]*xbox + box[5]*ybox + box[4]*zbox;
-            y1 = x[1+i*dim] + box[1]*ybox + box[3]*zbox;
-            y2 = x[2+i*dim] + zbox*box[2];
+            y0 = x[0+i*dim] + box[0]*image[i*dim+0] + box[5]*image[i*dim+1] + box[4]*image[i*dim+2];
+            y1 = x[1+i*dim] + box[1]*image[i*dim+1] + box[3]*image[i*dim+2];
+            y2 = x[2+i*dim] + box[2]*image[i*dim+2];
         }                                   
         if (eflag_atom)
             eatom[i] = -(fparam[0]*y0 + fparam[1]*y1 + fparam[2]*y2);
@@ -216,15 +213,13 @@ template <typename T> __global__ void gpuKernelFixAddForce2D(T *x, T *v, T *f, T
         T y0, y1;  
         f[i*dim+0] += fparam[0];
         f[i*dim+1] += fparam[1];
-        int xbox = (image[i] & IMGMASK) - IMGMAX;
-        int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
         if (triclinic == 0) {
-            y0 = x[0+i*dim] + xbox*box[0];
-            y1 = x[1+i*dim] + ybox*box[1];
+            y0 = x[0+i*dim] + image[i*dim+0]*box[0];
+            y1 = x[1+i*dim] + image[i*dim+1]*box[1];
         } else {
-            y0 = x[0+i*dim] + box[0]*xbox + box[5]*ybox;
-            y1 = x[1+i*dim] + box[1]*ybox;
-        }           
+            y0 = x[0+i*dim] + box[0]*image[i*dim+0] + box[5]*image[i*dim+1];
+            y1 = x[1+i*dim] + box[1]*image[i*dim+1];
+        }                                                                 
         if (eflag_atom)
             eatom[i] = -(fparam[0]*y0 + fparam[1]*y1);
         if (vflag_atom) {

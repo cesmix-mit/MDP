@@ -10,6 +10,7 @@
 
 #include "errormsg.cpp"
 #include "ioutilities.cpp"
+#include "setunits.cpp"
 
 void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int mpiprocs, Int mpirank, Int backend)
 {
@@ -80,6 +81,7 @@ void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int 
     common.validatelist = readiarrayfromdouble(in, app.nsize[51]);        
     common.trainingnum = app.nsize[50];
     common.validatenum = app.nsize[51];
+    readarray(in, &app.nvtparam, app.nsize[52]);    
     
     int n = 0;
     for (int i=13; i<=22; i++) 
@@ -310,9 +312,15 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.decomposition = app.flags[10]; // 0 -> force decomposition, 1 -> atom decomposition
     common.chemtype = app.flags[11];      // 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
     common.dftdata = app.flags[12];       // 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
+    common.unitstyle = app.flags[13];       // 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
+    common.ensemblemode = app.flags[14];   
     
-    common.time = app.simulaparam[0];
-    common.dt = app.simulaparam[1];
+    // set unit parameters
+    setunits(common, common.unitstyle);
+    
+    common.time = app.simulaparam[0]; // current time    
+    common.dt = app.simulaparam[1];    
+    common.currentstep = (int) common.time/common.dt;
     common.rcutml = sqrt(app.rcutsqml[0]);
             
     common.nflags = app.nsize[1];
@@ -382,6 +390,19 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     for (int i=0; i<common.dim; i++) {       
         common.pbc[i] = app.pbc[i];
         common.boxoffset[i] = app.boxoffset[i];
+    }
+
+    common.dtarray[0] = common.dt;     // dt
+    common.dtarray[1] = 0.5*common.dt; // dtf
+    common.dtarray[2] = common.dt;     // dtv
+    common.dtarray[3] = 0;             // beginstep 
+    common.dtarray[4] = common.ntimesteps; // endstep
+    common.dtarray[5] = common.currentstep;      
+        
+    if (common.ensemblemode == 2) { // NVT ensemble
+        common.tarray[0] = app.nvtparam[0]; // temp start
+        common.tarray[1] = app.nvtparam[1]; // temp stop
+        common.tarray[2] = 1/app.nvtparam[2]; // temp frequency            
     }
     
     TemplateMalloc(&common.pot1a, app.nsize[23], 0); 

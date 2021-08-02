@@ -51,6 +51,8 @@ mutable struct APPStruct
     energycal::Int64;    # turns energy calculation on or off
     forcecal::Int64;     # turns force calculation on or off
     stresscal::Int64;    # turns stress calculation on or off
+    unitstyle::Int64;    # system unit 
+    ensemblemode::Int64; # NVE, NVT
 
     time::Int64;       # initial time
     dt::Int64;         # time step
@@ -79,7 +81,8 @@ mutable struct APPStruct
     flag::Array{Int64,2};      # a list of flags 
     simparam::Array{Float64,2}; # simulation parameters
     solparam::Array{Float64,2}; # solver parameters
-    
+    nvtparam::Array{Float64,2}; # NVT parameters
+
     # machine learning potentials
     muml::Array{Float64,2};   # coefficients of ML potential
     K::Int64;          # degree of radial basis functions
@@ -224,6 +227,8 @@ function initializeapp(sourcepath,version)
     app.energycal = 0;    # turns energy calculation on or off
     app.forcecal = 0;     # turns force calculation on or off
     app.stresscal = 0;    # turns stress calculation on or off
+    app.unitstyle = 0;    # Default LJ unit style
+    app.ensemblemode = 0; # Default NVE
     app.time = 0.0;       # initial time
     app.dt = 0.0;         # time step
     app.rcutsqmax = 0.0;  # square of maximum cutoff radius

@@ -111,6 +111,16 @@ int cpuUniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, int *q
 int cpuFindAtomType(int *tlist, int* ilist, int *atomtype, int *p, int *q, int typei, int inum);
 void cpuMergeSort(int *output, int *index, int *input, int length);
 
+//********************************* simulation Box ****************************************//
+template <typename T> void cpuSetGlobalBox(T *h, T *h_inv, T *boxlo_bound, 
+        T *boxhi_bound, T *boxhi, T *boxlo, T *boxtilt, int triclinic);
+template <typename T> void cpuLamda2Box(T *x, T *lambda, T *h, T *boxlo, int dim, int n);
+template <typename T> void cpuBox2Lamda(T *lambda, T *x, T *h_inv, T *boxlo, int dim, int n);
+template <typename T> void cpuInsideBox(T *inside, T *x, T *boxlo, T *boxhi, T *lo_lamda, T *hi_lamda, 
+        T *h_inv, int triclinic, int dim, int n);
+template <typename T> void cpuMinimumImage(T *dp, T *h, int *pbc, int triclinic, int dim, int n);
+template <typename T> void cpuUnmap(T *y, T *x, T *h, int *image, int triclinic, int dim, int n);
+
 //********************************* Neighbor Lists ****************************************//
 template <typename T> void cpuBoundingBox2D(T *vc, T*wc, T *v, T *w, T *a, T *b, T *r, int *pbc);
 template <typename T> int cpuPeriodicImages2D(T *pimages, T *a, T *b, int *pbc);

@@ -1075,7 +1075,6 @@ inline void Cumsum(int *d_out, int *d_in, int *d_sums, int *d_incr, int length, 
 #endif                      
 }
 
-
 inline int FindAtomType(int *ilist, int* olist, int *atomtype, int *t0, int *t1, int typei, int na, int backend)
 {
     if (backend == 1) { 
@@ -1119,6 +1118,96 @@ inline int UniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, in
     }
 #endif             
     return 0;
+}
+
+inline void Lamda2Box(dstype *x, dstype *lambda, dstype *h, dstype *boxlo, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuLamda2Box(x, lambda, h, boxlo, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompLamda2Box(x, lambda, h, boxlo, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipLamda2Box(x, lambda, h, boxlo, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuLamda2Box(x, lambda, h, boxlo, dim, n);
+#endif
+}
+
+inline void Box2Lamda(dstype *lambda, dstype *x, dstype *h_inv, dstype *boxlo, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuBox2Lamda(lambda, x, h_inv, boxlo, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompBox2Lamda(lambda, x, h_inv, boxlo, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipBox2Lamda(lambda, x, h_inv, boxlo, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuBox2Lamda(lambda, x, h_inv, boxlo, dim, n);
+#endif
+}
+
+inline void InsideBox(dstype *inside, dstype *x, dstype *boxlo, dstype *boxhi, dstype *lo_lamda, dstype *hi_lamda, dstype *h_inv, int triclinic, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#endif
+}
+
+inline void MinimumImage(dstype *dp, dstype *h, int *pbc, int triclinic, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuMinimumImage(dp, h, pbc, triclinic, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompMinimumImage(dp, h, pbc, triclinic, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipMinimumImage(dp, h, pbc, triclinic, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuMinimumImage(dp, h, pbc, triclinic, dim, n);
+#endif
+}
+
+inline void Unmap(dstype *y, dstype *x, dstype *h, int *image, int triclinic, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuUnmap(y, x, h, image, triclinic, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompUnmap(y, x, h, image, triclinic, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipUnmap(y, x, h, image, triclinic, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuUnmap(y, x, h, image, triclinic, dim, n);
+#endif
 }
 
 inline void AtomList2D(int *alist,  int *inside, int *glistnumsum, int *glistnum, int *d_sums, int *d_incr, 

@@ -6,14 +6,14 @@ sourcepath = cdir(1:(ii-1));
 run(sourcepath + "Installation/setpath.m");
 
 app = initializeapp(sourcepath,version);
-% app.cpucompiler = "/usr/local/Cellar/llvm/11.1.0/bin/clang++";
-% app.cpuflags = "-Xclang -load -Xclang /usr/local/lib/ClangEnzyme-11.dylib";
-app.cpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
-app.cpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
-app.cpumacros = "-std=c++11 -D _ENZYME";
-app.gpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
-app.gpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
-app.gpumacros = "--cuda-gpu-arch=sm_60 -std=c++11 -D _ENZYME";
+app.cpucompiler = "/usr/local/Cellar/llvm/11.1.0/bin/clang++";
+app.cpuflags = "-Xclang -load -Xclang /usr/local/lib/ClangEnzyme-11.dylib";
+% app.cpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
+% app.cpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
+% app.cpumacros = "-std=c++11 -D _ENZYME";
+% app.gpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
+% app.gpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
+% app.gpumacros = "--cuda-gpu-arch=sm_60 -std=c++11 -D _ENZYME";
 app.appname = "test";
 app.currentdir = cdir; % current directory
 app.configfile = "configs/CONFIGS1"; % configuration file

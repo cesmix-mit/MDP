@@ -11,11 +11,6 @@
 #include <math.h>
 #include <algorithm>
 
-#define IMGMASK 1023
-#define IMGMAX 512
-#define IMGBITS 10
-#define IMG2BITS 20
-
 using std::min;
 using std::max;
 
@@ -257,9 +252,6 @@ template <typename T> __global__ void gpuKernelComputeXCM(T *axcm, T *x, T *mass
         int i = ilist[ii]; 
         T massone = mass[type[i]];
         T y0, y1, y2;  
-//         int xbox = (image[i] & IMGMASK) - IMGMAX;
-//         int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-//         int zbox = (image[i] >> IMG2BITS) - IMGMAX;
         if (triclinic == 0) {
             y0 = x[0+i*dim] + image[i*dim+0]*box[0];
             y1 = x[1+i*dim] + image[i*dim+1]*box[1];
@@ -330,9 +322,6 @@ template <typename T> __global__ void gpuKernelComputeGyration(T * ag, T *xcm, T
         int i = ilist[ii]; 
         T massone = mass[type[i]];
         T y0, y1, y2;  
-//         int xbox = (image[i] & IMGMASK) - IMGMAX;
-//         int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-//         int zbox = (image[i] >> IMG2BITS) - IMGMAX;
         if (triclinic == 0) {
             y0 = x[0+i*dim] + image[i*dim+0]*box[0];
             y1 = x[1+i*dim] + image[i*dim+1]*box[1];
@@ -376,9 +365,6 @@ template <typename T> __global__ void gpuKernelComputeAngmom(T *p, T *xcm, T *x,
         int i = ilist[ii]; 
         T massone = mass[type[i]];
         T y0, y1, y2;  
-//         int xbox = (image[i] & IMGMASK) - IMGMAX;
-//         int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-//         int zbox = (image[i] >> IMG2BITS) - IMGMAX;
         if (triclinic == 0) {
             y0 = x[0+i*dim] + image[i*dim+0]*box[0];
             y1 = x[1+i*dim] + image[i*dim+1]*box[1];
@@ -424,9 +410,6 @@ template <typename T> __global__ void gpuKernelComputeTorque(T *tlocal, T *xcm, 
   while (ii < inum) {
         int i = ilist[ii]; 
         T y0, y1, y2;  
-//         int xbox = (image[i] & IMGMASK) - IMGMAX;
-//         int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-//         int zbox = (image[i] >> IMG2BITS) - IMGMAX;
         if (triclinic == 0) {
             y0 = x[0+i*dim] + image[i*dim+0]*box[0];
             y1 = x[1+i*dim] + image[i*dim+1]*box[1];
@@ -472,9 +455,6 @@ template <typename T> __global__ void gpuKernelComputeInertia(T *ione, T *xcm, T
         int i = ilist[ii]; 
         T massone = mass[type[i]];
         T y0, y1, y2;  
-//         int xbox = (image[i] & IMGMASK) - IMGMAX;
-//         int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-//         int zbox = (image[i] >> IMG2BITS) - IMGMAX;
         if (triclinic == 0) {
             y0 = x[0+i*dim] + image[i*dim+0]*box[0];
             y1 = x[1+i*dim] + image[i*dim+1]*box[1];
@@ -1335,9 +1315,6 @@ template <typename T> __global__ void gpuKernelComputeMSD(T *vec, T *x, T *xorig
     while (ii < inum) {
         int i = ilist[ii];
         if (dim==3) {
-//             int xbox = (image[i] & IMGMASK) - IMGMAX;
-//             int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
-//             int zbox = (image[i] >> IMG2BITS) - IMGMAX;
             T xtmp, ytmp, ztmp;
             if (triclinic == 0) {
                 xtmp = x[i*dim+0] + image[i*dim+0]*box[0] - xcm[0];
@@ -1360,8 +1337,6 @@ template <typename T> __global__ void gpuKernelComputeMSD(T *vec, T *x, T *xorig
             vec[ii+1*inum] = dy*dy;
             vec[ii+2*inum] = dz*dz;
         } else {
-//             int xbox = (image[i] & IMGMASK) - IMGMAX;
-//             int ybox = (image[i] >> IMGBITS & IMGMASK) - IMGMAX;
             T xtmp, ytmp;
             if (triclinic == 0) {
                 xtmp = x[i*dim+0] + image[i*dim+0]*box[0] - xcm[0];

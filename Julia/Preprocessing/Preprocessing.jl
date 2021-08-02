@@ -123,7 +123,7 @@ else
     app.ncmu4b = 0;
 end
 
-app.flag = [app.descriptor app.spectrum app.training app.runMD app.potentialform app.neighpair app.energycal app.forcecal app.stresscal app.neighcell app.decomposition app.chemtype app.dftdata];
+app.flag = [app.descriptor app.spectrum app.training app.runMD app.potentialform app.neighpair app.energycal app.forcecal app.stresscal app.neighcell app.decomposition app.chemtype app.dftdata app.unitstyle app.ensemblemode];
 
 rcut = [reshape([app.rcutml],1,1) app.rcut2a app.rcut2b app.rcut2c app.rcut3a app.rcut3b app.rcut3c app.rcut4a app.rcut4b];
 rcutmax = maximum(rcut);     

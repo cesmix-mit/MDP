@@ -256,6 +256,7 @@ struct commonstruct {
     int forcecal;     // turns force calculation on or off
     int stresscal;     // turns stress calculation on or off
     int triclinic;     // types of the simulation box  
+    int unitstyle;
     int vflag=0;
     int vdeform=0;
     
@@ -379,12 +380,12 @@ struct commonstruct {
     dstype *ffixvelocity=NULL;
         
     // time integration parameters
-    dstype *dtarray;
-    dstype *tarray;
-    dstype *eta;
-    dstype *eta_dot;
-    dstype *eta_dotdot;
-    dstype *eta_mass;
+    dstype dtarray[10];
+    dstype tarray[10];
+    dstype eta[10];
+    dstype eta_dot[10];
+    dstype eta_dotdot[10];
+    dstype eta_mass[10];
     dstype nvtenergy;
     dstype vlimitsq;
     int eta_mass_flag;
@@ -442,7 +443,8 @@ struct commonstruct {
     dstype enthalpy = 0.0;
     dstype tdof;
     dstype extra_dof;
-    
+
+    // default LJ unit system
     dstype boltz = 1.0;
     dstype hplanck = 1.0;
     dstype mvv2e = 1.0;
@@ -550,6 +552,7 @@ struct appstruct {
     dstype *simulaparam=NULL; // simulation parameters   
     dstype *solversparam=NULL; // solvers parameters              
     dstype *physicsparam=NULL; // general physical parameters
+    dstype *nvtparam=NULL; // NVT parameters         
     dstype *eta=NULL; // hyperparameters
     int *atomnumber=NULL;   // a list of atomic numbers for every atom type
     int *kappa=NULL; // integer parameters                  

@@ -100,3 +100,14 @@ nstr = gencorestr(mstr);
 mstr = "template <typename T> void gpuPBC(T *x, T *v, int *image, T *boxhi, T *boxlo, T *hi_lambda, T *lo_lambda, T *h, T *h_inv, T *h_rate, int *pbc, int vdeform, int triclinic, int dim, int nlocal);";
 nstr = gencorestr(mstr);
 
+mstr = "template <typename T> void gpuLamda2Box(T *x, T *lambda, T *h, T *boxlo, int dim, int n);";
+nstr = gencorestr(mstr);
+mstr = "template <typename T> void gpuBox2Lamda(T *lambda, T *x, T *h_inv, T *boxlo, int dim, int n);";
+nstr = gencorestr(mstr);
+mstr = "template <typename T> void gpuInsideBox(T *inside, T *x, T *boxlo, T *boxhi, T *lo_lamda, T *hi_lamda, T *h_inv, int triclinic, int dim, int n);";
+nstr = gencorestr(mstr);
+mstr = "template <typename T> void gpuMinimumImage(T *dp, T *h, int *pbc, int triclinic, int dim, int n);";
+nstr = gencorestr(mstr);
+mstr = "template <typename T> void gpuUnmap(T *y, T *x, T *h, int *image, int triclinic, int dim, int n);";
+nstr = gencorestr(mstr);
+

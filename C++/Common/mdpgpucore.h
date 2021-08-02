@@ -116,8 +116,15 @@ template <typename T> void gpuRotc(T *X, T *Y, T *Z, T *R, T *x, T *y, T *z, int
 int gpuUniqueSort(int *b, int *c, int *d, int *e, int *a, int *p, int *t, int *q, int n);
 int gpuFindAtomType(int *tlist, int* ilist, int *atomtype, int *p, int *q, int typei, int inum);
 
-//********************************* Neighbor Lists ****************************************//
+//********************************* simulation Box ****************************************//
+template <typename T> void gpuLamda2Box(T *x, T *lambda, T *h, T *boxlo, int dim, int n);
+template <typename T> void gpuBox2Lamda(T *lambda, T *x, T *h_inv, T *boxlo, int dim, int n);
+template <typename T> void gpuInsideBox(T *inside, T *x, T *boxlo, T *boxhi, T *lo_lamda, T *hi_lamda, 
+        T *h_inv, int triclinic, int dim, int n);
+template <typename T> void gpuMinimumImage(T *dp, T *h, int *pbc, int triclinic, int dim, int n);
+template <typename T> void gpuUnmap(T *y, T *x, T *h, int *image, int triclinic, int dim, int n);
 
+//********************************* Neighbor Lists ****************************************//
 template <typename T> void gpuAtomList2D(int *alist,  int *inside, int *glistnumsum, int *glistnum, 
         int *d_sums, int *d_incr, T *x, T *pimages, T *wc, T *s2rmap, int inum, int pnum, int dim);
 template <typename T> void gpuAtomList3D(int *alist,  int *inside, int *glistnumsum, int *glistnum, 
