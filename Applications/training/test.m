@@ -59,6 +59,10 @@ app.pot2a = [1];     % list of nonbonded pair potentials
 app.mu2a = [A B];    % parameters for  LJ potential
 app.rcut2a = [8.5];  % cut-off radius 
 
+app.unitstyle = 2;
+app.lattice = setlattice("bcc", 3.316);
+app.region = setregion([0 0 0], [8 8 8]);
+
 % train and validate the potential
 app = mdp(app);
 

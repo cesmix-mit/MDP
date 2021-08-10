@@ -216,6 +216,564 @@ template <typename T> static void TemplateFree(T *data, int backend)
 #endif                      
 }
 
+void print1iarray(Int* a, Int m)
+{    
+    for (Int i=0; i<m; i++)
+        cout << a[i] << "   ";
+    cout << endl;
+}
+
+void print2iarray(Int* a, Int m, Int n)
+{
+    for (Int i=0; i<m; i++) {
+        for (Int j=0; j<n; j++)
+            cout << a[j*m+i] << "   ";
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void print3iarray(Int* a, Int m, Int n, Int p)
+{    
+    for (Int k=0; k<p; k++) {
+        for (Int i=0; i<m; i++) {
+            for (Int j=0; j<n; j++)
+                cout << a[k*n*m+j*m+i] << "   ";
+            cout << endl;
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+
+void print1darray(dstype* a, Int m)
+{
+    //cout.precision(4);
+    for (Int i=0; i<m; i++)
+        cout << scientific << a[i] << "   ";
+    cout << endl;
+}
+
+void printArray2D(Int* a, Int m, Int n, Int backend)
+{
+    if (backend==2) {
+#ifdef HAVE_CUDA
+        Int N = m*n;
+        Int *b = (Int*) malloc (sizeof (Int)*N);
+        cudaMemcpy(b, a, N*sizeof(Int), cudaMemcpyDeviceToHost);
+        print2iarray(b, m, n);
+        free(b);
+#endif
+    }
+    else
+        print2iarray(a, m, n);
+}
+
+void printArray3D(Int* a, Int m, Int n, Int p, Int backend)
+{
+    if (backend==2) {
+#ifdef HAVE_CUDA
+        Int N = m*n*p;
+        Int *b = (Int*) malloc (sizeof (Int)*N);
+        cudaMemcpy(b, a, N*sizeof(Int), cudaMemcpyDeviceToHost);
+        print3iarray(b, m, n, p);
+        free(b);
+#endif
+    }
+    else
+        print3iarray(a, m, n, p);
+}
+
+void print2darray(dstype* a, Int m, Int n)
+{
+    //cout.precision(4);
+    for (Int i=0; i<m; i++) {
+        for (Int j=0; j<n; j++)
+            cout << scientific << a[j*m+i] << "   ";
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void print3darray(dstype* a, Int m, Int n, Int p)
+{
+    //cout.precision(8);
+    for (Int k=0; k<p; k++) {
+        for (Int i=0; i<m; i++) {
+            for (Int j=0; j<n; j++)
+                cout << scientific << a[k*n*m+j*m+i] << "   ";
+            cout << endl;
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void printArray2D(dstype* a, Int m, Int n, Int backend)
+{
+    if (backend==2) {
+#ifdef  HAVE_CUDA        
+        Int N = m*n;
+        dstype *b = (dstype*) malloc (sizeof (dstype)*N);
+        cudaMemcpy(b, a, N*sizeof(dstype), cudaMemcpyDeviceToHost);    
+        print2darray(b, m, n);
+        free(b);
+#endif        
+    }
+    else
+        print2darray(a, m, n);
+}
+
+void printArray3D(dstype* a, Int m, Int n, Int p, Int backend)
+{
+    if (backend==2) {
+#ifdef  HAVE_CUDA        
+        Int N = m*n*p;
+        dstype *b = (dstype*) malloc (sizeof (dstype)*N);
+        cudaMemcpy(b, a, N*sizeof(dstype), cudaMemcpyDeviceToHost);    
+        print3darray(b, m, n, p);
+        free(b);
+#endif        
+    }
+    else
+        print3darray(a, m, n, p);
+}
+
+struct latticestruct {     
+    dstype *atombasis=NULL;//[12*3]; // fractional coords of each basis atom within unit cell (0 <= coord < 1)
+    dstype *primitive=NULL;//[9]; // lattice <-> box transform matrices
+    dstype *primitinv=NULL;//[9];
+    dstype *rotaterow=NULL;//[9];
+    dstype *rotatecol=NULL;//[9];
+    dstype *spacing=NULL;//[3]; // lattice scale factors in 3 dims
+    dstype *origin=NULL;//[3]; // lattice origin
+    dstype *sublo=NULL;//[3];  // sub-box bounds in lattice space on this proc
+    dstype *subhi=NULL;//[3];  // sub-box bounds in lattice space on this proc
+    dstype *a1=NULL;//[3]; // edge vectors of unit cell  
+    dstype *a2=NULL;//[3]; // edge vectors of unit cell  
+    dstype *a3=NULL;//[3]; // edge vectors of unit cell  
+    dstype scale;
+    int *atomtype;  // type of basis atoms
+    int *orientx=NULL;//[3]; // lattice orientation vecs
+    int *orienty=NULL;//[3]; // orientx = what lattice dir lies
+    int *orientz=NULL;//[3]; //           along x dim in box
+    int style;  // NONE,SC,FCC,etc
+    int spaceflag;    
+    int nbasis;                             // # of basis atoms in unit cell    
+    int ilo, ihi, jlo, jhi, klo, khi;       // lattice bounds for sub-box on this proc
+    int natom;                              // # of atoms in the sub-box on this proc
+
+    void latticebounds()
+    {
+      ilo = static_cast<int> (sublo[0]) - 1;
+      jlo = static_cast<int> (sublo[1]) - 1;
+      klo = static_cast<int> (sublo[2]) - 1;
+      ihi = static_cast<int> (subhi[0]) + 1;
+      jhi = static_cast<int> (subhi[1]) + 1;
+      khi = static_cast<int> (subhi[2]) + 1;
+
+      if (sublo[0] < 0.0) ilo--;
+      if (sublo[1] < 0.0) jlo--;
+      if (sublo[2] < 0.0) klo--;
+      
+      int i,j,k,m;
+      natom = 0;
+      for (k = klo; k <= khi; k++) 
+        for (j = jlo; j <= jhi; j++) 
+          for (i = ilo; i <= ihi; i++) 
+            for (m = 0; m < nbasis; m++) 
+                natom += 1;            
+    }
+    
+    void printout(int backend)
+    {
+        printf("style, spaceflag, nbasis, natom, ilo, ihi, jlo, jhi, klo, khi, scale\n");
+        printf("%i %i %i %i %i %i %i %i %i %i %g\n", style, spaceflag, nbasis, natom, ilo, ihi, jlo, jhi, klo, khi, scale);        
+        printf("origin: "); printArray2D(origin, 1, 3, backend);
+        printf("spacing: "); printArray2D(spacing, 1, 3, backend);
+        printf("orientx: "); printArray2D(orientx, 1, 3, backend);
+        printf("orienty: "); printArray2D(orienty, 1, 3, backend);
+        printf("orientz: "); printArray2D(orientz, 1, 3, backend);
+        printf("a1: "); printArray2D(a1, 1, 3, backend);
+        printf("a2: "); printArray2D(a2, 1, 3, backend);
+        printf("a3: "); printArray2D(a3, 1, 3, backend);
+        printf("sublo: "); printArray2D(sublo, 1, 3, backend);
+        printf("subhi: "); printArray2D(subhi, 1, 3, backend);                
+        printf("type: "); printArray2D(atomtype, 1, nbasis, backend);
+        printf("basis: \n"); printArray2D(atombasis, 3, nbasis, backend);
+        printf("primitive: \n"); printArray2D(primitive, 3, 3, backend);
+        printf("primitinv: \n"); printArray2D(primitinv, 3, 3, backend);
+        printf("rotaterow: \n"); printArray2D(rotaterow, 3, 3, backend);
+        printf("rotatecol: \n"); printArray2D(rotatecol, 3, 3, backend);
+    }    
+        
+    void allocatememory(int backend)
+    {
+        TemplateMalloc(&atombasis, 36, backend);
+        TemplateMalloc(&atomtype, 12, backend);
+        TemplateMalloc(&primitive, 9, backend);
+        TemplateMalloc(&primitinv, 9, backend);   
+        TemplateMalloc(&rotaterow, 9, backend);    
+        TemplateMalloc(&rotatecol, 9, backend);    
+        TemplateMalloc(&spacing, 3, backend);    
+        TemplateMalloc(&origin, 3, backend);
+        TemplateMalloc(&sublo, 3, backend);    
+        TemplateMalloc(&subhi, 3, backend);    
+        TemplateMalloc(&a1, 3, backend);
+        TemplateMalloc(&a2, 3, backend);
+        TemplateMalloc(&a3, 3, backend);
+        TemplateMalloc(&orientx, 3, backend);
+        TemplateMalloc(&orienty, 3, backend);
+        TemplateMalloc(&orientz, 3, backend);
+    }    
+    
+    void freememory(int backend)
+    {
+        TemplateFree(atombasis, backend);
+        TemplateFree(atomtype, backend);
+        TemplateFree(primitive, backend);
+        TemplateFree(primitinv, backend);   
+        TemplateFree(rotaterow, backend);    
+        TemplateFree(rotatecol, backend);    
+        TemplateFree(spacing, backend);    
+        TemplateFree(origin, backend);
+        TemplateFree(sublo, backend);    
+        TemplateFree(subhi, backend);    
+        TemplateFree(a1, backend);
+        TemplateFree(a2, backend);
+        TemplateFree(a3, backend);
+        TemplateFree(orientx, backend);
+        TemplateFree(orienty, backend);
+        TemplateFree(orientz, backend);
+    }    
+};
+
+void copylattice(latticestruct &dlat, latticestruct &hlat, int backend)
+{
+    dlat.style = hlat.style;  
+    dlat.spaceflag = hlat.spaceflag;    
+    dlat.nbasis = hlat.nbasis;                  
+    dlat.ilo = hlat.ilo;                  
+    dlat.ihi = hlat.ihi;                  
+    dlat.jlo = hlat.jlo;                  
+    dlat.jhi = hlat.jhi;                  
+    dlat.klo = hlat.klo;                  
+    dlat.khi = hlat.khi;                  
+    TemplateCopytoDevice(dlat.atombasis, hlat.atombasis, 36, backend);
+    TemplateCopytoDevice(dlat.primitive, hlat.primitive, 9, backend);
+    TemplateCopytoDevice(dlat.primitive, hlat.primitinv, 9, backend);
+    TemplateCopytoDevice(dlat.rotaterow, hlat.rotaterow, 9, backend);
+    TemplateCopytoDevice(dlat.rotatecol, hlat.rotatecol, 9, backend);
+    TemplateCopytoDevice(dlat.spacing, hlat.spacing, 3, backend);
+    TemplateCopytoDevice(dlat.origin, hlat.origin, 3, backend);
+    TemplateCopytoDevice(dlat.sublo, hlat.sublo, 3, backend);
+    TemplateCopytoDevice(dlat.subhi, hlat.subhi, 3, backend);
+    TemplateCopytoDevice(dlat.a1, hlat.a1, 3, backend);
+    TemplateCopytoDevice(dlat.a2, hlat.a2, 3, backend);
+    TemplateCopytoDevice(dlat.a3, hlat.a3, 3, backend);
+    TemplateCopytoDevice(dlat.orientx, hlat.orientx, 3, backend);
+    TemplateCopytoDevice(dlat.orienty, hlat.orienty, 3, backend);
+    TemplateCopytoDevice(dlat.orientz, hlat.orientz, 3, backend);
+}
+
+struct domainstruct {     
+    int box_exist;                          // 0 = not yet created, 1 = exists
+    int dimension;                          // 2 = 2d, 3 = 3d
+    int nonperiodic;                        // 0 = periodic in all 3 dims
+                                            // 1 = periodic or fixed in all 6
+                                            // 2 = shrink-wrap in any of 6
+    int triclinic;    // 0 = orthog box, 1 = triclinic
+    int tiltsmall;    // 1 if limit tilt, else 0  
+    int box_change;           // 1 if any of next 3 flags are set, else 0
+    int box_change_size;      // 1 if box size changes, 0 if not
+    int box_change_shape;     // 1 if box shape changes, 0 if not
+    int box_change_domain;    // 1 if proc sub-domains change, 0 if not
+    int deform_flag;        // 1 if fix deform exist, else 0
+    int deform_vremap;      // 1 if fix deform remaps v, else 0
+    int deform_groupbit;    // atom group to perform v remap for    
+    int *boundary=NULL;//[3*2];    // settings for 6 boundaries
+                         // 0 = periodic
+                         // 1 = fixed non-periodic
+                         // 2 = shrink-wrap non-periodic
+                         // 3 = shrink-wrap non-per w/ min
+    int *pbc=NULL;//[3];          // xyz periodicity as array
+    
+    dstype *face=NULL;//[6*3];   // unit normals of 6 box faces
+    dstype *corners=NULL;//[8*3];                     // 8 corner points
+    dstype *faces=NULL;//[6*4*3];   // 4 corner pts of 6 prism faces   
+    dstype *boxhi=NULL;//[3];   // orthogonal box global bounds
+    dstype *boxlo=NULL;//[3];   // orthogonal box global bounds
+    dstype *boxtilt=NULL;//[3]; // 3 tilt factors
+    dstype *boxhi_lamda=NULL;//[3]; // lamda box = (0,1)
+    dstype *boxlo_lamda=NULL;//[3]; // lamda box = (0,1)
+    dstype *boxhi_bound=NULL;//[3];  // bounding box of tilted domain
+    dstype *boxlo_bound=NULL;//[3];  // bounding box of tilted domain
+    dstype *subhi=NULL;//[3]; // sub-box bounds on this proc
+    dstype *sublo=NULL;//[3]; // sub-box bounds on this proc
+    dstype *ssubhi=NULL;//[3]; // shifted sub-box on this proc
+    dstype *ssublo=NULL;//[3]; // shifted sub-box on this proc
+    dstype *bsubhi=NULL;//[3]; // bounding for sub-box on this proc
+    dstype *bsublo=NULL;//[3]; // bounding for sub-box on this proc
+    dstype *subhi_lamda=NULL;//[3];  // bounds of subbox in lamda
+    dstype *sublo_lamda=NULL;//[3];  // bounds of subbox in lamda
+    dstype *h=NULL;//[6]               // shape matrix in Voigt ordering
+                                      // Voigt = xx,yy,zz,yz,xz,xy
+    dstype *h_inv=NULL;//[6];  // inverse of h
+    dstype *h_rate=NULL;//[6]; // rate of box size/shape change
+
+    void printout(int backend)
+    {
+        printf("boxlo: "); printArray2D(boxlo, 1, 3, backend);
+        printf("boxhi: "); printArray2D(boxhi, 1, 3, backend);
+        printf("boxtilt: "); printArray2D(boxtilt, 1, 3, backend);
+        printf("sublo: "); printArray2D(sublo, 1, 3, backend);
+        printf("subhi: "); printArray2D(subhi, 1, 3, backend);
+        printf("sublo_lamda: "); printArray2D(sublo_lamda, 1, 3, backend);
+        printf("subhi_lamda: "); printArray2D(subhi_lamda, 1, 3, backend);
+        printf("bsublo: "); printArray2D(bsublo, 1, 3, backend);
+        printf("bsubhi: "); printArray2D(bsubhi, 1, 3, backend);
+        printf("ssublo: "); printArray2D(ssublo, 1, 3, backend);
+        printf("ssubhi: "); printArray2D(ssubhi, 1, 3, backend);
+        printf("h: "); printArray2D(h, 1, 6, backend);
+        printf("h_inv: "); printArray2D(h_inv, 1, 6, backend);
+    }    
+    
+    void allocatememory(int backend)
+    {
+        TemplateMalloc(&boundary, 6, backend);
+        TemplateMalloc(&pbc, 3, backend);
+        TemplateMalloc(&face, 18, backend);
+        TemplateMalloc(&corners, 24, backend);   
+        TemplateMalloc(&faces, 72, backend);   
+        TemplateMalloc(&boxlo, 3, backend);    
+        TemplateMalloc(&boxhi, 3, backend);    
+        TemplateMalloc(&boxtilt, 3, backend);    
+        TemplateMalloc(&boxhi_lamda, 3, backend);
+        TemplateMalloc(&boxlo_lamda, 3, backend);    
+        TemplateMalloc(&boxhi_bound, 3, backend);    
+        TemplateMalloc(&boxlo_bound, 3, backend);
+        TemplateMalloc(&subhi, 3, backend);
+        TemplateMalloc(&sublo, 3, backend);
+        TemplateMalloc(&ssubhi, 3, backend);
+        TemplateMalloc(&ssublo, 3, backend);
+        TemplateMalloc(&bsubhi, 3, backend);
+        TemplateMalloc(&bsublo, 3, backend);
+        TemplateMalloc(&subhi_lamda, 3, backend);
+        TemplateMalloc(&sublo_lamda, 3, backend);
+        TemplateMalloc(&h, 6, backend);
+        TemplateMalloc(&h_inv, 6, backend);
+        TemplateMalloc(&h_rate, 6, backend);
+    }    
+    
+    void freememory(int backend)
+    {
+        TemplateFree(boundary, backend);
+        TemplateFree(pbc, backend);
+        TemplateFree(face, backend);   
+        TemplateFree(corners, backend);   
+        TemplateFree(faces, backend);   
+        TemplateFree(boxlo, backend);    
+        TemplateFree(boxhi, backend);    
+        TemplateFree(boxtilt, backend);    
+        TemplateFree(boxhi_lamda, backend);
+        TemplateFree(boxlo_lamda, backend);    
+        TemplateFree(boxhi_bound, backend);    
+        TemplateFree(boxlo_bound, backend);
+        TemplateFree(subhi, backend);
+        TemplateFree(sublo, backend);
+        TemplateFree(ssubhi, backend);
+        TemplateFree(ssublo, backend);
+        TemplateFree(bsubhi, backend);
+        TemplateFree(bsublo, backend);
+        TemplateFree(subhi_lamda, backend);
+        TemplateFree(sublo_lamda, backend);
+        TemplateFree(h, backend);
+        TemplateFree(h_inv, backend);
+        TemplateFree(h_rate, backend);
+    }        
+};
+
+void copydomain(domainstruct &ddom, domainstruct &hdom, int backend)
+{
+    ddom.box_exist = hdom.box_exist;  
+    ddom.dimension = hdom.dimension;    
+    ddom.nonperiodic = hdom.nonperiodic;                  
+    ddom.triclinic = hdom.triclinic;   
+    ddom.tiltsmall = hdom.tiltsmall;   
+    ddom.box_change = hdom.box_change;   
+    ddom.box_change_size = hdom.box_change_size;   
+    ddom.box_change_shape = hdom.box_change_shape;   
+    ddom.box_change_domain = hdom.box_change_domain;   
+    ddom.deform_flag = hdom.deform_flag;   
+    ddom.deform_vremap = hdom.deform_vremap;   
+    ddom.deform_groupbit = hdom.deform_groupbit;   
+    
+    TemplateCopytoDevice(ddom.boundary, hdom.boundary, 6, backend);
+    TemplateCopytoDevice(ddom.pbc, hdom.pbc, 3, backend);
+    TemplateCopytoDevice(ddom.face, hdom.face, 18, backend);
+    TemplateCopytoDevice(ddom.corners, hdom.corners, 24, backend);
+    TemplateCopytoDevice(ddom.faces, hdom.faces, 72, backend);
+    TemplateCopytoDevice(ddom.boxlo, hdom.boxlo, 3, backend);
+    TemplateCopytoDevice(ddom.boxhi, hdom.boxhi, 3, backend);
+    TemplateCopytoDevice(ddom.boxtilt, hdom.boxtilt, 3, backend);
+    TemplateCopytoDevice(ddom.boxlo_lamda, hdom.boxlo_lamda, 3, backend);
+    TemplateCopytoDevice(ddom.boxhi_lamda, hdom.boxhi_lamda, 3, backend);
+    TemplateCopytoDevice(ddom.boxlo_bound, hdom.boxlo_bound, 3, backend);
+    TemplateCopytoDevice(ddom.boxhi_bound, hdom.boxhi_bound, 3, backend);        
+    TemplateCopytoDevice(ddom.sublo, hdom.sublo, 3, backend);
+    TemplateCopytoDevice(ddom.subhi, hdom.subhi, 3, backend);
+    TemplateCopytoDevice(ddom.ssublo, hdom.ssublo, 3, backend);
+    TemplateCopytoDevice(ddom.ssubhi, hdom.ssubhi, 3, backend);
+    TemplateCopytoDevice(ddom.bsublo, hdom.bsublo, 3, backend);
+    TemplateCopytoDevice(ddom.bsubhi, hdom.bsubhi, 3, backend);
+    TemplateCopytoDevice(ddom.sublo_lamda, hdom.sublo_lamda, 3, backend);
+    TemplateCopytoDevice(ddom.subhi_lamda, hdom.subhi_lamda, 3, backend);    
+    TemplateCopytoDevice(ddom.h, hdom.h, 6, backend);
+    TemplateCopytoDevice(ddom.h_inv, hdom.h_inv, 6, backend);
+    TemplateCopytoDevice(ddom.h_rate, hdom.h_rate, 6, backend);
+}
+
+struct regionstruct {       
+    int style;
+    int triclinic; 
+    int interior;                     // 1 for interior, 0 for exterior
+    int scaleflag;                    // 1 for lattice, 0 for box  
+    int bboxflag;                // 1 if bounding box is computable
+    int varshape;                // 1 if region shape changes over time
+    int dynamic;                 // 1 if position/orient changes over time
+    int moveflag, rotateflag;    // 1 if position/orientation changes
+    int openflag;                // 1 if any face is open
+    
+    dstype *r=NULL;                   // distance between particle & surf, r > 0.0
+    dstype *delx=NULL;
+    dstype *dely=NULL;
+    dstype *delz=NULL;    // vector from surface pt to particle
+    dstype *radius=NULL;              // curvature of region at contact point
+    int *iwall=NULL;                  // unique id of wall for storing shear history    
+    int *openfaces=NULL;//[6];           // flags for which faces are open
+    int *tri=NULL;//[12*3];    // 3 corner pts of 12 triangles (2 per face)
+    dstype theta; // orientation
+    dstype rprev; // speed of time-dependent radius, if applicable
+    
+    dstype *face=NULL;//[6*3];   // unit normals of 6 prism faces
+    dstype *corners=NULL;//[8*3];  // 8 corner pts of prism     
+    dstype *faces=NULL;//[6*4*3];   // 4 corner pts of 6 prism faces   
+    dstype *boxlo=NULL;//[3];
+    dstype *boxhi=NULL;//[3];
+    dstype *boxtilt=NULL;//[3];
+    dstype *clo=NULL;//[3]; // opposite corners of prism
+    dstype *chi=NULL;//[3]; // opposite corners of prism   
+    dstype *scale=NULL;//[3];
+    dstype *extent_lo=NULL;//[3];
+    dstype *extent_hi=NULL;//[3];
+    dstype *a=NULL;//[3];  // edge vectors of region
+    dstype *b=NULL;//[3];  // edge vectors of region
+    dstype *c=NULL;//[3];  // edge vectors of region
+    dstype *h=NULL;//[6];
+    dstype *h_inv=NULL;//[6];    
+    dstype *dx=NULL;//[3];    // current displacement 
+    dstype *v=NULL;//[3];                 // translational velocity
+    dstype *rpoint=NULL;//[3];            // current origin of rotation axis
+    dstype *omega=NULL;//[3];             // angular velocity    
+    dstype *xcenter=NULL;//[3];    // translated/rotated center of cylinder/sphere (only used if varshape)
+    dstype *prev=NULL;//[5];       // stores displacement (X3), angle and if
+    
+    void allocatememory(int backend)
+    {
+        TemplateMalloc(&face, 18, backend);
+        TemplateMalloc(&corners, 24, backend);
+        TemplateMalloc(&faces, 72, backend);   
+        TemplateMalloc(&boxlo, 3, backend);    
+        TemplateMalloc(&boxhi, 3, backend);    
+        TemplateMalloc(&boxtilt, 3, backend);    
+        TemplateMalloc(&clo, 3, backend);
+        TemplateMalloc(&chi, 3, backend);    
+        TemplateMalloc(&scale, 3, backend);    
+        TemplateMalloc(&extent_lo, 3, backend);
+        TemplateMalloc(&extent_hi, 3, backend);
+        TemplateMalloc(&a, 3, backend);
+        TemplateMalloc(&b, 3, backend);
+        TemplateMalloc(&c, 3, backend);
+        TemplateMalloc(&h, 6, backend);
+        TemplateMalloc(&h_inv, 6, backend);
+        TemplateMalloc(&dx, 3, backend);
+        TemplateMalloc(&v, 3, backend);
+        TemplateMalloc(&rpoint, 3, backend);
+        TemplateMalloc(&omega, 3, backend);
+        TemplateMalloc(&xcenter, 3, backend);
+        TemplateMalloc(&prev, 5, backend);
+        TemplateMalloc(&openfaces, 6, backend);
+        TemplateMalloc(&tri, 36, backend);
+    }    
+                
+    void freememory(int backend)
+    {
+        TemplateFree(face, backend);
+        TemplateFree(corners, backend);
+        TemplateFree(faces, backend);   
+        TemplateFree(boxlo, backend);    
+        TemplateFree(boxhi, backend);    
+        TemplateFree(boxtilt, backend);    
+        TemplateFree(clo, backend);
+        TemplateFree(chi, backend);    
+        TemplateFree(scale, backend);    
+        TemplateFree(extent_lo, backend);
+        TemplateFree(extent_hi, backend);
+        TemplateFree(a, backend);
+        TemplateFree(b, backend);
+        TemplateFree(c, backend);
+        TemplateFree(h, backend);
+        TemplateFree(h_inv, backend);
+        TemplateFree(dx, backend);
+        TemplateFree(v, backend);
+        TemplateFree(rpoint, backend);
+        TemplateFree(omega, backend);
+        TemplateFree(xcenter, backend);
+        TemplateFree(prev, backend);
+        TemplateFree(openfaces, backend);
+        TemplateFree(tri, backend);
+    }            
+};
+
+void copyregion(regionstruct &dreg, regionstruct &hreg, int backend)
+{
+    dreg.style = hreg.style;  
+    dreg.interior = hreg.interior;    
+    dreg.scaleflag = hreg.scaleflag;                  
+    dreg.bboxflag = hreg.bboxflag;   
+    dreg.varshape = hreg.varshape;   
+    dreg.dynamic = hreg.dynamic;   
+    dreg.moveflag = hreg.moveflag;   
+    dreg.rotateflag = hreg.rotateflag;   
+    dreg.openflag = hreg.openflag;   
+        
+    TemplateCopytoDevice(dreg.face, hreg.face, 18, backend);
+    TemplateCopytoDevice(dreg.corners, hreg.corners, 24, backend);
+    TemplateCopytoDevice(dreg.faces, hreg.faces, 72, backend);
+    TemplateCopytoDevice(dreg.boxlo, hreg.boxlo, 3, backend);
+    TemplateCopytoDevice(dreg.boxhi, hreg.boxhi, 3, backend);
+    TemplateCopytoDevice(dreg.boxtilt, hreg.boxtilt, 3, backend);
+    TemplateCopytoDevice(dreg.clo, hreg.clo, 3, backend);
+    TemplateCopytoDevice(dreg.chi, hreg.chi, 3, backend);
+    TemplateCopytoDevice(dreg.scale, hreg.scale, 3, backend);
+    TemplateCopytoDevice(dreg.extent_lo, hreg.extent_lo, 3, backend);        
+    TemplateCopytoDevice(dreg.extent_hi, hreg.extent_hi, 3, backend);        
+    TemplateCopytoDevice(dreg.a, hreg.a, 3, backend);
+    TemplateCopytoDevice(dreg.b, hreg.b, 3, backend);
+    TemplateCopytoDevice(dreg.c, hreg.c, 3, backend);
+    TemplateCopytoDevice(dreg.h, hreg.h, 6, backend);
+    TemplateCopytoDevice(dreg.h_inv, hreg.h_inv, 6, backend);    
+    TemplateCopytoDevice(dreg.dx, hreg.dx, 3, backend);
+    TemplateCopytoDevice(dreg.v, hreg.v, 3, backend);    
+    TemplateCopytoDevice(dreg.rpoint, hreg.rpoint, 3, backend);
+    TemplateCopytoDevice(dreg.omega, hreg.omega, 3, backend);
+    TemplateCopytoDevice(dreg.xcenter, hreg.xcenter, 3, backend);        
+    TemplateCopytoDevice(dreg.prev, hreg.prev, 5, backend);
+    TemplateCopytoDevice(dreg.openfaces, hreg.openfaces, 6, backend);
+    TemplateCopytoDevice(dreg.tri, hreg.tri, 36, backend);    
+}
+
 struct commonstruct {     
     string filein;       // Name of binary file with input data
     string fileout;      // Name of binary file to write the solution    
@@ -223,6 +781,9 @@ struct commonstruct {
     int backend=1;   // 1: CPU; 2: CUDA GPU  
     int mpiRank=0;  // MPI rank      
     int mpiProcs=1; // number of MPI ranks
+    int readlattice=0;
+    int readregion=0;
+    int readdomain=0;
     
     int dim;     // physical dimensions
     int nconfigs=1; // number of configurations        
@@ -248,7 +809,7 @@ struct commonstruct {
     int neighcell=0;  // 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
     int decomposition=0;// 0 -> force decomposition, 1 -> atom decomposition
     int bondtype=0;   // 0 -> non-bonded interaction, 1 -> bonded interaction
-    int chemtype = 0;   // 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
+    int chemtype = 0;   // 0 -> single atom-type basis functions, 1 -> dstype atom-type basis functions 
     int pairsymmetry;  // 1 -> V(r_ij) equal V(r_ji), 0 -> V(r_ij) not equal V(r_ji) 
     int tripletsymmetry; // 1 -> V(r_ij, r_ik) equal V(r_ik, r_ij)
                          // 0 -> V(r_ij, r_ik) not equal V(r_ik, r_ij)
@@ -256,7 +817,7 @@ struct commonstruct {
     int forcecal;     // turns force calculation on or off
     int stresscal;     // turns stress calculation on or off
     int triclinic;     // types of the simulation box  
-    int unitstyle;
+    int unitstyle=0;
     int vflag=0;
     int vdeform=0;
     
@@ -296,6 +857,23 @@ struct commonstruct {
     int natom4b=0;    
     int nmu[12];
     
+    int *pot1a=NULL; 
+    int *pot1b=NULL;
+    int *pot2a=NULL; 
+    int *pot2b=NULL;
+    int *pot2c=NULL; 
+    int *pot3a=NULL;
+    int *pot3b=NULL; 
+    int *pot3c=NULL;
+    int *pot4a=NULL;
+    int *pot4b=NULL; 
+    int *atom1b=NULL;
+    int *atom2b=NULL;
+    int *atom2c=NULL; 
+    int *atom3b=NULL; 
+    int *atom3c=NULL;
+    int *atom4b=NULL; 
+        
     // cpuFixSetForce, cpuFixLineForce, cpuFixPlaneForce, cpuFixAddForce, cpuFixAveForce, cpuFixDragForce, 
     // cpuFixWallReflect, cpuFixWallHarmonic, cpuFixWallLJ93, cpuFixWallLJ126, cpuFixWallLJ1043, cpuFixWallMorse 
 
@@ -388,7 +966,7 @@ struct commonstruct {
     dstype eta_mass[10];
     dstype nvtenergy;
     dstype vlimitsq;
-    int eta_mass_flag;
+    int eta_mass_flag=1;
     int biasflag;
     int mtchain=1;
     int nc_tchain=1;
@@ -475,23 +1053,6 @@ struct commonstruct {
     dstype pres_tensor[6];
     int pbc[3];
     
-    int *pot1a=NULL; 
-    int *pot1b=NULL;
-    int *pot2a=NULL; 
-    int *pot2b=NULL;
-    int *pot2c=NULL; 
-    int *pot3a=NULL;
-    int *pot3b=NULL; 
-    int *pot3c=NULL;
-    int *pot4a=NULL;
-    int *pot4b=NULL; 
-    int *atom1b=NULL;
-    int *atom2b=NULL;
-    int *atom2c=NULL; 
-    int *atom3b=NULL; 
-    int *atom3c=NULL;
-    int *atom4b=NULL; 
-    
     int *traininglist;
     int *validatelist;
     int trainingnum=0;
@@ -499,6 +1060,10 @@ struct commonstruct {
             
 //     dstype pi = M_PI; // Pi  number
      
+    latticestruct lat;
+    regionstruct reg;
+    domainstruct dom;
+        
     cudaEvent_t eventHandle;
     cublasHandle_t cublasHandle;
     
@@ -527,6 +1092,9 @@ struct commonstruct {
         CPUFREE(atom4b); 
         CPUFREE(traininglist); 
         CPUFREE(validatelist); 
+        lat.freememory(0);
+        reg.freememory(0);
+        dom.freememory(0);        
     }                         
 };
 
@@ -537,21 +1105,30 @@ struct appstruct {
     int *flags=NULL;        // flag parameters            
     int *bcs=NULL;           // boundary conditions
     int *pbc=NULL;           // periodic boundary conditions        
-        
+                        
     dstype *boxhi=NULL;
     dstype *boxlo=NULL;
+    dstype *boxtilt=NULL;
     dstype *boxhi_lamda=NULL;
     dstype *boxlo_lamda=NULL;
+//     dstype *boxhi_bound=NULL;
+//     dstype *boxlo_bound=NULL;
+//     dstype *subhi=NULL;
+//     dstype *sublo=NULL;
+//     dstype *subhi_lamda=NULL;
+//     dstype *sublo_lamda=NULL;
     dstype *h=NULL;
     dstype *h_inv=NULL;
     dstype *h_rate=NULL;
-    dstype *box; // six parameters for the simulation box
-    dstype *boxoffset=NULL;                
+    dstype *box; // 9 parameters for the simulation box
+    dstype *boxoffset=NULL;  
+    
     dstype *atommass=NULL; //  a list of atomic mass for every atom type
     dstype *atomcharge=NULL; //  a list of atomic charge for every atom type
     dstype *simulaparam=NULL; // simulation parameters   
     dstype *solversparam=NULL; // solvers parameters              
     dstype *physicsparam=NULL; // general physical parameters
+    dstype *nveparam=NULL; // NVE parameters     
     dstype *nvtparam=NULL; // NVT parameters         
     dstype *eta=NULL; // hyperparameters
     int *atomnumber=NULL;   // a list of atomic numbers for every atom type
@@ -636,6 +1213,10 @@ struct appstruct {
     dstype *fsetvelocity=NULL;
     dstype *ffixvelocity=NULL;
     
+    latticestruct lat;
+    regionstruct reg;
+    domainstruct dom;
+
     // custom destructor
     void freememory(int backend)
     {
@@ -691,7 +1272,10 @@ struct appstruct {
         TemplateFree(atom2c, backend);
         TemplateFree(atom3b, backend);
         TemplateFree(atom3c, backend);
-        TemplateFree(atom4b, backend);                        
+        TemplateFree(atom4b, backend);
+        lat.freememory(backend);
+        reg.freememory(backend);
+        dom.freememory(backend);        
     }
 };
 
@@ -946,7 +1530,7 @@ struct snastruct {
     }                         
 };
 
-const double factable[] = {
+const dstype factable[] = {
   1,
   1,
   2,

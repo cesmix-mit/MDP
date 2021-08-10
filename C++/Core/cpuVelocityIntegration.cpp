@@ -46,7 +46,7 @@ template <typename T> void cpuVelocityZeroRotation(T *x, T *v, T *box, T *xcm, T
   }
 }
 
-template <typename T> void cpuVelocityCreate(T *x, T *v, T *f, T *mass, T *second, T *omega, 
+template <typename T> void cpuVelocityCreate(T *x, T *v, T *mass, T *second, T *omega, 
         T *box, T *xcm, T *vcm, T t_desired, T t_current, int *seed, int *save, int *map, int *image, 
         int *type, int sum_flag, int dist_flag, int loop_flag, int rotation_flag, 
         int momentum_flag, int triclinic, int dim, int mpiRank, int nlocal, int natoms)
@@ -61,7 +61,7 @@ template <typename T> void cpuVelocityCreate(T *x, T *v, T *f, T *mass, T *secon
   int m;
   T vx,vy,vz,factor;
 
-  if (loop_flag == 0) {
+  if (loop_flag == 0) { // ALL
 
     // loop over all atoms in system
     // generate RNGs for all atoms, only assign to ones I own
@@ -86,7 +86,7 @@ template <typename T> void cpuVelocityCreate(T *x, T *v, T *f, T *mass, T *secon
               v[m*dim+2] += vz * factor;        
       }
     }
-  } else if (loop_flag == 1) {
+  } else if (loop_flag == 1) { // LOCAL
     save[0] = 0;
     seed[0] = seed[0] + mpiRank;
     for (i = 0; i < WARMUP; i++) cpuRandomUniform(seed);
@@ -107,7 +107,7 @@ template <typename T> void cpuVelocityCreate(T *x, T *v, T *f, T *mass, T *secon
         if (dim == 3) v[i*dim+2] += vz * factor;      
     }
 
-  } else if (loop_flag == 2) {      
+  } else if (loop_flag == 2) {      // GEOM
     save[0] = 0;
     seed[0] = 1;    
     for (i = 0; i < nlocal; i++) {
@@ -170,7 +170,7 @@ template <typename T> void cpuVelocityRamp(T *x, T *v, T *v_lo, T *v_hi, T *coor
       }    
 }
 
-template <typename T> void cpuVelocity(T *x, T *v, T *f, T *box, T *xcm, T *vcm, 
+template <typename T> void cpuVelocity(T *x, T *v, T *box, T *xcm, T *vcm, 
         T *mass, T *second, T *omega, T *vext, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi, 
         T t_desired, T t_current, int *seed, int *save, int *map, int *image, int *type, 
         int *coord_dim, int *vdim, int sum_flag, int dist_flag, int loop_flag, 
@@ -178,7 +178,7 @@ template <typename T> void cpuVelocity(T *x, T *v, T *f, T *box, T *xcm, T *vcm,
         int vmode, int nlocal, int natoms)
 {
     if (vmode==0) {
-        cpuVelocityCreate(x, v, f, mass, second, omega,  box, xcm, vcm, t_desired, 
+        cpuVelocityCreate(x, v, mass, second, omega,  box, xcm, vcm, t_desired, 
                 t_current, seed, save, map, image, type, sum_flag, dist_flag, loop_flag, 
                 rotation_flag, momentum_flag, triclinic, dim, mpiRank, nlocal, natoms);
     } else if (vmode==1) {
@@ -195,11 +195,11 @@ template <typename T> void cpuVelocity(T *x, T *v, T *f, T *box, T *xcm, T *vcm,
         cpuVelocityZeroRotation(x, v, box, xcm, omega, image, triclinic, dim, nlocal);
     }    
 }
-template void cpuVelocity(double *, double *, double *, double *, double *, 
+template void cpuVelocity(double *, double *, double *, double *, 
         double *, double *, double *, double *, double *, double *, double *, double *, double *, 
         double, double, int *, int *, int *, int *, int *, int *, int *, int, int, int, 
         int, int, int, int, int, int, int, int);
-template void cpuVelocity(float *, float *, float *, float *, float *, 
+template void cpuVelocity(float *, float *, float *, float *, 
         float *, float *, float *, float *, float *, float *, float *, float *, float *, 
         float, float, int *, int *, int *, int *, int *, int *, int *, int, int, int, 
         int, int, int, int, int, int, int, int);

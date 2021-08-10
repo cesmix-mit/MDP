@@ -103,6 +103,19 @@ else
     config = readweight(app, config);    
 end
 
+if ~isempty(app.lattice)
+    writelattice(app.lattice, app.appname + "lattice.bin");
+    movefile(char(app.appname + "lattice.bin"), char(app.sourcepath + "C++/Main"));
+end
+if ~isempty(app.region)
+    writeregion(app.region, app.appname + "region.bin");
+    movefile(char(app.appname + "region.bin"), char(app.sourcepath + "C++/Main"));
+end
+if ~isempty(app.domain)
+    writedomain(app.domain, app.appname + "domain.bin");
+    movefile(char(app.appname + "domain.bin"), char(app.sourcepath + "C++/Main"));
+end
+
 app = writeapp(app, app.appname + "app.bin");
 writeconfig(config, app.appname + "config.bin");
    

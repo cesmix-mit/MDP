@@ -81,6 +81,7 @@ mutable struct APPStruct
     flag::Array{Int64,2};      # a list of flags 
     simparam::Array{Float64,2}; # simulation parameters
     solparam::Array{Float64,2}; # solver parameters
+    nveparam::Array{Float64,2}; # NVE parameters
     nvtparam::Array{Float64,2}; # NVT parameters
 
     # machine learning potentials
@@ -256,7 +257,9 @@ function initializeapp(sourcepath,version)
     app.flag = reshape([], 0, 2);      # a list of flags 
     app.simparam = reshape([], 0, 2); # simulation parameters
     app.solparam = reshape([], 0, 2); # solver parameters
-    
+    app.nveparam = reshape([], 0, 2); # NVE parameters
+    app.nvtparam = reshape([], 0, 2); # NVT parameters
+
     # machine learning potentials
     app.muml = reshape([], 0, 2);   # coefficients of ML potential
     app.K = 0;          # degree of radial basis functions

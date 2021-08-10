@@ -25,7 +25,7 @@ elseif app.platform == "gpu"
 end
 
 cd(char(app.currentdir));
-% 
+ 
 % if app.training > 0
 %     filename = app.sourcepath + "C++/Main/coefficients.bin";
 %     fileID = fopen(filename,'r');

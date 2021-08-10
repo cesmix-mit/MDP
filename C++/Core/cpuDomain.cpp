@@ -40,9 +40,42 @@ template <typename T> void cpuSetGlobalBox(T *h, T *h_inv, T *boxlo_bound,
     boxhi_bound[1] = MAX(boxhi[1],boxhi[1]+yz);
     boxhi_bound[2] = boxhi[2];
   }
+  else {
+    h[3] = 0;
+    h[4] = 0;
+    h[5] = 0;
+    h_inv[3] = 0;
+    h_inv[4] = 0;
+    h_inv[5] = 0;      
+    for (int i = 0; i<3; i ++) {
+        boxhi_bound[i] = boxhi[i];
+        boxlo_bound[i] = boxlo[i];
+    }
+  }
 }
 template void cpuSetGlobalBox(double *h, double *h_inv, double *boxlo_bound, double *boxhi_bound, double *boxhi, double *boxlo, double *boxtilt, int triclinic);
 template void cpuSetGlobalBox(float *h, float *h_inv, float *boxlo_bound, float *boxhi_bound, float *boxhi, float *boxlo, float *boxtilt, int triclinic);
+
+template <typename T> void cpuSetLocalOrthBox(T *subhi, T *sublo, T *boxhi, T *boxlo, T *subhi_lamda, T *sublo_lamda, int dim)
+{
+    for (int i=0; i<dim; i++) {
+        sublo[i] = boxlo[i] + (boxhi[i] - boxlo[i])*sublo_lamda[i];
+        subhi[i] = boxlo[i] + (boxhi[i] - boxlo[i])*subhi_lamda[i];
+    }    
+}
+template void cpuSetLocalOrthBox(double *subhi, double *sublo, double *boxhi, double *boxlo, 
+        double *subhi_lamda, double *sublo_lamda, int dim);
+template void cpuSetLocalOrthBox(float *subhi, float *sublo, float *boxhi, float *boxlo, 
+        float *subhi_lamda, float *sublo_lamda, int dim);
+
+template <typename T> void cpuShiftLocalOrthBox(T *subhi, T *sublo, T *boxhi, T *boxlo, T *epsilon, int *pbc, int dim)
+{
+    for (int i=0; i<dim; i++)
+      if (pbc[i]) {
+        if (fabs(sublo[i] - boxlo[i]) < epsilon[i]) sublo[i] -= epsilon[i];
+        if (fabs(subhi[i] - boxhi[i]) < epsilon[i]) subhi[i] -= epsilon[i];
+      }
+}
 
 template <typename T> void cpuLamda2Box(T *x, T *lambda, T *h, T *boxlo, int dim, int n)
 {    
@@ -78,6 +111,126 @@ template <typename T> void cpuBox2Lamda(T *lambda, T *x, T *h_inv, T *boxlo, int
 }
 template void cpuBox2Lamda(double *lambda, double *x, double *h_inv, double *boxlo, int dim, int n);
 template void cpuBox2Lamda(float *lambda, float *x, float *h_inv, float *boxlo, int dim, int n);
+
+/* ----------------------------------------------------------------------
+   convert 8 lamda corner pts of lo/hi box to box coords
+   return bboxlo/hi = bounding box around 8 corner pts in box coords
+------------------------------------------------------------------------- */
+template <typename T> void cpuDomainBbox(T *bboxlo, T *bboxhi, T *lo_lamda, T *hi_lamda, T *boxlo, T *h, int dim)
+{
+  T x[3];
+
+  bboxlo[0] = bboxlo[1] = bboxlo[2] = BIG;
+  bboxhi[0] = bboxhi[1] = bboxhi[2] = -BIG;
+
+  x[0] = lo_lamda[0]; x[1] = lo_lamda[1]; 
+  if (dim==3) x[2] = lo_lamda[2]; 
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = hi_lamda[0]; x[1] = lo_lamda[1]; 
+  if (dim==3) x[2] = lo_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = lo_lamda[0]; x[1] = hi_lamda[1]; 
+  if (dim==3) x[2] = lo_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = hi_lamda[0]; x[1] = hi_lamda[1]; 
+  if (dim==3) x[2] = lo_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = lo_lamda[0]; x[1] = lo_lamda[1]; 
+  if (dim==3) x[2] = hi_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = hi_lamda[0]; x[1] = lo_lamda[1]; 
+  if (dim==3) x[2] = hi_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = lo_lamda[0]; x[1] = hi_lamda[1]; 
+  if (dim==3) x[2] = hi_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+
+  x[0] = hi_lamda[0]; x[1] = hi_lamda[1]; 
+  if (dim==3) x[2] = hi_lamda[2];
+  cpuLamda2Box(x, x, h, boxlo, dim, 1);
+  bboxlo[0] = MIN(bboxlo[0],x[0]); bboxhi[0] = MAX(bboxhi[0],x[0]);
+  bboxlo[1] = MIN(bboxlo[1],x[1]); bboxhi[1] = MAX(bboxhi[1],x[1]);
+  if (dim==3)
+    bboxlo[2] = MIN(bboxlo[2],x[2]); bboxhi[2] = MAX(bboxhi[2],x[2]);
+}
+
+// return shifted sub box in box coords if triclinic == 0
+//                        in lambda coordinates if triclinic == 1
+template <typename T> void cpuShiftedSubbox(T *ssublo, T *ssubhi, T *boxlo, T *boxhi, 
+        T *boxlo_lamda, T *boxhi_lamda, T *sublo, T *subhi, 
+        T *sublo_lamda, T *subhi_lamda, T *epsilon, int *pbc, int triclinic)
+{
+  if (triclinic == 0) {
+    // shited subbox in atom coordinates
+    ssublo[0] = sublo[0]; ssubhi[0] = subhi[0];
+    ssublo[1] = sublo[1]; ssubhi[1] = subhi[1];
+    ssublo[2] = sublo[2]; ssubhi[2] = subhi[2];
+    cpuShiftLocalOrthBox(ssubhi, ssublo, boxhi, boxlo, epsilon, pbc, 3);
+  } else {
+    // shited subbox in lambda coordinates
+    ssublo[0] = sublo_lamda[0]; ssubhi[0] = subhi_lamda[0];
+    ssublo[1] = sublo_lamda[1]; ssubhi[1] = subhi_lamda[1];
+    ssublo[2] = sublo_lamda[2]; ssubhi[2] = subhi_lamda[2];
+    cpuShiftLocalOrthBox(ssubhi, ssublo, boxhi_lamda, boxlo_lamda, epsilon, pbc, 3);
+  }
+}
+template void cpuShiftedSubbox(double *ssublo, double *ssubhi, double *boxlo, double *boxhi, 
+        double *boxlo_lamda, double *boxhi_lamda, double *sublo, double *subhi, 
+        double *sublo_lamda, double *subhi_lamda, double *epsilon, int *pbc, int triclinic);
+template void cpuShiftedSubbox(float *ssublo, float *ssubhi, float *boxlo, float *boxhi, 
+        float *boxlo_lamda, float *boxhi_lamda, float *sublo, float *subhi, 
+        float *sublo_lamda, float *subhi_lamda, float *epsilon, int *pbc, int triclinic);
+
+// return bounding sub box in box coords 
+template <typename T> void cpuBoundingSubbox(T *bsublo, T *bsubhi, T *sublo, T *subhi, 
+        T *sublo_lamda, T *subhi_lamda, T *boxlo, T *h, int triclinic)
+{        
+  // bounding box for a subbox in atom coordinates
+  if (triclinic == 0) {
+    bsublo[0] = sublo[0]; bsubhi[0] = subhi[0];
+    bsublo[1] = sublo[1]; bsubhi[1] = subhi[1];
+    bsublo[2] = sublo[2]; bsubhi[2] = subhi[2];
+  } else // use subbox in lambda coordinates to compute the bounding box in atom coordinates
+      cpuDomainBbox(bsublo, bsubhi, sublo_lamda, subhi_lamda, boxlo, h, 3);
+}
+template void cpuBoundingSubbox(double *bsublo, double *bsubhi, double *sublo, double *subhi, 
+        double *sublo_lamda, double *subhi_lamda, double *boxlo, double *h, int triclinic);
+template void cpuBoundingSubbox(float *bsublo, float *bsubhi, float *sublo, float *subhi, 
+        float *sublo_lamda, float *subhi_lamda, float *boxlo, float *h, int triclinic);
 
 template <typename T> void cpuPBCOrthBox(T *x, T *v, int *image, T *hi, T *lo, 
         T *h, T *h_rate, int *pbc, int vdeform, int dim, int nlocal)
@@ -482,4 +635,19 @@ template <typename T> void cpuUnmap(T *y, T *x, T *h, int *image, int triclinic,
 }
 template void cpuUnmap(double *y, double *x, double *h, int *image, int triclinic, int dim, int n);
 template void cpuUnmap(float *y, float *x, float *h, int *image, int triclinic, int dim, int n);
+
+
+// void cpuCreateBox()
+// {    
+//   for (int i=0; i<3; i++) {
+//     boxlo[i] = lo[i];
+//     boxhi[i] = hi[i];    
+//   }
+//   
+//   if (triclinic==1)
+//     for (int i=0; i<3; i++)  
+//         boxtilt[i] = tilt[i];
+//   
+//   cpuSetGlobalBox(h, h_inv, boxlo_bound, boxhi_bound, boxhi, boxlo, boxtilt, triclinic);        
+// }
 

@@ -1551,6 +1551,50 @@ void gpuEmpiricalPotentialDescriptors(dstype *ei, neighborstruct &nb, commonstru
 //     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                            
 }
 
+dstype gpuEmpiricalPotentialEnergy(dstype *ei, neighborstruct &nb, commonstruct &common, 
+        appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    int inum = common.inum;
+    int dim = common.dim;        
+                
+    if (common.npot1a > 0)
+        gpuNonbondedSingleEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+
+    if (common.npot1b > 0)
+        gpuBondedSingleEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+
+    if (common.npot2a > 0)
+        gpuNonbondedPairEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+
+    if (common.npot2b > 0)
+        gpuBondedPairEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+
+    if (common.npot2c > 0)    
+        gpuBoPairEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+ 
+    if (common.npot3a > 0)    
+        gpuNonbondedTripletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+    
+    if (common.npot3b > 0)
+        gpuBondedTripletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+
+    if (common.npot3c > 0)    
+        gpuBoTripletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+
+    if (common.npot4a > 0)
+        gpuNonbondedQuadrupletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+
+    if (common.npot4b > 0)
+        gpuBondedQuadrupletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
+    
+    dstype *onevec =  &tmp.tmpmem[0];  
+    ArraySetValue(onevec, 1.0, inum, common.backend);
+    PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                            
+    
+    return e;
+}
+
+
 
 #endif
 

@@ -172,9 +172,9 @@ template <typename T> void cpuArrayTranspose(T *A, T *B, int m, int n)
 
 template <typename T> void cpuGetArrayAtColumnIndex(T *A, T *B, int *colind, int m, int n)
 {  
-    for (int ii=0; ii<n; ii++) {
+    for (int ii=0; ii<n; ii++) { // loop over each column
         int i = colind[ii];   
-        for (int j=0; j<m; j++)
+        for (int j=0; j<m; j++) // loop over each row
             A[ii*m+j] = B[i*m+j]; 
     }
 }

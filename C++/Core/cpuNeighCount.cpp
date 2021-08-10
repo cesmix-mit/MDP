@@ -8,6 +8,19 @@
 #ifndef __CPUNEIGHCOUNT
 #define __CPUNEIGHCOUNT
 
+int cpuBoolFlagged(int *index, int* ilist, int *flags, int *q, int inum)
+{    
+    // parallel prefix sum on p
+    cpuCumsum(q, flags, inum+1);
+    
+    // form tlist by ignoring indices at which p are zero
+    for (int ii=0; ii<inum; ii++) 
+        if (flags[ii] == 1)                     
+            index[q[ii+1]-1] = ilist[ii];   
+    
+    return q[inum];    
+}
+
 int cpuFindAtomType(int *tlist, int* ilist, int *atomtype, int *p, int *q, int typei, int inum)
 {
     // form binary array p

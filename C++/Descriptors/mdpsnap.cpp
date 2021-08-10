@@ -769,7 +769,6 @@ void ComputeMDPSnapArrays(dstype *snaarray, dstype *snad, dstype *snav, dstype *
     
     ComputeSnav2(snav, dblist, blist, x, aii, ai, aj, 
           ti, mask, ncoeff, ntypes, nperdim, ijnum, quadraticflag, backend);        
-
 }
 
 

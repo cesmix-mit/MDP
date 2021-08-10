@@ -74,6 +74,7 @@ app.ndims = [];     % a list of integers indicating dimensions
 app.flag = [];      % a list of flags 
 app.simparam = []; % simulation parameters
 app.solparam = []; % solver parameters
+app.nveparam = []; % NVE params
 app.nvtparam = []; % NVT params
 
 % machine learning potentials
@@ -172,6 +173,10 @@ app.ncq = 0; % number of compoments of q
 app.ncmu = 0; % number of compoments of mu
 app.nceta = 0; % number of compoments of eta
 app.nckappa = 0; % number of compoments of kappa
+
+app.lattice = [];
+app.region = [];
+app.domain = [];
 
 end
 

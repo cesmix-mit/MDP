@@ -10,6 +10,16 @@
 
 #include "cub112/device/device_partition.cuh"
 
+int gpuBoolFlagged(int *index, int *ilist, int *flags, int *q, int inum)
+{
+    size_t  temp_storage_bytes  = 0;
+    void  *d_temp_storage = NULL;
+    cub::DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, ilist, flags, index, &q[inum], inum);            
+    cub::DevicePartition::Flagged((void*) q, temp_storage_bytes, ilist, flags, index, &q[inum], inum);
+        
+    return gpuArrayGetValueAtIndex(q, inum);    
+}
+        
 __global__ void gpuKernelAtomTypeI(int *p, int *ilist, int *atomtype, int typei, int inum)
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;

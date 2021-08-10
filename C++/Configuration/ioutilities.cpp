@@ -15,130 +15,6 @@ template <typename T> string NumberToString ( T Number )
     return ss.str();
 }
 
-void print1iarray(Int* a, Int m)
-{    
-    for (Int i=0; i<m; i++)
-        cout << a[i] << "   ";
-    cout << endl;
-}
-
-void print2iarray(Int* a, Int m, Int n)
-{
-    for (Int i=0; i<m; i++) {
-        for (Int j=0; j<n; j++)
-            cout << a[j*m+i] << "   ";
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void print3iarray(Int* a, Int m, Int n, Int p)
-{    
-    for (Int k=0; k<p; k++) {
-        for (Int i=0; i<m; i++) {
-            for (Int j=0; j<n; j++)
-                cout << a[k*n*m+j*m+i] << "   ";
-            cout << endl;
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-
-void print1darray(dstype* a, Int m)
-{
-    //cout.precision(4);
-    for (Int i=0; i<m; i++)
-        cout << scientific << a[i] << "   ";
-    cout << endl;
-}
-
-void print2darray(dstype* a, Int m, Int n)
-{
-    //cout.precision(4);
-    for (Int i=0; i<m; i++) {
-        for (Int j=0; j<n; j++)
-            cout << scientific << a[j*m+i] << "   ";
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void print3darray(dstype* a, Int m, Int n, Int p)
-{
-    //cout.precision(8);
-    for (Int k=0; k<p; k++) {
-        for (Int i=0; i<m; i++) {
-            for (Int j=0; j<n; j++)
-                cout << scientific << a[k*n*m+j*m+i] << "   ";
-            cout << endl;
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void printArray2D(Int* a, Int m, Int n, Int backend)
-{
-    if (backend==2) {
-#ifdef HAVE_CUDA
-        Int N = m*n;
-        Int *b = (Int*) malloc (sizeof (Int)*N);
-        cudaMemcpy(b, a, N*sizeof(Int), cudaMemcpyDeviceToHost);
-        print2iarray(b, m, n);
-        free(b);
-#endif
-    }
-    else
-        print2iarray(a, m, n);
-}
-
-void printArray3D(Int* a, Int m, Int n, Int p, Int backend)
-{
-    if (backend==2) {
-#ifdef HAVE_CUDA
-        Int N = m*n*p;
-        Int *b = (Int*) malloc (sizeof (Int)*N);
-        cudaMemcpy(b, a, N*sizeof(Int), cudaMemcpyDeviceToHost);
-        print3iarray(b, m, n, p);
-        free(b);
-#endif
-    }
-    else
-        print3iarray(a, m, n, p);
-}
-
-void printArray2D(dstype* a, Int m, Int n, Int backend)
-{
-    if (backend==2) {
-#ifdef  HAVE_CUDA        
-        Int N = m*n;
-        dstype *b = (dstype*) malloc (sizeof (dstype)*N);
-        cudaMemcpy(b, a, N*sizeof(dstype), cudaMemcpyDeviceToHost);    
-        print2darray(b, m, n);
-        free(b);
-#endif        
-    }
-    else
-        print2darray(a, m, n);
-}
-
-void printArray3D(dstype* a, Int m, Int n, Int p, Int backend)
-{
-    if (backend==2) {
-#ifdef  HAVE_CUDA        
-        Int N = m*n*p;
-        dstype *b = (dstype*) malloc (sizeof (dstype)*N);
-        cudaMemcpy(b, a, N*sizeof(dstype), cudaMemcpyDeviceToHost);    
-        print3darray(b, m, n, p);
-        free(b);
-#endif        
-    }
-    else
-        print3darray(a, m, n, p);
-}
-
 template <typename T> T * copyarray(T *b, Int N)
 {
     T *a;
@@ -157,7 +33,14 @@ template <typename T> void readarray(ifstream &in, T **a, Int N)
 {
     if (N>0) {        
         *a = (T*) malloc (sizeof (T)*N);
-        in.read( reinterpret_cast<char*>( *a ), sizeof(T)*N );        
+        in.read( reinterpret_cast<char*>( *a ), sizeof(T)*N );                           
+    }    
+}
+
+template <typename T> void readarraynomalloc(ifstream &in, T **a, Int N)
+{
+    if (N>0) {        
+        in.read( reinterpret_cast<char*>( *a ), sizeof(T)*N );                           
     }    
 }
 
