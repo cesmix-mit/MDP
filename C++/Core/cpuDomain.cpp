@@ -254,12 +254,14 @@ template <typename T> void cpuPBCOrthBox(T *x, T *v, int *image, T *hi, T *lo,
 
     if (pbc[1]) {
       if (x[k+1] < lo[1]) {
+        printf("%i %g %g\n",i,h[1],x[k+1]);
         x[k+1] += h[1];
         if (vdeform) {
           v[k+0] += h_rate[5];
           v[k+1] += h_rate[1];
         }        
         image[k+1] -= 1;
+        printf("%i %g %g\n",i,h[1],x[k+1]);
       }
       if (x[k+1] >= hi[1]) {
         x[k+1] -= h[1];
@@ -317,12 +319,12 @@ template <typename T> void cpuPBCTiltBox(T *x, T *v, int *image, T *boxlo, T *h,
     
     if (pbc[0]) {
       if (lambda[0] < lo_lambda[0]) {
-        lambda[0] += h[0];
+        lambda[0] += hi_lambda[0];
         if (vdeform) v[k+0] += h_rate[0];
         image[k+0] -= 1;
       }
       if (lambda[0] >= hi_lambda[0]) {
-        lambda[0] -= h[0];
+        lambda[0] -= hi_lambda[0];
         lambda[0] = MAX(lambda[0],lo_lambda[0]);
         if (vdeform) v[k+0] -= h_rate[0];
         image[k+0] += 1;
@@ -331,7 +333,7 @@ template <typename T> void cpuPBCTiltBox(T *x, T *v, int *image, T *boxlo, T *h,
 
     if (pbc[1]) {
       if (lambda[1] < lo_lambda[1]) {
-        lambda[1] += h[1];
+        lambda[1] += hi_lambda[1];
         if (vdeform) {
           v[k+0] += h_rate[5];
           v[k+1] += h_rate[1];
@@ -339,7 +341,7 @@ template <typename T> void cpuPBCTiltBox(T *x, T *v, int *image, T *boxlo, T *h,
         image[k+1] -= 1;
       }
       if (lambda[1] >= hi_lambda[1]) {
-        lambda[1] -= h[1];
+        lambda[1] -= hi_lambda[1];
         lambda[1] = MAX(lambda[1],lo_lambda[1]);
         if (vdeform) {
           v[k+0] -= h_rate[5];
@@ -351,7 +353,7 @@ template <typename T> void cpuPBCTiltBox(T *x, T *v, int *image, T *boxlo, T *h,
 
     if (pbc[2]) {
       if (lambda[2] < lo_lambda[2]) {
-        lambda[2] += h[2];
+        lambda[2] += hi_lambda[2];
         if (vdeform) {
           v[k+0] += h_rate[4];
           v[k+1] += h_rate[3];
@@ -360,7 +362,7 @@ template <typename T> void cpuPBCTiltBox(T *x, T *v, int *image, T *boxlo, T *h,
         image[k+2] -= 1;
       }
       if (lambda[2] >= hi_lambda[2]) {
-        lambda[2] -= h[2];
+        lambda[2] -= hi_lambda[2];
         lambda[2] = MAX(lambda[2],lo_lambda[2]);
         if (vdeform) {
           v[k+0] -= h_rate[4];

@@ -26,6 +26,8 @@ template <typename T> void cpuArrayMinusXAtIndex(T *y, T *x, int *ind, int n);
 template <typename T> void cpuArrayAXPYAtIndex(T *y, T *x, T a, int *ind, int n);
 
 template <typename T> void cpuArrayTranspose(T *A, T *B, int m, int n);
+template <typename T> void cpuArrayPlusAtColumnIndex(T *A, T *B, int *colind, int m, int n);
+template <typename T> void cpuArrayMinusAtColumnIndex(T *A, T *B, int *colind, int m, int n);
 template <typename T> void cpuGetArrayAtColumnIndex(T *A, T *B, int *colind, int m, int n);
 template <typename T> void cpuArrayTransposeAtColumnIndex(T *A, T *B, int *colind, int m, int n);
 template <typename T> void cpuGetArrayAtRowIndex(T *A, T *B, int *rowind, int m, int n);
@@ -298,6 +300,17 @@ template <typename T> void cpuComputeVACF(T *vacf, T *v, T *voriginal,
          int *ilist, int nvacf, int dim,  int inum);
 
 //********************************* Velocity integration ****************************************//
+template <typename T> void cpuVelocityZeroMomentum(T *v, T *vcm, int dim, int nlocal);
+template <typename T> void cpuVelocityZeroRotation(T *x, T *v, T *box, T *xcm, T *omega, 
+        int *image, int triclinic, int dim, int nlocal);
+template <typename T> void cpuVelocitySet(T *v, T *vext, int *vdim,
+        int sum_flag, int dim, int nlocal);
+template <typename T> void cpuVelocityRamp(T *x, T *v, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi,
+        int *coord_dim, int *v_dim, int sum_flag, int dim, int nlocal);
+template <typename T> void cpuVelocityCreate(T *x, T *v, T *mass, T *second, 
+         int *seed, int *save, int *map, int *type, int seed0, int sum_flag, int dist_flag, int loop_flag, 
+        int dim, int mpiRank, int nlocal, int natoms);
+
 template <typename T> void cpuVelocity(T *x, T *v, T *f, T *box, T *xcm, T *vcm, 
         T *mass, T *second, T *omega, T *vext, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi, 
         T t_desired, T t_current, int *seed, int *save, int *map, int *image, int *type, 
@@ -497,18 +510,6 @@ template <typename T> int cpuAtomAdd(T *y, int *atomtype, T *x, T *h_inv, T *box
 template <typename T> void cpuAtomLattice(T *y, int *atomtype, T *basis, T *primitive, T *rotaterow, T *origin, 
         T *latticespacing, T scale, int *basistype, int nbasis, int nlocal, 
         int ilo, int ihi, int jlo, int jhi, int klo, int khi, int dim);
-
-template <typename T> void cpuVelocity(T *x, T *v, T *box, T *xcm, T *vcm, 
-        T *mass, T *second, T *omega, T *vext, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi, 
-        T t_desired, T t_current, int *seed, int *save, int *map, int *image, int *type, 
-        int *coord_dim, int *vdim, int sum_flag, int dist_flag, int loop_flag, 
-        int rotation_flag, int momentum_flag, int triclinic, int dim, int mpiRank, 
-        int vmode, int nlocal, int natoms);
-
-// template <typename T> void cpuVelocityCreate(T *x, T *v, T *f, T *mass, T *second, T *omega, 
-//         T *box, T *xcm, T *vcm, T t_desired, T t_current, int *seed, int *save, int *map, int *image, 
-//         int *type, int sum_flag, int dist_flag, int loop_flag, int rotation_flag, 
-//         int momentum_flag, int triclinic, int dim, int mpiRank, int nlocal, int natoms);
 
 #endif  
 

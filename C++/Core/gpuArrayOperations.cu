@@ -145,6 +145,44 @@ template <typename T> void gpuArrayTranspose(T *A, T *B, int m, int n)
 }
 
 template <typename T> 
+__global__ void gpuKernelArrayPlusAtColumnIndex(T *A, T *B, int *colind, int m, int n)
+{  
+    int ii = threadIdx.x + blockIdx.x * blockDim.x;  
+    while (ii < n) {    
+        int i = colind[ii];   
+        for (int j=0; j<m; j++)
+            A[ii*m+j] += B[i*m+j];
+        ii += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuArrayPlusAtColumnIndex(T *A, T *B, int *colind, int m, int n)
+{
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelArrayPlusAtColumnIndex<<<gridDim, blockDim>>>(A, B, colind, m, n);    
+}
+
+template <typename T> 
+__global__ void gpuKernelArrayMinusAtColumnIndex(T *A, T *B, int *colind, int m, int n)
+{  
+    int ii = threadIdx.x + blockIdx.x * blockDim.x;  
+    while (ii < n) {    
+        int i = colind[ii];   
+        for (int j=0; j<m; j++)
+            A[ii*m+j] = B[i*m+j] - A[ii*m+j];
+        ii += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuArrayMinusAtColumnIndex(T *A, T *B, int *colind, int m, int n)
+{
+    int blockDim = 256;
+    int gridDim = (n + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelArrayMinusAtColumnIndex<<<gridDim, blockDim>>>(A, B, colind, m, n);    
+}
+
+template <typename T> 
 __global__ void gpuKernelGetArrayAtColumnIndex(T *A, T *B, int *colind, int m, int n)
 {  
     int ii = threadIdx.x + blockIdx.x * blockDim.x;  
@@ -1427,6 +1465,14 @@ template void gpuArrayCopy(int*, int*, int);
 template void gpuArrayTranspose(double *A, double *B, int m, int n);
 template void gpuArrayTranspose(float *A, float *B, int m, int n);
 template void gpuArrayTranspose(int *A, int *B, int m, int n);
+
+template void gpuArrayPlusAtColumnIndex(double *A, double *B, int *colind, int m, int n);
+template void gpuArrayPlusAtColumnIndex(float *A, float *B, int *colind, int m, int n);
+template void gpuArrayPlusAtColumnIndex(int *A, int *B, int *colind, int m, int n);
+
+template void gpuArrayMinusAtColumnIndex(double *A, double *B, int *colind, int m, int n);
+template void gpuArrayMinusAtColumnIndex(float *A, float *B, int *colind, int m, int n);
+template void gpuArrayMinusAtColumnIndex(int *A, int *B, int *colind, int m, int n);
 
 template void gpuGetArrayAtColumnIndex(double *A, double *B, int *colind, int m, int n);
 template void gpuGetArrayAtColumnIndex(float *A, float *B, int *colind, int m, int n);

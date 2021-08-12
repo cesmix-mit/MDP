@@ -88,7 +88,6 @@ void setunits(commonstruct &common, int style)
     common.qelectron = 1.6021765e-19;
     common.dt = 1.0e-8;
     common.skin = 0.001;
-
   } else if (style == 4) { // cgs
     common.boltz = 1.3806504e-16;
     common.hplanck = 6.62606896e-27;

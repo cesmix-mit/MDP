@@ -8,10 +8,21 @@
 function [app,config] = preprocessing(app)
 
 % read configurations from data file
-config = readconfig(app, app.configmode);     
+if strcmpi(app.configfile,"")==0 && app.configmode>=0
+    config = readconfig(app, app.configmode);     
+    % number of configurations
+    app.nconfigs = config.nconfigs;          
+else    
+    app.nconfigs = 0;          
+    config = 0;
+end
 
- % number of configurations
-app.nconfigs = config.nconfigs;          
+if strcmpi(app.snapcoefffile,"")==0 
+    fileID = fopen(app.snapcoefffile);
+    coeff = textscan(fileID,'%f','Delimiter',',');
+    app.snapcoeff = coeff{1};
+    fclose(fileID);   
+end
 
 % nonbonded single potentials
 app.npot1a = length(app.pot1a);  % number of nonbonded single potentials 
@@ -62,17 +73,73 @@ app.ncmu4b = length(app.mu4b); % length of mu1a
 % app.nceta = 0; % number of compoments of eta
 % app.nckappa = 0; % number of compoments of kappa
 
+ %lj or real or metal or si or cgs or electron or micro or nano
+style = app.unitstyle;
+if (strcmpi(style,"lj")) 
+    app.unitstyle = 0;
+elseif (strcmpi(style,"real")) 
+    app.unitstyle = 1;    
+elseif (strcmpi(style,"metal")) 
+    app.unitstyle = 2;
+elseif (strcmpi(style,"si")) 
+    app.unitstyle = 3;
+elseif (strcmpi(style,"cgs")) 
+    app.unitstyle = 4;
+elseif (strcmpi(style,"electron")) 
+    app.unitstyle = 5;
+elseif (strcmpi(style,"micro")) 
+    app.unitstyle = 6;
+elseif (strcmpi(style,"nano")) 
+    app.unitstyle = 7;
+else
+    error("Invalid unit style");
+end
+
+% descriptor flag: 0 -> Spherical Harmonics Bessel, 1-> snap
+descriptor = app.descriptor;
+if (strcmpi(descriptor,"shp")) 
+    app.descriptor = 0;
+elseif (strcmpi(descriptor,"snap")) 
+    app.descriptor = 1;    
+else
+    app.descriptor = -1; 
+end
+
+ensemblemode = app.ensemblemode;
+if (strcmpi(ensemblemode,"nve")) 
+    app.ensemblemode = 0;
+    app.runMD = 1;  
+elseif (strcmpi(ensemblemode,"nvelimit")) 
+    app.ensemblemode = 1;    
+    app.runMD = 1;  
+elseif (strcmpi(ensemblemode,"nvt")) 
+    app.ensemblemode = 2;        
+    app.runMD = 1;  
+else
+    app.ensemblemode = -1;
+    app.runMD = 0;  
+end
+
+app.natomtype = length(app.atommasses);
+app.atomnumbers = [0; app.atomnumbers(:)];
+app.atommasses = [0; app.atommasses(:)];
+app.atomcharges = [0; app.atomcharges(:)];
+
 app.flag = [app.descriptor app.spectrum app.training app.runMD app.potentialform app.neighpair...
             app.energycal app.forcecal app.stresscal app.neighcell app.decomposition app.chemtype ....
-            app.dftdata app.unitstyle app.ensemblemode];
+            app.dftdata app.unitstyle app.ensemblemode app.neighcheck];
 
 rcut = [app.rcutml; app.rcut2a(:); app.rcut2b(:); app.rcut2c(:); ...
               app.rcut3a(:); app.rcut3b(:); app.rcut3c(:); app.rcut4a(:); app.rcut4b(:)];
-rcutmax = max(rcut);          
+rcutmax = max(rcut)+app.neighskin;          
 app.rcutsqmax = max(rcutmax.^2);        
 app.boxoffset = [rcutmax rcutmax rcutmax];
 app.simparam = [app.time app.dt];        
-
+app.solparam = [rcutmax app.neighskin];
+app.snaparam = [app.snapnelem app.snapncoeff app.snaprcutfac app.snaptwojmax app.snaprfac0 app.snaprmin0 ...
+                app.snapbzeroflag app.snapswitchflag app.snapquadraticflag app.snapchemflag ...
+                app.snapbnormflag app.snapwselfallflag];
+            
 app.ndims = zeros(20,1);
 app.ndims(1) = app.dim;
 app.ndims(2) = app.L;
@@ -84,23 +151,20 @@ app.ndims(7) = app.backend;
 app.ndims(8) = app.nconfigs;
 app.ndims(9) = app.natomtype;
 app.ndims(10) = app.nmoletype; 
-app.ndims(11) = app.maxnumneighbors;
-
+app.ndims(11) = app.neighmax;
+app.ndims(12) = app.neighevery;
+app.ndims(13) = app.neighdelay;
+app.ndims(14) = app.globalfreq;
+app.ndims(15) = app.peratomfreq;
+ 
 % check configurations
 m = 1;
-for i = 1:config.nconfigs
+for i = 1:app.nconfigs
     [B2C, C2B] = cubemapping(config.a(:,i), config.b(:,i), config.c(:,i));
     ximages = boxperiodicimages(app.pbc, config.a(:,i), config.b(:,i), config.c(:,i));    
     n = config.natom(i);
     config.x(:,m:(m+n-1)) = checkconfig(config.x(:,m:(m+n-1)), ximages, B2C, C2B);    
     m = m + n;
-end
-
-if app.training == 0
-    config.we = [];
-    config.wf = [];
-else
-    config = readweight(app, config);    
 end
 
 if ~isempty(app.lattice)
@@ -116,11 +180,19 @@ if ~isempty(app.domain)
     movefile(char(app.appname + "domain.bin"), char(app.sourcepath + "C++/Main"));
 end
 
+if app.nconfigs>0
+    if app.training == 0
+        config.we = [];
+        config.wf = [];
+    else
+        config = readweight(app, config);    
+    end    
+    writeconfig(config, app.appname + "config.bin");
+    movefile(char(app.appname + "config.bin"), char(app.sourcepath + "C++/Main"));
+end   
+
 app = writeapp(app, app.appname + "app.bin");
-writeconfig(config, app.appname + "config.bin");
-   
 movefile(char(app.appname + "app.bin"), char(app.sourcepath + "C++/Main"));
-movefile(char(app.appname + "config.bin"), char(app.sourcepath + "C++/Main"));
 
 end
 

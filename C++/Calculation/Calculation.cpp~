@@ -96,12 +96,8 @@ void CCalculation::GetEnergy(dstype *e, Int ci)
 
 void CCalculation::NeighborList(dstype* x)
 {
-    // build neighbor list
     implNeighborList(nb, common, app, tmp, x, common.inum);    
-    
-    // copy x to xhold to check neighbor list
-    ArrayCopy(sys.xhold, sys.x, common.dim*common.inum, common.backend);
-    //Unmap(sys.xhold, sys.x, app.dom.h, sys.image, common.triclinic, common.dim, common.inum, common.backend);
+    cpuUnmap(T *y, T *x, T *h, int *image, int triclinic, int dim, int n)
 }
 
 void CCalculation::EmpiricalPotentialDescriptors(dstype *e, dstype* x, dstype *q, dstype *param, Int *nparam) 
@@ -245,9 +241,6 @@ void CCalculation::PotentialDescriptors(dstype *e, dstype *f, dstype* x, dstype 
 
 void CCalculation::PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
 {     
-    ArraySetValue(e, 0.0, common.inum, common.backend);  
-    ArraySetValue(f, 0.0, common.inum*common.dim, common.backend);  
-
     if (common.potential == 0)
         this->EmpiricalPotentialEnergyForce(e, f, x, coeff, q, param, nparam);              
     else if (common.potential == 1)

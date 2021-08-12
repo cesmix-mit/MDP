@@ -135,7 +135,7 @@ fwrite(fileID,app.snaparam(:),'double',endian);
 fwrite(fileID,app.snapelemradius(:),'double',endian);
 fwrite(fileID,app.snapelemweight(:),'double',endian);
 fwrite(fileID,app.snapcoeff(:),'double',endian);
-fwrite(fileID,app.createvelocity(:),'double',endian);
+fwrite(fileID,app.crea(:),'double',endian);
 
 fclose(fileID);
 

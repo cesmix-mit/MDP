@@ -162,30 +162,39 @@ int main(int argc, char** argv)
     
     // set up configuration and allocate memory
     CCal.SetConfiguration(0);
-                        
+    CCal.sys.c[0] = 1.0;
+        
+//     CCal.NeighborList(CCal.sys.x);        
+//     CCal.PotentialEnergyForce(CCal.sys.e, CCal.sys.f, CCal.sys.x, CCal.sys.c, CCal.sys.q, CCal.app.muep, CCal.common.nmu);                     
+    
     // construct regression object
-    CRegression CReg(CCal);
+    CIntegration CInt(CCal);
+    //CInt.IntegrationSetup(CCal);    
+    CInt.VelocityVerlet(CCal);
+    
+//     // construct regression object
+//     CRegression CReg(CCal);
     
 //     do {
 //        cout <<"Initialization is done! Press RETURN key to train the potential.";
 //     } while (std::cin.get() != '\n');
     
-    // train the potential using linear regression 
-    CReg.LinearRegression(CCal);    
-    
-    do {
-       cout <<"Training is done! Press RETURN key to validate the potential.";
-    } while (std::cin.get() != '\n');
-
-    // Validate linear regression potential
-    dstype *x, *e, *f, *q;
-    x = &CCal.sys.x[0];
-    e = &CCal.sys.e[0];
-    f = &CCal.sys.f[0];
-    q = &CCal.sys.q[0];    
-    CReg.ValidateLinearRegression(CCal, x, e, f, q);
-    
-    
+//     // train the potential using linear regression 
+//     CReg.LinearRegression(CCal);    
+//     
+//     do {
+//        cout <<"Training is done! Press RETURN key to validate the potential.";
+//     } while (std::cin.get() != '\n');
+// 
+//     // Validate linear regression potential
+//     dstype *x, *e, *f, *q;
+//     x = &CCal.sys.x[0];
+//     e = &CCal.sys.e[0];
+//     f = &CCal.sys.f[0];
+//     q = &CCal.sys.q[0];    
+//     CReg.ValidateLinearRegression(CCal, x, e, f, q);
+//     
+//     
     
     
 //     // check linear regression errors

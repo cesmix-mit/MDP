@@ -44,7 +44,7 @@ if mode<=2
     config = initializeconfig(app);
 end
 
-if mode<=1
+if mode==1
     n2 = 6;
     m  = (1+nce+dim*dim)*nconfigs;
     n1 = n2+1;

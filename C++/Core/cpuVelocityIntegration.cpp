@@ -10,8 +10,7 @@
 
 #define WARMUP 100
 
-template <typename T> void cpuVelocityZeroMomentum(T *v, T *vcm, 
-        int dim, int nlocal)
+template <typename T> void cpuVelocityZeroMomentum(T *v, T *vcm, int dim, int nlocal)
 {  
   for (int i = 0; i < nlocal; i++) {
       v[i*dim+0] -= vcm[0];
@@ -19,6 +18,8 @@ template <typename T> void cpuVelocityZeroMomentum(T *v, T *vcm,
       if (dim==3) v[i*dim+2] -= vcm[2];
   }
 }
+template void cpuVelocityZeroMomentum(double *v, double *vcm, int dim, int nlocal);
+template void cpuVelocityZeroMomentum(float *v, float *vcm, int dim, int nlocal);
 
 template <typename T> void cpuVelocityZeroRotation(T *x, T *v, T *box, T *xcm, T *omega, 
         int *image, int triclinic, int dim, int nlocal)
@@ -45,6 +46,100 @@ template <typename T> void cpuVelocityZeroRotation(T *x, T *v, T *box, T *xcm, T
       }      
   }
 }
+template void cpuVelocityZeroRotation(double *x, double *v, double *box, double *xcm, double *omega, 
+        int *image, int triclinic, int dim, int nlocal);
+template void cpuVelocityZeroRotation(float *x, float *v, float *box, float *xcm, float *omega, 
+        int *image, int triclinic, int dim, int nlocal);
+
+template <typename T> void cpuVelocityCreate(T *x, T *v, T *mass, T *second, 
+         int *seed, int *save, int *map, int *type, int seed0, int sum_flag, int dist_flag, int loop_flag, 
+        int dim, int mpiRank, int nlocal, int natoms)
+{
+  int i;
+  
+  if (sum_flag==0) {
+      for (i = 0; i < dim*nlocal; i++)
+          v[i] = 0.0;
+  }
+
+  int m;
+  T vx,vy,vz,factor;
+
+  if (loop_flag == 0) { // ALL
+
+    // loop over all atoms in system
+    // generate RNGs for all atoms, only assign to ones I own
+    // use either per-type mass or per-atom rmass
+    save[0] = 0;
+    for (i = 1; i <= natoms; i++) {
+      if (dist_flag == 0) {
+        vx = cpuRandomUniform(seed) - 0.5;
+        vy = cpuRandomUniform(seed) - 0.5;
+        vz = cpuRandomUniform(seed) - 0.5;
+      } else {
+        vx = cpuRandomGaussian(seed, save, second);
+        vy = cpuRandomGaussian(seed, save, second);
+        vz = cpuRandomGaussian(seed, save, second);
+      }
+      m = map[i]; // map global ID to local ID
+      if (m >= 0 && m < nlocal) {        
+          factor = 1.0/sqrt(mass[type[m]]);
+          v[m*dim+0] += vx * factor;
+          v[m*dim+1] += vy * factor;
+          if (dim == 3) 
+              v[m*dim+2] += vz * factor;        
+      }
+    }
+  } else if (loop_flag == 1) { // LOCAL
+    save[0] = 0;
+    seed[0] = seed[0] + mpiRank;
+    for (i = 0; i < WARMUP; i++) cpuRandomUniform(seed);
+
+    for (i = 0; i < nlocal; i++) {
+        if (dist_flag == 0) {
+          vx = cpuRandomUniform(seed) - 0.5;
+          vy = cpuRandomUniform(seed) - 0.5;
+          vz = cpuRandomUniform(seed) - 0.5;
+        } else {
+          vx = cpuRandomGaussian(seed, save, second);
+          vy = cpuRandomGaussian(seed, save, second);
+          vz = cpuRandomGaussian(seed, save, second);
+        }
+        factor = 1.0/sqrt(mass[type[i]]);
+        v[i*dim+0] += vx * factor;
+        v[i*dim+1] += vy * factor;
+        if (dim == 3) v[i*dim+2] += vz * factor;      
+    }
+
+  } else if (loop_flag == 2) {      // GEOM
+    save[0] = 0;
+    seed[0] = 1;    
+    for (i = 0; i < nlocal; i++) {
+        cpuRandomResetSeed(seed,save,seed0,&x[i*dim]);        
+        //if (i<10) printf("%i %i %i %g %g %g\n",i, seed0, seed[0], x[i*dim], x[i*dim+1], x[i*dim+2]);                    
+        if (dist_flag == 0) {
+          vx = cpuRandomUniform(seed) - 0.5;
+          vy = cpuRandomUniform(seed) - 0.5;
+          vz = cpuRandomUniform(seed) - 0.5;
+        } else {
+          vx = cpuRandomGaussian(seed, save, second);
+          vy = cpuRandomGaussian(seed, save, second);
+          vz = cpuRandomGaussian(seed, save, second);
+        }
+
+        factor = 1.0/sqrt(mass[type[i]]);
+        v[i*dim+0] += vx * factor;
+        v[i*dim+1] += vy * factor;
+        if (dim == 3) v[i*dim+2] += vz * factor;      
+    }
+  }
+}
+template void cpuVelocityCreate(double *x, double *v, double *mass, double *second, 
+         int *seed, int *save, int *map, int *type, int seed0, int sum_flag, int dist_flag, int loop_flag, 
+        int dim, int mpiRank, int nlocal, int natoms);
+template void cpuVelocityCreate(float *x, float *v, float *mass, float *second, 
+         int *seed, int *save, int *map, int *type, int seed0, int sum_flag, int dist_flag, int loop_flag, 
+        int dim, int mpiRank, int nlocal, int natoms);
 
 template <typename T> void cpuVelocityCreate(T *x, T *v, T *mass, T *second, T *omega, 
         T *box, T *xcm, T *vcm, T t_desired, T t_current, int *seed, int *save, int *map, int *image, 
@@ -77,7 +172,7 @@ template <typename T> void cpuVelocityCreate(T *x, T *v, T *mass, T *second, T *
         vy = cpuRandomGaussian(seed, save, second);
         vz = cpuRandomGaussian(seed, save, second);
       }
-      m = map[i];
+      m = map[i]; // map global ID to local ID
       if (m >= 0 && m < nlocal) {        
           factor = 1.0/sqrt(mass[type[m]]);
           v[m*dim+0] += vx * factor;
@@ -155,6 +250,8 @@ template <typename T> void cpuVelocitySet(T *v, T *vext, int *vdim,
         }      
     }
 }
+template void cpuVelocitySet(double *v, double *vext, int *vdim, int sum_flag, int dim, int nlocal);
+template void cpuVelocitySet(float *v, float *vext, int *vdim, int sum_flag, int dim, int nlocal);
 
 template <typename T> void cpuVelocityRamp(T *x, T *v, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi,
         int *coord_dim, int *v_dim, int sum_flag, int dim, int nlocal)
@@ -169,41 +266,44 @@ template <typename T> void cpuVelocityRamp(T *x, T *v, T *v_lo, T *v_hi, T *coor
           else v[i*dim+v_dim[j]] = vramp;
       }    
 }
+template void cpuVelocityRamp(double *x, double *v, double *v_lo, double *v_hi, double *coord_lo, double *coord_hi,
+        int *coord_dim, int *v_dim, int sum_flag, int dim, int nlocal);
+template void cpuVelocityRamp(float *x, float *v, float *v_lo, float *v_hi, float *coord_lo, float *coord_hi,
+        int *coord_dim, int *v_dim, int sum_flag, int dim, int nlocal);
 
-template <typename T> void cpuVelocity(T *x, T *v, T *box, T *xcm, T *vcm, 
-        T *mass, T *second, T *omega, T *vext, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi, 
-        T t_desired, T t_current, int *seed, int *save, int *map, int *image, int *type, 
-        int *coord_dim, int *vdim, int sum_flag, int dist_flag, int loop_flag, 
-        int rotation_flag, int momentum_flag, int triclinic, int dim, int mpiRank, 
-        int vmode, int nlocal, int natoms)
-{
-    if (vmode==0) {
-        cpuVelocityCreate(x, v, mass, second, omega,  box, xcm, vcm, t_desired, 
-                t_current, seed, save, map, image, type, sum_flag, dist_flag, loop_flag, 
-                rotation_flag, momentum_flag, triclinic, dim, mpiRank, nlocal, natoms);
-    } else if (vmode==1) {
-        cpuVelocitySet(v, vext,  vdim, sum_flag, dim, nlocal);        
-    } else if (vmode==2) {
-        cpuVelocityRamp(x, v, v_lo, v_hi, coord_lo, coord_hi, 
-                coord_dim, vdim, sum_flag, dim, nlocal);        
-    } else if (vmode==3) {
-        //cpuVelocityScale(v, t_current, t_desired, mask, dim, nlocal);
-        cpuArrayMultiplyScalar(v, sqrt(t_desired/t_current), nlocal*dim);
-    } else if (vmode==4) {
-        cpuVelocityZeroMomentum(v, vcm, dim, nlocal);
-    } else if (vmode==5) {
-        cpuVelocityZeroRotation(x, v, box, xcm, omega, image, triclinic, dim, nlocal);
-    }    
-}
-template void cpuVelocity(double *, double *, double *, double *, 
-        double *, double *, double *, double *, double *, double *, double *, double *, double *, 
-        double, double, int *, int *, int *, int *, int *, int *, int *, int, int, int, 
-        int, int, int, int, int, int, int, int);
-template void cpuVelocity(float *, float *, float *, float *, 
-        float *, float *, float *, float *, float *, float *, float *, float *, float *, 
-        float, float, int *, int *, int *, int *, int *, int *, int *, int, int, int, 
-        int, int, int, int, int, int, int, int);
-
+// template <typename T> void cpuVelocity(T *x, T *v, T *box, T *xcm, T *vcm, 
+//         T *mass, T *second, T *omega, T *vext, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi, 
+//         T t_desired, T t_current, int *seed, int *save, int *map, int *image, int *type, 
+//         int *coord_dim, int *vdim, int sum_flag, int dist_flag, int loop_flag, 
+//         int rotation_flag, int momentum_flag, int triclinic, int dim, int mpiRank, 
+//         int vmode, int nlocal, int natoms)
+// {
+//     if (vmode==0) {
+//         cpuVelocityCreate(x, v, mass, second, omega,  box, xcm, vcm, t_desired, 
+//                 t_current, seed, save, map, image, type, sum_flag, dist_flag, loop_flag, 
+//                 rotation_flag, momentum_flag, triclinic, dim, mpiRank, nlocal, natoms);
+//     } else if (vmode==1) {
+//         cpuVelocitySet(v, vext,  vdim, sum_flag, dim, nlocal);        
+//     } else if (vmode==2) {
+//         cpuVelocityRamp(x, v, v_lo, v_hi, coord_lo, coord_hi, 
+//                 coord_dim, vdim, sum_flag, dim, nlocal);        
+//     } else if (vmode==3) {
+//         //cpuVelocityScale(v, t_current, t_desired, mask, dim, nlocal);
+//         cpuArrayMultiplyScalar(v, sqrt(t_desired/t_current), nlocal*dim);
+//     } else if (vmode==4) {
+//         cpuVelocityZeroMomentum(v, vcm, dim, nlocal);
+//     } else if (vmode==5) {
+//         cpuVelocityZeroRotation(x, v, box, xcm, omega, image, triclinic, dim, nlocal);
+//     }    
+// }
+// template void cpuVelocity(double *, double *, double *, double *, 
+//         double *, double *, double *, double *, double *, double *, double *, double *, double *, 
+//         double, double, int *, int *, int *, int *, int *, int *, int *, int, int, int, 
+//         int, int, int, int, int, int, int, int);
+// template void cpuVelocity(float *, float *, float *, float *, 
+//         float *, float *, float *, float *, float *, float *, float *, float *, float *, 
+//         float, float, int *, int *, int *, int *, int *, int *, int *, int, int, int, 
+//         int, int, int, int, int, int, int, int);
 
 template <typename T> void cpuNVEInitialIntegrate(T *x, T *v, T *f, T *mass, T dtf, T dtv,
         int *type, int *ilist, int dim, int inum)
@@ -221,7 +321,8 @@ template <typename T> void cpuNVEInitialIntegrate(T *x, T *v, T *f, T *mass, T d
             v[i*dim+2] += dtfm * f[i*dim+2];
             x[i*dim+2] += dtv * v[i*dim+2];
         }                
-    }  
+        //printf("%i %g %g %g",i,x[i*dim+0],x[i*dim+1],x[i*dim+2]);
+    }      
 }
 
 template <typename T> void cpuNVEFinalIntegrate(T *x, T *v, T *f, T *mass, T dtf,

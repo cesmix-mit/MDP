@@ -17,7 +17,7 @@ void gpuSingleEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -72,7 +72,7 @@ void gpuFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -91,26 +91,26 @@ void gpuFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                         
         //a list contains the starting positions of the first neighbor              
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                                 
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
         
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);                       
+                atomtype, na, neighmax, ncq, dim);                       
         
         dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
@@ -141,7 +141,7 @@ void gpuHalfNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -160,26 +160,26 @@ void gpuHalfNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);            
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);            
         else
-            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, dim);
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, dim);
                                 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                                 
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
@@ -261,7 +261,7 @@ void gpuBO2EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -280,23 +280,23 @@ void gpuBO2EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
-        gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                                 
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *du = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq+1)]; // ntuples        
@@ -381,7 +381,7 @@ void gpuTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -400,11 +400,11 @@ void gpuTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum        
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax        
         if ((typej>0) && (typek>0))
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, dim);
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, dim);
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                 
         Int *tripletnum = &tmp.intmem[na]; // na        
         gpuTripletnum(tripletnum, pairnum, na);
@@ -415,11 +415,11 @@ void gpuTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         Int *tripletnumsum = &tmp.intmem[2*na]; // na+1        
         //Cumsum(tripletnumsum, tripletnum, na+1, backend);                                         
         //int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, common.backend);     
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, backend);                             
         
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
-        gpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
+        gpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *tripletlist = &tmp.intmem[1 + 3*na]; // 2*ntuples    (ilist, tripletnum, tripletnumsum, tripletlist)            
         gpuArrayCopy(tripletlist, temp, 2*ntuples);
         
@@ -487,7 +487,7 @@ void gpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -506,24 +506,24 @@ void gpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum       
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax       
         if (typej == typei) {
-            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
         }
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1    
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1    
         //Cumsum(pairnumsum, pairnum, na+1, backend);                                         
         //int npairs = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int npairs = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // npairs    
-        Int *aj = &tmp.intmem[1+3*na+npairs+na*jnum]; // npairs        
-        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs        
-        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // npairs    
+        Int *aj = &tmp.intmem[1+3*na+npairs+na*neighmax]; // npairs        
+        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs        
+        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs        
         dstype *eij = &tmp.tmpmem[0]; // npairs
         dstype *fij = &tmp.tmpmem[npairs]; // npairs*dim
         dstype *xij = &tmp.tmpmem[npairs*(1+dim)]; // npairs*dim
@@ -531,31 +531,31 @@ void gpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         dstype *qj = &tmp.tmpmem[npairs*(1+2*dim+ncq)]; // npairs*ncq
         dstype *du = &tmp.tmpmem[npairs*(1+2*dim+2*ncq)]; // npairs
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                                 
         //gpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, dim, ncq, nparam, npairs, potnum);
         gpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, npairs, potnum, 3);
         
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj)                 
-        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs
-        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs*jnum        
+        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs
+        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs*neighmax        
         gpuNeighTripletList(tripletnum, tripletlist, x, rcutsq, pairnum, pairnumsum, pairlist, atomtype, ilist, nb.alist, nb.neighlist, 
-                nb.neighnum, na, jnum, typek, dim);                
+                nb.neighnum, na, neighmax, typek, dim);                
         
         //a list contains the starting positions of the first neighbor 
-        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*jnum]; // npairs+1        
+        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*neighmax]; // npairs+1        
         //Cumsum(tripletnumsum, tripletnum, npairs+1);                                 
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*jnum], npairs+1, backend);                                         
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*neighmax], npairs+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, npairs, common.backend);     
                 
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj, tripletnum, tripletnumsum, tripletlist)         
-        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum]; // ntuples        
-        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples]; // ntuples   
-        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples]; // ntuples   
-        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+3*ntuples]; // ntuples        
-        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+4*ntuples]; // ntuples        
-        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+5*ntuples]; // ntuples        
+        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax]; // ntuples        
+        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples]; // ntuples   
+        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples]; // ntuples   
+        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+3*ntuples]; // ntuples        
+        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+4*ntuples]; // ntuples        
+        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+5*ntuples]; // ntuples        
         dstype *x3ij = &tmp.tmpmem[npairs*(1+dim)]; // ntuples*dim
         dstype *x3ik = &tmp.tmpmem[npairs*(1+dim)+ntuples*dim]; // ntuples*dim
         dstype *q3i = &tmp.tmpmem[npairs*(1+dim)+2*ntuples*dim]; // ntuples*ncq
@@ -563,7 +563,7 @@ void gpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         dstype *q3k = &tmp.tmpmem[npairs*(1+dim)+ntuples*(2*dim+2*ncq)]; // ntuples*ncq       
         
         gpuNeighTriplets(x3ij, x3ik, q3i, q3j, q3k, x, q, a3i, a3j, a3k, t3i, t3j, t3k, tripletnum, tripletlist, tripletnumsum, 
-                nb.alist, atomtype, jnum, npairs, ncq, dim);                      
+                nb.alist, atomtype, neighmax, npairs, ncq, dim);                      
         
         dstype *f3ij = &tmp.tmpmem[npairs*(1+dim)+ntuples*(2*dim+3*ncq)]; // ntuples*dim
         dstype *f3ik = &tmp.tmpmem[npairs*(1+dim)+ntuples*(3*dim+3*ncq)]; // ntuples*dim
@@ -585,19 +585,19 @@ void gpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
                             
         // pairnum, pairnumsum, pairlist, tripletnum, tripletlist, tripletnumsum, t3i, t3j, t3k -> ai, aj, a3i, a3j, a3k
 //         for (int i=0; i<npairs; i++) {
-//             tmp.intmem[i] = tmp.intmem[1+3*na+na*jnum+i]; // ai
-//             tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*jnum+i]; // aj
+//             tmp.intmem[i] = tmp.intmem[1+3*na+na*neighmax+i]; // ai
+//             tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*neighmax+i]; // aj
 //         }
 //         for (int i=0; i<ntuples; i++) {
-//             tmp.intmem[2*npairs+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+i]; //a3i
-//             tmp.intmem[2*npairs+ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples+i]; //a3j
-//             tmp.intmem[2*npairs+2*ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples+i]; //a3k
+//             tmp.intmem[2*npairs+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+i]; //a3i
+//             tmp.intmem[2*npairs+ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples+i]; //a3j
+//             tmp.intmem[2*npairs+2*ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples+i]; //a3k
 //         }
-        gpuArrayCopy(&tmp.intmem[0], &tmp.intmem[1+3*na+na*jnum], npairs);
-        gpuArrayCopy(&tmp.intmem[npairs], &tmp.intmem[1+3*na+na*jnum+npairs], npairs);
-        gpuArrayCopy(&tmp.intmem[2*npairs], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum], ntuples);
-        gpuArrayCopy(&tmp.intmem[2*npairs+ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples], ntuples);
-        gpuArrayCopy(&tmp.intmem[2*npairs+2*ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples], ntuples);
+        gpuArrayCopy(&tmp.intmem[0], &tmp.intmem[1+3*na+na*neighmax], npairs);
+        gpuArrayCopy(&tmp.intmem[npairs], &tmp.intmem[1+3*na+na*neighmax+npairs], npairs);
+        gpuArrayCopy(&tmp.intmem[2*npairs], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax], ntuples);
+        gpuArrayCopy(&tmp.intmem[2*npairs+ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples], ntuples);
+        gpuArrayCopy(&tmp.intmem[2*npairs+2*ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples], ntuples);
 
         if (decomp==0)
             gpuHalfNeighPairDecomposition(e, f, eij, fij, ai, aj, npairs, dim);
@@ -684,7 +684,7 @@ void gpuQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonst
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -703,11 +703,11 @@ void gpuQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonst
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum    
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax    
         if ((typej>0) && (typek>0) && (typel>0))
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, typel, dim);
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, typel, dim);
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
         
         Int *quadrupletnum = &tmp.intmem[na]; // na        
         //for (int ii=0; ii<na; ii++)
@@ -717,11 +717,11 @@ void gpuQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonst
         //a list contains the starting positions of the first neighbor 
         Int *quadrupletnumsum = &tmp.intmem[2*na]; // na+1        
         //Cumsum(quadrupletnumsum, quadrupletnum, na+1, backend);       
-        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(quadrupletnumsum, na, common.backend);     
                         
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
-        gpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
+        gpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *quadrupletlist = &tmp.intmem[1 + 3*na]; // 3*ntuples    (ilist, quadrupletnum, quadrupletnumsum, quadrupletlist)            
         gpuArrayCopy(quadrupletlist, temp, 3*ntuples);
         
@@ -895,7 +895,7 @@ void gpuSingleEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstr
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -948,7 +948,7 @@ void gpuFullNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -967,26 +967,26 @@ void gpuFullNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                         
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);        
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);        
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim        
         gpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
@@ -1005,7 +1005,7 @@ void gpuHalfNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1024,26 +1024,26 @@ void gpuHalfNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);            
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);            
         else
-            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, dim);
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, dim);
                                 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);           
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);           
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         gpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
@@ -1120,7 +1120,7 @@ void gpuBO2Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1139,23 +1139,23 @@ void gpuBO2Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
-        gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples    
         gpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
@@ -1184,7 +1184,7 @@ void gpuTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appst
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1203,22 +1203,22 @@ void gpuTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appst
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum        
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax        
         if ((typej>0) && (typek>0))
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, dim);
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, dim);
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                 
         Int *tripletnum = &tmp.intmem[na]; // na        
         gpuTripletnum(tripletnum, pairnum, na);
                         
         //a list contains the starting positions of the first neighbor 
         Int *tripletnumsum = &tmp.intmem[2*na]; // na+1        
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                                              
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                                              
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, common.backend);     
                 
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
-        gpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
+        gpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *tripletlist = &tmp.intmem[1 + 3*na]; // 2*ntuples    (ilist, tripletnum, tripletnumsum, tripletlist)            
         gpuArrayCopy(tripletlist, temp, 2*ntuples);
         
@@ -1283,7 +1283,7 @@ void gpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1302,52 +1302,52 @@ void gpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         }                
                 
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum       
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax       
         if (typej == typei) {
-            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
         }
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1            
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1            
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int npairs = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // npairs    
-        Int *aj = &tmp.intmem[1+3*na+npairs+na*jnum]; // npairs        
-        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs        
-        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // npairs    
+        Int *aj = &tmp.intmem[1+3*na+npairs+na*neighmax]; // npairs        
+        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs        
+        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs        
         dstype *eij = &tmp.tmpmem[0]; // npairs
         dstype *xij = &tmp.tmpmem[npairs*(1)]; // npairs*dim
         dstype *qi = &tmp.tmpmem[npairs*(1+dim)]; // npairs*ncq
         dstype *qj = &tmp.tmpmem[npairs*(1+dim+ncq)]; // npairs*ncq
         dstype *du = &tmp.tmpmem[npairs*(1+dim+2*ncq)]; // npairs
         gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
 
          
         gpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, npairs, potnum, 3);        
                 
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj)                 
-        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs
-        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs*jnum        
+        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs
+        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs*neighmax        
         gpuNeighTripletList(tripletnum, tripletlist, x, rcutsq, pairnum, pairnumsum, pairlist, atomtype, ilist, nb.alist, nb.neighlist, 
-                nb.neighnum, na, jnum, typek, dim);                
+                nb.neighnum, na, neighmax, typek, dim);                
                         
         //a list contains the starting positions of the first neighbor 
-        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*jnum]; // npairs+1                 
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*jnum], npairs+1, backend);                                         
+        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*neighmax]; // npairs+1                 
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*neighmax], npairs+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, npairs, common.backend);     
         
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj, tripletnum, tripletnumsum, tripletlist)         
-        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum]; // ntuples        
-        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples]; // ntuples   
-        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples]; // ntuples   
-        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+3*ntuples]; // ntuples        
-        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+4*ntuples]; // ntuples        
-        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+5*ntuples]; // ntuples        
+        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax]; // ntuples        
+        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples]; // ntuples   
+        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples]; // ntuples   
+        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+3*ntuples]; // ntuples        
+        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+4*ntuples]; // ntuples        
+        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+5*ntuples]; // ntuples        
         dstype *x3ij = &tmp.tmpmem[npairs*(1)]; // ntuples*dim
         dstype *x3ik = &tmp.tmpmem[npairs*(1)+ntuples*dim]; // ntuples*dim
         dstype *q3i = &tmp.tmpmem[npairs*(1)+2*ntuples*dim]; // ntuples*ncq
@@ -1355,7 +1355,7 @@ void gpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         dstype *q3k = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+2*ncq)]; // ntuples*ncq
         
         gpuNeighTriplets(x3ij, x3ik, q3i, q3j, q3k, x, q, a3i, a3j, a3k, t3i, t3j, t3k, tripletnum, tripletlist, tripletnumsum, 
-                nb.alist, atomtype, jnum, npairs, ncq, dim);          
+                nb.alist, atomtype, neighmax, npairs, ncq, dim);          
         dstype *e3ijk = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+3*ncq)]; // ntuples
         gpuTriplet(e3ijk, x3ij, x3ik, q3i, q3j, q3k, t3i, t3j, t3k, a3i, a3j, a3k,
                        param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);                
@@ -1365,8 +1365,8 @@ void gpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         gpuTripletcDensity(c3ij, h3ij, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, npairs, potnum);
             
         gpuArrayAXY(eij, eij, c3ij, 1.0, npairs);                        
-        ArrayCopy(&tmp.intmem[0], &tmp.intmem[1+3*na+na*jnum], npairs, backend);
-        ArrayCopy(&tmp.intmem[npairs], &tmp.intmem[1+3*na+na*jnum+npairs], npairs, backend);
+        ArrayCopy(&tmp.intmem[0], &tmp.intmem[1+3*na+na*neighmax], npairs, backend);
+        ArrayCopy(&tmp.intmem[npairs], &tmp.intmem[1+3*na+na*neighmax+npairs], npairs, backend);
         
         // pairnum, pairnumsum, pairlist, tripletnum, tripletlist, tripletnumsum, t3i, t3j, t3k -> ai, aj, a3i, a3j, a3k        
                 
@@ -1402,7 +1402,7 @@ void gpuQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, ap
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1421,22 +1421,22 @@ void gpuQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, ap
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum    
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax    
         if ((typej>0) && (typek>0) && (typel>0))
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, typel, dim);
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, typel, dim);
         else
-            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
         
         Int *quadrupletnum = &tmp.intmem[na]; // na        
         gpuQuadrupletnum(quadrupletnum, pairnum, na);
         
         //a list contains the starting positions of the first neighbor 
         Int *quadrupletnumsum = &tmp.intmem[2*na]; // na+1        
-        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(quadrupletnumsum, na, common.backend);     
                                 
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
-        gpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
+        gpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *quadrupletlist = &tmp.intmem[1 + 3*na]; // 3*ntuples    (ilist, quadrupletnum, quadrupletnumsum, quadrupletlist)            
         gpuArrayCopy(quadrupletlist, temp, 3*ntuples);
         

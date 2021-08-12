@@ -37,8 +37,6 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     
     // copy atoms I to xstart  
     ArrayCopy(xstart, CCal.sys.x, dim*inum, backend);
-    printArray2D(CCal.sys.x, dim, inum, backend);        
-    printArray2D(CCal.sys.f, dim, inum, backend);      
     
     // initial integration of the velocity vertlet method: update velocity and position    
     this->InitialIntegration(CCal);
@@ -60,18 +58,26 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     int build = this->NeighborListRebuild(CCal, istep);
                 
     if (build == 0) {
+        printArray2D(CCal.sys.x, dim, inum, backend);
+        printArray2D(xstart, dim, inum, backend);
+        
         // calculate the distance between x and xstart: xstart = x - xstart
         ArrayAXPBY(xstart, CCal.sys.x, xstart, one, minusone, dim*inum, backend);
         // shift periodic images of atoms I by the above distance
         ArrayPlusAtColumnIndex(&CCal.sys.x[dim*inum], xstart, &CCal.nb.alist[inum], dim, gnum, backend);        
+//         for (int i=CCal.common.inum; i<CCal.common.anum; i++) 
+//             for (int j=0; j<CCal.common.dim; j++)
+//                 CCal.sys.x[i*CCal.common.dim+j] = CCal.sys.x[i*CCal.common.dim+j] + xstart[CCal.nb.alist[i]*CCal.common.dim+j];          
+//        printArray2D(&CCal.sys.x[dim*inum], dim, gnum, backend);
+        
     }
+    cout<<"Build: "<<build<<endl;
+    
+    
+    error("here");
     
     // calculate atomic forces
     CCal.PotentialEnergyForce(CCal.sys.e, CCal.sys.f, CCal.sys.x, CCal.sys.c, CCal.sys.q, CCal.app.muep, CCal.common.nmu);                     
-    
-    printArray2D(CCal.sys.x, dim, inum, backend);       
-    printArray2D(CCal.sys.f, dim, inum, backend);        
-    error("here");
     
     // // impose force constraints if any
     this->PostForceComputation(CCal);
@@ -214,9 +220,6 @@ int CIntegration::NeighborListRebuild(CCalculation &CCal, int istep)
 //     error("here");
     
     if (build == 1) {
-        if (CCal.common.mpiRank==0)
-            printf("Rebuild neighbor list ...\n");
-        
         PBC(CCal.sys.x, CCal.sys.v, CCal.sys.image, CCal.app.dom.boxhi, CCal.app.dom.boxlo, CCal.app.dom.boxhi_lamda, 
                 CCal.app.dom.boxlo_lamda, CCal.app.dom.h, CCal.app.dom.h_inv, CCal.app.dom.h_rate, 
                 CCal.app.pbc, CCal.common.vdeform, CCal.common.triclinic, dim, inum, backend);  

@@ -83,7 +83,6 @@ void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int 
     readarray(in, &app.snapelemradius, app.nsize[55]);    
     readarray(in, &app.snapelemweight, app.nsize[56]);    
     readarray(in, &app.snapcoeff, app.nsize[57]);    
-    readarray(in, &app.createvelocity, app.nsize[58]);    
     
     int n = 0;
     for (int i=13; i<=22; i++) 
@@ -305,12 +304,8 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.nab = app.ndims[4]; // number of atoms per block
     common.natomtypes = app.ndims[8]; // number of atom types
     common.nmoletypes = app.ndims[9]; // number of molecule types
-    common.neighmax = app.ndims[10]; // % maximum number of neighbors allowed
-    common.neighevery = app.ndims[11]; // rebuild neighborlist every iterations
-    common.neighdelay = app.ndims[12]; 
-    common.globalfreq = app.ndims[13]; 
-    common.peratomfreq = app.ndims[14]; 
-        
+    common.jnum = app.ndims[10]; // % maximum number of neighbors allowed
+    
     common.descriptor = app.flags[0];   // descriptor flag: 0 -> Spherical Harmonics Bessel
     common.spectrum = app.flags[1];     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     common.training = app.flags[2];     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
@@ -324,15 +319,12 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.decomposition = app.flags[10]; // 0 -> force decomposition, 1 -> atom decomposition
     common.chemtype = app.flags[11];      // 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
     common.dftdata = app.flags[12];       // 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
-    common.unitstyle = app.flags[13];       
+    common.unitstyle = app.flags[13];       // 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
     common.ensemblemode = app.flags[14];   
-    common.neighcheck = app.flags[15]; 
-            
+    
     // set unit parameters
     setunits(common, common.unitstyle);
         
-    common.rcutmax = app.solversparam[0]; 
-    common.neighskin = app.solversparam[1];        
     common.time = app.simulaparam[0]; // current time    
     common.dt = app.simulaparam[1];    
     common.currentstep = (int) common.time/common.dt;
@@ -516,13 +508,12 @@ void implSetDomainStruct(domainstruct &dom, commonstruct &common, regionstruct &
             common.dom.boxlo[i] = common.lat.spacing[i]*common.reg.boxlo[i];        
             common.dom.boxlo_lamda[i] = 0.0;
             common.dom.boxhi_lamda[i] = 1.0;                    
-        }                          
-        
+        }                                
         cpuSetGlobalBox(common.dom.h, common.dom.h_inv, common.dom.boxlo_bound, common.dom.boxhi_bound, 
                 common.dom.boxhi, common.dom.boxlo, common.dom.boxtilt, common.dom.triclinic);                
         cpuSetLocalOrthBox(common.dom.subhi, common.dom.sublo, common.dom.boxhi, common.dom.boxlo, 
                 common.dom.subhi_lamda, common.dom.sublo_lamda, 3);
-                
+        
         dstype epsilon[3]; 
         for (int i=0; i<3; i++) epsilon[i] = 1e-6*(common.dom.boxhi[i]-common.dom.boxlo[i]);
         cpuShiftedSubbox(common.dom.ssublo, common.dom.ssubhi, common.dom.boxlo, common.dom.boxhi, 
@@ -533,23 +524,37 @@ void implSetDomainStruct(domainstruct &dom, commonstruct &common, regionstruct &
         cpuLatticeBoundingBox(common.lat.sublo, common.lat.subhi, common.dom.bsublo, common.dom.bsubhi, 
                 common.lat.primitive, common.lat.rotaterow, common.lat.primitinv, common.lat.rotatecol, 
                 common.lat.origin, common.lat.spacing, common.lat.scale);
-        common.lat.latticebounds();        
+        common.lat.latticebounds();
     }
      
 }
 
+
+//     int *lsize=NULL;
+//     int *nsize=NULL;  // data size
+//     int *ndims=NULL;  // dimensions    
+//     int *natoms=NULL; // a list containing the number of atoms in each configuration 
+//     int *natomssum=NULL; // a list containing the number of atoms in each configuration     
+//     int *t=NULL;      // atomic types of atoms for all configurations 
+//     dstype *x=NULL;   // positions of atoms for all configurations        
+//     dstype *v=NULL;   // velocities of atoms for all configurations        
+//     dstype *e=NULL;   // energies acting on atoms for all configurations    
+//     dstype *f=NULL;   // forces acting on atoms for all configurations    
+//     dstype *q=NULL;   // charges acting on atoms for all configurations        
+//     dstype *a=NULL;   // principal vectors of the simulation box for all configurations       
+//     dstype *b=NULL;   // principal vectors of the simulation box for all configurations       
+//     dstype *c=NULL;   // principal vectors of the simulation box for all configurations       
+//     dstype *we=NULL;   // weights on energies
+//     dstype *wf=NULL;   // weights on forces 
+
 void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app, commonstruct &common, regionstruct &reg, latticestruct &lat)
 {
-    int dim = common.dim;
-    int mpiRank = common.mpiRank;
+    
     int backend = 1;    
-    int *ilist;
-    dstype *y, *amass;        
-        
-    TemplateMalloc(&y, common.dim*common.lat.natom, backend);
-    TemplateMalloc(&ilist, common.lat.natom, backend);           
-    TemplateMalloc(&config.x, common.dim*common.lat.natom, backend);
-    TemplateMalloc(&config.t, common.lat.natom, backend);                
+    int *a;
+    dstype *y, *amass;    
+    int *ilist, *image;
+    
     TemplateMalloc(&config.natoms, 1, backend);     
     TemplateMalloc(&config.natomssum, 2, backend);         
     TemplateMalloc(&config.a, 3, backend);     
@@ -558,56 +563,62 @@ void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app
     
     config.a[0] = dom.boxhi[0]-dom.boxlo[0]; config.a[1] = 0.0;                       config.a[2] = 0.0;
     config.b[0] = dom.boxtilt[0];            config.b[1] = dom.boxhi[1]-dom.boxlo[1]; config.b[2] = 0.0;
-    config.c[0] = dom.boxtilt[1];            config.c[1] = dom.boxtilt[2];            config.c[2] = dom.boxhi[2] - dom.boxlo[2];
-    
-    cpuAtomLattice(y, ilist, common.lat.atombasis, common.lat.primitive, common.lat.rotaterow, common.lat.origin, 
+    config.c[0] = dom.boxtilt[1];            config.b[1] = dom.boxtilt[2];            config.b[2] = dom.boxhi[2] - dom.boxlo[2];
+                
+    TemplateMalloc(&y, common.dim*common.lat.natom, backend);
+    TemplateMalloc(&a, common.lat.natom, backend);                
+    cpuAtomLattice(y, a, common.lat.atombasis, common.lat.primitive, common.lat.rotaterow, common.lat.origin, 
             common.lat.spacing, common.lat.scale, common.lat.atomtype, common.lat.nbasis, 0, common.lat.ilo, 
-            common.lat.ihi, common.lat.jlo, common.lat.jhi, common.lat.klo, common.lat.khi, dim);
-        
+            common.lat.ihi, common.lat.jlo, common.lat.jhi, common.lat.klo, common.lat.khi, common.dim);
+    
+    TemplateMalloc(&config.x, common.dim*common.lat.natom, backend);
+    TemplateMalloc(&config.t, common.lat.natom, backend);                
     int nlocal = cpuAtomAdd(config.x, config.t, y, common.dom.h_inv, common.dom.boxlo, common.dom.sublo_lamda,
-        common.dom.subhi_lamda, ilist, common.dim, 0, common.lat.natom);
+        common.dom.subhi_lamda, a, common.dim, 0, common.lat.natom);
 
-    config.natoms[0] = nlocal;
-    config.natomssum[0] = 0;
-    config.natomssum[1] = nlocal;
-    common.nlocal = nlocal;
-    common.inum = nlocal;
-    common.inummax = nlocal;
-    common.tdof = (nlocal-1)*dim;    
-    common.tfactor = common.mvv2e / (common.tdof * common.boltz);    
-            
+    config.natoms[0] = nloc
+    int dim = 3;
     TemplateMalloc(&config.v, dim*nlocal, backend);        
     TemplateMalloc(&amass, nlocal, backend);        
+    TemplateMalloc(&ilist, nlocal, backend);        
     for (int i=0; i<nlocal; i++) ilist[i] = i;
-        
-    if (app.nsize[58]>0) {
-        dstype t_desired = app.createvelocity[0];
-        int seed0 = (int) app.createvelocity[1];
-        int dist_flag = (int) app.createvelocity[2];
-        int sum_flag = (int) app.createvelocity[3];
-        int loop_flag = (int) app.createvelocity[4];
-        int momentum_flag = (int) app.createvelocity[5];         
-        int rotation_flag = (int) app.createvelocity[6];     
+    TemplateMalloc(&image, dim*nlocal, backend);        
+    for (int i=0; i<dim*nlocal; i++) image[i] = 0;
 
-        int natom=nlocal;
-        cpuVelocityCreate(config.x, config.v, app.atommass, common.second, common.seed, common.save, ilist, 
-                config.t, seed0, sum_flag, dist_flag, loop_flag, dim, mpiRank, nlocal, natom);
-        
-        common.masstotal = cpuComputeMass(amass, app.atommass, config.t, ilist, nlocal);                                
-        cpuComputeVCM(common.vcm, config.v, app.atommass, common.masstotal, ilist, config.t, dim, nlocal);                
-        cpuVelocityZeroMomentum(config.v, common.vcm, dim, nlocal);
+    int sum_flag=0;
+    int dist_flag=0;
+    int loop_flag=2; 
+    int rotation_flag=0; 
+    int momentum_flag=1; 
+    int mpiRank=0;
+    int natoms=nlocal;
+    int seed0 = 4928459;
+    dstype second[1];
+    int seed[1]; 
+    int save[1];                 
+    cpuVelocityCreate(config.x, config.v, app.atommass, second, seed, save, ilist, config.t, seed0, 
+            sum_flag, dist_flag, loop_flag, dim, mpiRank, nlocal, natoms);
 
-        common.temp = cpuComputeTempScalar(config.v, app.atommass, common.tfactor, config.t, ilist, dim, nlocal);    
-        cpuArrayMultiplyScalar(config.v, sqrt(t_desired/common.temp), nlocal*dim);                                              
-        common.nv = 1;
-    }
+    dstype vcm[3];
+    dstype masstotal = cpuComputeMass(amass, app.atommass, config.t, ilist, nlocal);                                
+    cpuComputeVCM(vcm, config.v, app.atommass, masstotal, ilist, config.t, dim, nlocal);                
+    cpuVelocityZeroMomentum(config.v, vcm, dim, nlocal);
+
+    int unitstyle=2; //metal
+    dstype dof = (nlocal-1)*dim;
+    setunits(common, unitstyle);
+    dstype tfactor = common.mvv2e / (dof * common.boltz);
+    dstype t_current = cpuComputeTempScalar(config.v, app.atommass, tfactor, config.t, ilist, dim, nlocal);
+    dstype t_desired = 300;
+    cpuArrayMultiplyScalar(config.v, sqrt(t_desired/t_current), nlocal*dim);                                
+
+    printf("%g %g %g\n", masstotal, tfactor, t_current);
+    printArray2D(config.v, common.dim, 10, 1);
+    printArray2D(vcm, 1, 3, 1);
     
-    free(y); free(ilist); free(amass);   
-        
-//     printf("%g %g %g\n", common.masstotal, common.tfactor, common.temp);
-//     printArray2D(config.v, common.dim, 10, 1);
-//     printArray2D(common.vcm, 1, 3, 1);    
-    //error("here");        
+    //free(tmp); free(lsize); free(nsize); free(type);  
+    
+    error("here");        
 }
 
 void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &common, 
@@ -619,16 +630,158 @@ void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &comm
     common.readregion = implReadRegionStruct(common.reg, filein);
     common.readdomain = implReadDomainStruct(common.dom, filein);    
     implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);         
-    
+       
     if (common.readdomain==0)
         implSetDomainStruct(common.dom, common, common.reg, common.lat);
     
     if (common.readconfig==0)
-        implSetConfigStruct(config, common.dom, app, common, common.reg, common.lat);    
+        implSetConfigStruct(config, common.dom, app, common, common.reg, common.lat);
     
-    common.triclinic = common.dom.triclinic;
-    app.dom.allocatememory(backend);
-    copydomain(app.dom, common.dom, backend);
+//     if (common.readdomain==0) {
+//         if (common.readregion == 0) 
+//             error("Domain and region are not defined.");
+//         else {
+//             if (common.readlattice==0) {
+//                 common.dom.triclinic = common.reg.triclinic;
+//                 for (int i = 0; i<= 3; i++) {
+//                     common.dom.boxhi[i] = common.reg.boxhi[i]; 
+//                     common.dom.boxlo[i] = common.reg.boxlo[i]; 
+//                     common.dom.boxtilt[i] = common.reg.boxtilt[i]; 
+//                 }
+//             }
+//             else {
+//                 //print1darray(common.lat.spacing, 3);
+//                 //cout<<common.lat.scale<<endl;
+//                 
+//                 cpuLattice(common.lat.atombasis, common.lat.primitive, common.lat.rotaterow, common.lat.primitinv, 
+//                         common.lat.rotatecol, common.lat.origin, common.lat.spacing, common.lat.a1, common.lat.a2, 
+//                         common.lat.a3, common.lat.scale, common.lat.orientx, common.lat.orienty, common.lat.orientz, 
+//                         common.lat.style, common.unitstyle, common.lat.spaceflag, common.dim);
+//                 
+//                 //print1darray(common.lat.spacing, 3);
+//                 //cout<<common.lat.scale<<endl;
+//                 //error("here");
+//                 common.dom.triclinic = common.reg.triclinic;
+//                 common.dom.boxtilt[0] = common.lat.spacing[0]*common.reg.boxtilt[0];                     
+//                 common.dom.boxtilt[1] = common.lat.spacing[0]*common.reg.boxtilt[1];                     
+//                 common.dom.boxtilt[2] = common.lat.spacing[1]*common.reg.boxtilt[2];                                     
+//                 for (int i = 0; i<= 3; i++) {
+//                     common.dom.boxhi[i] = common.lat.spacing[i]*common.reg.boxhi[i]; 
+//                     common.dom.boxlo[i] = common.lat.spacing[i]*common.reg.boxlo[i];        
+//                     common.dom.boxlo_lamda[i] = 0.0;
+//                     common.dom.boxhi_lamda[i] = 1.0;                    
+//                 }                                
+//                 cpuSetGlobalBox(common.dom.h, common.dom.h_inv, common.dom.boxlo_bound, common.dom.boxhi_bound, 
+//                         common.dom.boxhi, common.dom.boxlo, common.dom.boxtilt, common.dom.triclinic);                
+//                 cpuSetLocalOrthBox(common.dom.subhi, common.dom.sublo, common.dom.boxhi, common.dom.boxlo, 
+//                         common.dom.subhi_lamda, common.dom.sublo_lamda, 3);
+//                 dstype epsilon[3];
+//                 epsilon[0] = epsilon[1] = epsilon[2] = 1e-6;
+//                 cpuShiftedSubbox(common.dom.ssublo, common.dom.ssubhi, common.dom.boxlo, common.dom.boxhi, 
+//                         common.dom.boxlo_lamda, common.dom.boxhi_lamda, common.dom.sublo, common.dom.subhi, 
+//                         common.dom.sublo_lamda, common.dom.subhi_lamda, epsilon, common.pbc, common.dom.triclinic);
+//                 cpuBoundingSubbox(common.dom.bsublo, common.dom.bsubhi, common.dom.sublo, common.dom.subhi,   
+//                         common.dom.sublo_lamda, common.dom.subhi_lamda, common.dom.boxlo, common.dom.h, common.dom.triclinic);                                        
+//                 cpuLatticeBoundingBox(common.lat.sublo, common.lat.subhi, common.dom.bsublo, common.dom.bsubhi, 
+//                         common.lat.primitive, common.lat.rotaterow, common.lat.primitinv, common.lat.rotatecol, 
+//                         common.lat.origin, common.lat.spacing, common.lat.scale);
+//                 common.lat.latticebounds();
+//                 //common.dom.printout(1);
+//                 //common.lat.printout(1);
+//                 
+//                 int backend = 1;
+//                 dstype *y, *x;
+//                 int *a, *atomtype;
+//                 TemplateMalloc(&y, common.dim*common.lat.natom, backend);
+//                 TemplateMalloc(&a, common.lat.natom, backend);                
+//                 cpuAtomLattice(y, a, common.lat.atombasis, common.lat.primitive, common.lat.rotaterow, common.lat.origin, 
+//                         common.lat.spacing, common.lat.scale, common.lat.atomtype, common.lat.nbasis, 0, common.lat.ilo, 
+//                         common.lat.ihi, common.lat.jlo, common.lat.jhi, common.lat.klo, common.lat.khi, common.dim);
+//                 
+//                 
+//                 TemplateMalloc(&x, common.dim*common.lat.natom, backend);
+//                 TemplateMalloc(&atomtype, common.lat.natom, backend);                
+//                 int nlocal = cpuAtomAdd(x, atomtype, y, common.dom.h_inv, common.dom.boxlo, common.dom.sublo_lamda,
+//                     common.dom.subhi_lamda, a, common.dim, 0, common.lat.natom);
+//                 
+//                 //cout<<n<<endl;
+//                 //printArray2D(x, common.dim, 10, 1);
+//                 
+//                 int dim = 3;
+//                 dstype *v, *mass, *amass;
+//                 int *ilist, *image;
+//                 TemplateMalloc(&v, dim*nlocal, backend);        
+//                 TemplateMalloc(&amass, nlocal, backend);        
+//                 TemplateMalloc(&mass, 2, backend);        
+//                 mass[0] = 0.0; mass[1] = 180.88;
+//                 TemplateMalloc(&ilist, nlocal, backend);        
+//                 for (int i=0; i<nlocal; i++) ilist[i] = i;
+//                 TemplateMalloc(&image, dim*nlocal, backend);        
+//                 for (int i=0; i<dim*nlocal; i++) image[i] = 0;
+//                 
+//                 int sum_flag=0;
+//                 int dist_flag=0;
+//                 int loop_flag=2; 
+//                 int rotation_flag=0; 
+//                 int momentum_flag=1; 
+//                 int mpiRank=0;
+//                 int natoms=nlocal;
+//                 int seed0 = 4928459;
+//                 dstype second[1];
+//                 int seed[1]; 
+//                 int save[1];                 
+//                 cpuVelocityCreate(x, v, mass, second, seed, save, ilist, atomtype, seed0, sum_flag, dist_flag, loop_flag, 
+//                                   dim, mpiRank, nlocal, natoms);
+//                 
+//                 dstype vcm[3];
+//                 dstype masstotal = cpuComputeMass(amass, mass, atomtype, ilist, nlocal);                                
+//                 cpuComputeVCM(vcm, v, mass, masstotal, ilist, atomtype, dim, nlocal);                
+//                 cpuVelocityZeroMomentum(v, vcm, dim, nlocal);
+//                 
+//                 int unitstyle=2; //metal
+//                 dstype dof = (nlocal-1)*dim;
+//                 setunits(common, unitstyle);
+//                 dstype tfactor = common.mvv2e / (dof * common.boltz);
+//                 dstype t_current = cpuComputeTempScalar(v, mass, tfactor, atomtype, ilist, dim, nlocal);
+//                 dstype t_desired = 300;
+//                 cpuArrayMultiplyScalar(v, sqrt(t_desired/t_current), nlocal*dim);                                
+//                 
+//                 printf("%g %g %g\n", masstotal, tfactor, t_current);
+//                 printArray2D(v, common.dim, 10, 1);
+//                 printArray2D(vcm, 1, 3, 1);
+//                 
+//                 //cpuComputeXCM(xcm, x, mass, common.dom.h, masstotal, ilist, atomtype, image, common.dom.triclinic, dim, nlocal);
+// // cpuVelocityCreate(T *x, T *v, T *mass, T *second, 
+// //          int *seed, int *save, int *map, int *type, int sum_flag, int dist_flag, int loop_flag, 
+// //         int dim, int mpiRank, int nlocal, int natoms);
+// 
+// //                 dstype *vext, *v_lo, *v_hi, *coord_lo, *coord_hi; 
+// //                 int *coord_dim, *vdim;
+// //                 int vmode, natoms;
+// //                 cpuVelocity(x, v, box, xcm, vcm, mass, second, omega, vext, v_lo, v_hi, coord_lo, coord_hi, 
+// //                         t_desired, t_current, seed, save, map, image, type, coord_dim, vdim, sum_flag, dist_flag, loop_flag, 
+// //                         rotation_flag, momentum_flag, triclinic, dim, mpiRank, vmode, nlocal, natoms);
+// 
+// //         cpuVelocityCreate(x, v, mass, second, omega,  box, xcm, vcm, t_desired, 
+// //                 t_current, seed, save, map, image, type, sum_flag, dist_flag, loop_flag, 
+// //                 rotation_flag, momentum_flag, triclinic, dim, mpiRank, nlocal, natoms);
+//                 
+// // template <typename T> T cpuComputeMass(T *amass, T *mass, int *type, int *ilist, int inum);                
+// // template <typename T> void  cpuComputeXCM(T *xcm, T *x, T *mass, T *box, T masstotal, 
+// //         int *ilist, int *type, int *image, int triclinic, int dim, int inum);
+// // template <typename T> void  cpuComputeVCM(T *vcm, T *v, T *mass, T masstotal, 
+// //         int *ilist, int *type, int dim, int inum);
+//                 
+// // cpuVelocity(T *x, T *v, T *box, T *xcm, T *vcm, 
+// //         T *mass, T *second, T *omega, T *vext, T *v_lo, T *v_hi, T *coord_lo, T *coord_hi, 
+// //         T t_desired, T t_current, int *seed, int *save, int *map, int *image, int *type, 
+// //         int *coord_dim, int *vdim, int sum_flag, int dist_flag, int loop_flag, 
+// //         int rotation_flag, int momentum_flag, int triclinic, int dim, int mpiRank, 
+// //         int vmode, int nlocal, int natoms);                
+// //                error("here");
+//             }
+//         }
+//     }
 }
 
 #endif

@@ -91,7 +91,12 @@ app.simparam = []; % simulation parameters
 app.solparam = []; % solver parameters
 app.nveparam = []; % NVE params
 app.nvtparam = []; % NVT params
-app.createvelocity = [];
+
+app.snaparam = []; % snap parameters
+app.snapelemradius = []; % radius per element
+app.snapelemweight = [];   % weight per element
+app.snapcoeff = [];
+app.snapcoefffile = "";
 
 % machine learning potentials
 app.muml = [];   % coefficients of ML potential
@@ -114,11 +119,6 @@ app.snapbnormflag = 0;
 app.snapwselfallflag = 0;
 app.snapnelem = 0;    % # of elements
 app.snapncoeff = 0;  % # of coeffients per element
-app.snaparam = []; % snap parameters
-app.snapelemradius = []; % radius per element
-app.snapelemweight = [];   % weight per element
-app.snapcoeff = [];
-app.snapcoefffile = "";
 
 % empirical potential parameters
 app.eta = [];   % hyperparameters for emprical potentials

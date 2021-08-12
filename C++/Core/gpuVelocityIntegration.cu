@@ -386,7 +386,7 @@ template <typename T> void gpuNoseHooverThermostat(T *v, T *dtarray, T *tarray, 
 }
 
 template <typename T> void gpuNVTInitialIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,
-        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T *ke, T *tmp, int *type, int *ilist, 
+        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, int *type, int *ilist, 
         int eta_mass_flag, int biasflag, int mtchain, int nc_tchain, int dim, int inum)
 {  
   T dtf = dtarray[1];
@@ -427,7 +427,7 @@ template <typename T> void gpuNVTFinalIntegrate(T *x, T *v, T *f, T *mass, T *dt
 }
 
 template <typename T> void gpuInitialIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,
-        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T *ke, T *tmp, T vlimitsq, int *type, int *ilist,
+        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T vlimitsq, int *type, int *ilist,
         int eta_mass_flag, int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum)
 {
     T dtf = dtarray[1];
@@ -442,8 +442,11 @@ template <typename T> void gpuInitialIntegrate(T *x, T *v, T *f, T *mass, T *dta
     }
     else if (mode==2) {
         gpuNVTInitialIntegrate(x, v, f, mass, dtarray, tarray,
-            eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, type, ilist, 
-            eta_mass_flag, biasflag, mtchain, nc_tchain, dim, inum);
+            eta_mass, eta, eta_dot, eta_dotdot, type, ilist, 
+            eta_mass_flag, biasflag, mtchain, nc_tchain, dim, inum);        
+//         gpuNVTInitialIntegrate(x, v, f, mass, dtarray, tarray,
+//             eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, type, ilist, 
+//             eta_mass_flag, biasflag, mtchain, nc_tchain, dim, inum);
     }
 //     else if (mode==3) {
 //         gpuMoveInitialIntegrate(x, v, f, mass, fparam, dtf, dtv, type, ilist, iparam, dim, inum);
@@ -451,11 +454,11 @@ template <typename T> void gpuInitialIntegrate(T *x, T *v, T *f, T *mass, T *dta
 }
 template void gpuInitialIntegrate(double *x, double *v, double *f, double *mass, 
         double *dtarray, double *tarray, double *eta_mass, double *eta, double *eta_dot, 
-        double *eta_dotdot, double *ke, double *tmp, double vlimitsq, int *type, int *ilist, 
+        double *eta_dotdot, double vlimitsq, int *type, int *ilist, 
         int eta_mass_flag, int biasflag,  int mtchain, int nc_tchain, int mode, int dim, int inum);
 template void gpuInitialIntegrate(float *x, float *v, float *f, float *mass, 
         float *dtarray, float *tarray, float *eta_mass, float *eta, float *eta_dot, 
-        float *eta_dotdot, float *ke, float *tmp, float vlimitsq, int *type, int *ilist, 
+        float *eta_dotdot, float vlimitsq, int *type, int *ilist, 
         int eta_mass_flag, int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum);
 
 template <typename T> void gpuFinalIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,

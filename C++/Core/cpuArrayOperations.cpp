@@ -170,6 +170,24 @@ template <typename T> void cpuArrayTranspose(T *A, T *B, int m, int n)
     }
 }
 
+template <typename T> void cpuArrayPlusAtColumnIndex(T *A, T *B, int *colind, int m, int n)
+{  
+    for (int ii=0; ii<n; ii++) { // loop over each column
+        int i = colind[ii];   
+        for (int j=0; j<m; j++) // loop over each row
+            A[ii*m+j] += B[i*m+j]; 
+    }
+}
+
+template <typename T> void cpuArrayMinusAtColumnIndex(T *A, T *B, int *colind, int m, int n)
+{  
+    for (int ii=0; ii<n; ii++) { // loop over each column
+        int i = colind[ii];   
+        for (int j=0; j<m; j++) // loop over each row
+            A[ii*m+j] = B[i*m+j] - A[ii*m+j]; 
+    }
+}
+
 template <typename T> void cpuGetArrayAtColumnIndex(T *A, T *B, int *colind, int m, int n)
 {  
     for (int ii=0; ii<n; ii++) { // loop over each column
@@ -784,6 +802,14 @@ template void cpuArrayInsert(int*, int*, int, int, int, int, int, int, int, int,
 template void cpuArrayTranspose(double *A, double *B, int m, int n);
 template void cpuArrayTranspose(float *A, float *B, int m, int n);
 template void cpuArrayTranspose(int *A, int *B, int m, int n);
+
+template void cpuArrayPlusAtColumnIndex(double *A, double *B, int *colind, int m, int n);
+template void cpuArrayPlusAtColumnIndex(float *A, float *B, int *colind, int m, int n);
+template void cpuArrayPlusAtColumnIndex(int *A, int *B, int *colind, int m, int n);
+
+template void cpuArrayMinusAtColumnIndex(double *A, double *B, int *colind, int m, int n);
+template void cpuArrayMinusAtColumnIndex(float *A, float *B, int *colind, int m, int n);
+template void cpuArrayMinusAtColumnIndex(int *A, int *B, int *colind, int m, int n);
 
 template void cpuGetArrayAtColumnIndex(double *A, double *B, int *colind, int m, int n);
 template void cpuGetArrayAtColumnIndex(float *A, float *B, int *colind, int m, int n);

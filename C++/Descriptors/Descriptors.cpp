@@ -189,7 +189,7 @@ void SphericalHarmonicBesselDescriptors(dstype *e, neighborstruct &nb, commonstr
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int dim = common.dim;
         Int backend = common.backend;
                 
@@ -207,29 +207,29 @@ void SphericalHarmonicBesselDescriptors(dstype *e, neighborstruct &nb, commonstr
         }                
         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim, backend);
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim, backend);
         else
-            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim, backend);        
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim, backend);        
                 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1        
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1        
         //cpuCumsum(pairnumsum, pairnum, na+1);                                         
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
         
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         //dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         Int nbasis = common.K*(common.L+1)*(common.L+1);
         dstype *xij = &tmp.tmpmem[2*na*nbasis+ntuples*(2*nbasis)]; // ntuples*dim
         dstype *qi;
         dstype *qj;
         NeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim, backend);       
+                atomtype, na, neighmax, ncq, dim, backend);       
                                                 
         dstype *cr =  &tmp.tmpmem[0];         // na*nbasis
         dstype *ci =  &tmp.tmpmem[na*nbasis]; // na*nbasis              
@@ -286,7 +286,7 @@ void SphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int dim = common.dim;
         Int backend = common.backend;
         
@@ -304,31 +304,31 @@ void SphericalHarmonicBesselDescriptors(dstype *e, dstype *f, neighborstruct &nb
         }                
                 
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim, backend);
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim, backend);
         else
-            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim, backend);        
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim, backend);        
                 
                         //printArray2D(nb.neighnum, 1, na, common.backend);
         
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1        
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1        
         //cpuCumsum(pairnumsum, pairnum, na+1);         
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         //dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         Int nbasis = common.K*(common.L+1)*(common.L+1);
         dstype *xij = &tmp.tmpmem[2*na*nbasis+ntuples*(8*nbasis)]; // ntuples*dim
         dstype *qi;
         dstype *qj;
         NeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim, backend);                                                               
+                atomtype, na, neighmax, ncq, dim, backend);                                                               
                         
         dstype *cr =  &tmp.tmpmem[0];         // na*nbasis
         dstype *ci =  &tmp.tmpmem[na*nbasis]; // na*nbasis                        
@@ -505,7 +505,7 @@ void SphericalHarmonicBesselEnergyForce(dstype *e, dstype *f, neighborstruct &nb
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int dim = common.dim;
         Int backend = common.backend;
                 
@@ -523,28 +523,28 @@ void SphericalHarmonicBesselEnergyForce(dstype *e, dstype *f, neighborstruct &nb
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim, backend);
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim, backend);
         else
-            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim, backend);        
+            FullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim, backend);        
                                                 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1        
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1        
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
         
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         //dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         Int nbasis = common.K*(common.L+1)*(common.L+1);
         dstype *xij = &tmp.tmpmem[2*na*nbasis+ntuples*(8*nbasis)]; // ntuples*dim
         dstype *qi;
         dstype *qj;
         NeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim, backend);       
+                atomtype, na, neighmax, ncq, dim, backend);       
         
 // #ifdef HAVE_CHECK         
 //         dstype *xi1 =  new dstype[ntuples*dim]; 

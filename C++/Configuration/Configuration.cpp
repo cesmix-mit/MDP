@@ -299,7 +299,7 @@ void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
 //     common.nab = app.ndims[4]; // number of atoms per block
 //     common.natomtypes = app.ndims[8]; // number of atom types
 //     common.nmoletypes = app.ndims[9]; // number of molecule types
-//     common.jnum = app.ndims[10]; // % maximum number of neighbors allowed
+//     common.neighmax = app.ndims[10]; // % maximum number of neighbors allowed
 //     
 //     common.descriptor = app.flags[0];   // descriptor flag: 0 -> Spherical Harmonics Bessel
 //     common.spectrum = app.flags[1];     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
@@ -601,7 +601,7 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
         b[i] = simbox[dim+i];        
         c[i] = (dim > 2) ? simbox[2*dim+i] : 0.0;        
     }                    
-    
+        
     if (dim==2) {
         cpuBoundingBox2D(refvertices, rbvertices, boxvertices, bbvertices, 
                 a, b, common.boxoffset, common.pbc);
@@ -660,12 +660,12 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     
     // need to check size of nb.alist
     TemplateMalloc(&nb.alist, common.anummax, common.backend);  
-    TemplateMalloc(&nb.neighlist, common.inum*common.jnum, common.backend);  
+    TemplateMalloc(&nb.neighlist, common.inum*common.neighmax, common.backend);  
     TemplateMalloc(&nb.neighnum, common.inum, common.backend);      
     //TemplateMalloc(&nb.neighnumsum, common.inum+1, common.backend);      
-    //for (Int i=0; i<common.inum*common.jnum; i++)
+    //for (Int i=0; i<common.inum*common.neighmax; i++)
     //    nb.neighlist[i] = 0;
-        
+            
     if (common.backend <= 1) {
         for (Int i=0; i<dim; i++)
             nb.cellnum[i] = cellnum[i];
@@ -708,34 +708,44 @@ void implSetTempStruct(tempstruct & tmp, commonstruct &common)
     // need to check size of tmp.intmem and tmp.tmpmem
     Int anummax= common.anummax;
     Int inum = common.inum;
-    Int jnum = common.jnum;
+    Int neighmax = common.neighmax;
     Int pnum = common.pnum;
     Int nabmax = common.nabmax;
     
     Int n1 = pnum*inum + 2*inum + 1;
     Int n2 = 4*anummax;    
-    Int n3 = 1 + 3*nabmax + 11*nabmax*jnum; 
+    Int n3 = 1 + 3*nabmax + 11*nabmax*neighmax; 
     common.nintmem = max(max(n1, n2), n3);
     TemplateMalloc(&tmp.intmem, common.nintmem, common.backend);  
     
     Int nbasis = common.K*(common.L+1)*(common.L+1);    
-    n1 = nabmax*jnum*(7*common.dim+3*common.ncq+1);
-    n2 = 2*nabmax*nbasis + nabmax*jnum*(8*nbasis) + nabmax*common.Nbf;
-    n3 = 2*nabmax*nbasis + nabmax*jnum*(6*nbasis) + 3*nabmax*jnum*common.Nbf;    
+    n1 = nabmax*neighmax*(7*common.dim+3*common.ncq+1);
+    n2 = 2*nabmax*nbasis + nabmax*neighmax*(8*nbasis) + nabmax*common.Nbf;
+    n3 = 2*nabmax*nbasis + nabmax*neighmax*(6*nbasis) + 3*nabmax*neighmax*common.Nbf;    
     common.ntmpmem = max(max(n1, n2), n3);    
+    
+    printf("Temporary memory for integer array: %i\n", common.nintmem);
+    printf("Temporary memory for float array: %i\n", common.ntmpmem);
+    
     TemplateMalloc(&tmp.tmpmem, common.ntmpmem, common.backend);          
 }
 
 void implSetSysStruct(sysstruct & sys, commonstruct &common, configstruct &config, Int ci)
 {   
     TemplateMalloc(&sys.e, common.inummax, common.backend);      
-    TemplateMalloc(&sys.f, common.dim*common.inummax, common.backend);  
+    TemplateMalloc(&sys.f, common.dim*common.inummax, common.backend);      
+    TemplateMalloc(&sys.image, common.dim*common.inummax, common.backend);  
+    ArraySetValue(sys.image, 0, common.dim*common.inummax, common.backend);  
     
+    //printf("%i %i %i %i\n", common.dim, common.inum, common.inummax, common.anummax);
     if (common.nx>0) {
-        // need to check size of sys.x
-        TemplateMalloc(&sys.x, common.anummax*common.dim*common.inummax, common.backend);  
+        // need to check size of sys.x        
+        TemplateMalloc(&sys.x, common.dim*max(common.anummax,common.inummax), common.backend);  
         implGetPositions(sys.x, common, config, ci);
     }
+    
+    TemplateMalloc(&sys.xhold, common.dim*common.inummax, common.backend);  
+    ArrayCopy(sys.xhold, sys.x, common.dim*common.inummax, common.backend);  
     
     if (common.nv > 0) {
         TemplateMalloc(&sys.v, common.dim*common.inummax, common.backend);  
@@ -755,9 +765,11 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
     Int dim = common.dim;
     Int cnum = common.cnum;
     Int pnum = common.pnum;
-    Int jnum = common.jnum;    
+    Int neighmax = common.neighmax;    
     Int ntype = common.natomtypes;
-    Int gnum, anum;    
+    Int gnum, anum;            
+    
+    //printf("%i %i %i %i %i %i\n", dim, cnum, pnum, inum, neighmax, ntype);
     
     Int *inside = &tmp.intmem[0]; // inum*pnum
     Int *glistnum = &tmp.intmem[inum*common.pnum]; // inum
@@ -766,9 +778,11 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
     Int *d_incr = &tmp.intmem[inum*common.pnum + 3*inum+2]; // inum+1
     
     if (dim==2) {        
+        // include periodic images of atoms I as ghost atoms
         AtomList2D(nb.alist, inside, glistnumsum, glistnum, d_sums, d_incr, x, nb.pimages, 
                  nb.rbvertices, nb.s2rmap, inum, pnum, dim, common.backend);
         
+        // number of ghost atoms
         gnum = IntArrayGetValueAtIndex(glistnumsum, inum, common.backend);        
         anum = inum + gnum;
         common.inum = inum;
@@ -776,7 +790,7 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         common.anum = anum;
         
         if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list                    
-            FullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim, common.backend);                                    
+            FullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, neighmax, dim, common.backend);                                    
         }
         else { // form neighbor list using cell list
             Int *clist = &tmp.intmem[0]; //anum
@@ -788,10 +802,10 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
             CellList2D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim, common.backend);  
             Cell2AtomList(c2alist, c2anumsum, c2anum, clist, dtemp, anum, cnum, common.backend);                        
             FullNeighborList2D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist,   
-                       c2alist, c2anumsum, nb.cellnum, inum, jnum, dim, common.backend);                             
+                       c2alist, c2anumsum, nb.cellnum, inum, neighmax, dim, common.backend);                             
         }
     }
-    else {
+    else {        
         AtomList3D(nb.alist, inside, glistnumsum, glistnum, d_sums, d_incr, x, nb.pimages, 
                  nb.rbvertices, nb.s2rmap, inum, pnum, dim, common.backend);
         
@@ -799,10 +813,10 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
         anum = inum + gnum;
         common.inum = inum;
         common.gnum = gnum;
-        common.anum = anum;
-                       
+        common.anum = anum;                               
+        
         if (common.neighcell == 0) { // O(N^2) algorithm to form the neighbor list
-            FullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, jnum, dim, common.backend);                                    
+            FullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, anum, inum, neighmax, dim, common.backend);                                    
         }
         else { // form neighbor list using cell list
             Int *clist = &tmp.intmem[0]; //anum
@@ -814,19 +828,19 @@ void implNeighborList(neighborstruct &nb, commonstruct &common, appstruct &app, 
             CellList3D(clist, x, nb.eta1, nb.eta2, nb.eta3, nb.s2rmap, nb.cellnum, inum, anum, dim, common.backend);  
             Cell2AtomList(c2alist, c2anumsum, c2anum, clist, dtemp, anum, cnum, common.backend);                        
             FullNeighborList3D(nb.neighlist, nb.neighnum, x, app.rcutsq, nb.alist, clist,   
-                       c2alist, c2anumsum, nb.cellnum, inum, jnum, dim, common.backend);                 
+                       c2alist, c2anumsum, nb.cellnum, inum, neighmax, dim, common.backend);                 
         }
     }
     
 // #ifdef HAVE_DEBUG                      
 //     //printArray2D(nb.neighnum, 1, inum, common.backend);  
-//     //printArray2D(nb.neighlist, jnum, inum, common.backend);              
+//     //printArray2D(nb.neighlist, neighmax, inum, common.backend);              
 //     string fn = (common.backend == 2) ? "alistgpu.bin" : "alistcpu.bin";
 //     writearray2file(fn, nb.alist, anum, common.backend); 
 //     fn = (common.backend == 2) ? "neighnumgpu.bin" : "neighnumcpu.bin";
 //     writearray2file(fn, nb.neighnum, inum, common.backend);
 //     fn = (common.backend == 2) ? "neighlistgpu.bin" : "neighlistcpu.bin";
-//     writearray2file(fn, nb.neighlist, inum*jnum, common.backend);    
+//     writearray2file(fn, nb.neighlist, inum*neighmax, common.backend);    
 // #endif                        
     
     //error("here");

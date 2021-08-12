@@ -17,7 +17,7 @@ void cpuSingleEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -72,7 +72,7 @@ void cpuFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -91,26 +91,28 @@ void cpuFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                         
         //a list contains the starting positions of the first neighbor              
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                                 
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
         
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
+        
+        //printArray2D(f, dim, 10, common.backend);        
         
         dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
@@ -122,6 +124,10 @@ void cpuFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         else // atom decomposition
             cpuCenterAtomPairDecomposition(e, f, eij, fij, ilist, pairnumsum, na, dim);     
         
+//         printArray2D(x, dim, 10, common.backend);
+//         printArray2D(f, dim, 10, common.backend);  
+//         printArray2D(xij, dim, 10, common.backend);
+//         printArray2D(fij, dim, 10, common.backend);        
 #ifdef HAVE_DEBUG                      
         writearray2file("xijcpu.bin", xij, ntuples*dim, common.backend); 
         writearray2file("eijcpu.bin", eij, ntuples, common.backend); 
@@ -140,7 +146,7 @@ void cpuHalfNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -159,26 +165,26 @@ void cpuHalfNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);            
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);            
         else
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, dim);
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, dim);
                                 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                                 
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
@@ -259,7 +265,7 @@ void cpuBO2EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -278,23 +284,23 @@ void cpuBO2EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
-        cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                                 
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *du = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq+1)]; // ntuples        
@@ -379,7 +385,7 @@ void cpuTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -398,11 +404,11 @@ void cpuTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum        
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax        
         if ((typej>0) && (typek>0))
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, dim);
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, dim);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                 
         Int *tripletnum = &tmp.intmem[na]; // na        
         cpuTripletnum(tripletnum, pairnum, na);
@@ -413,11 +419,11 @@ void cpuTripletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruc
         Int *tripletnumsum = &tmp.intmem[2*na]; // na+1        
         //Cumsum(tripletnumsum, tripletnum, na+1, backend);                                         
         //int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, common.backend);     
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, backend);                             
         
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
-        cpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
+        cpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *tripletlist = &tmp.intmem[1 + 3*na]; // 2*ntuples    (ilist, tripletnum, tripletnumsum, tripletlist)            
         cpuArrayCopy(tripletlist, temp, 2*ntuples);
         
@@ -485,7 +491,7 @@ void cpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -504,24 +510,24 @@ void cpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum       
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax       
         if (typej == typei) {
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
         }
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1    
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1    
         //Cumsum(pairnumsum, pairnum, na+1, backend);                                         
         //int npairs = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int npairs = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // npairs    
-        Int *aj = &tmp.intmem[1+3*na+npairs+na*jnum]; // npairs        
-        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs        
-        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // npairs    
+        Int *aj = &tmp.intmem[1+3*na+npairs+na*neighmax]; // npairs        
+        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs        
+        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs        
         dstype *eij = &tmp.tmpmem[0]; // npairs
         dstype *fij = &tmp.tmpmem[npairs]; // npairs*dim
         dstype *xij = &tmp.tmpmem[npairs*(1+dim)]; // npairs*dim
@@ -529,31 +535,31 @@ void cpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         dstype *qj = &tmp.tmpmem[npairs*(1+2*dim+ncq)]; // npairs*ncq
         dstype *du = &tmp.tmpmem[npairs*(1+2*dim+2*ncq)]; // npairs
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                                 
         //cpuComputePairEnergyForce(eij, fij, xij, qi, qj, ti, tj, ai, aj, param, dim, ncq, nparam, npairs, potnum);
         cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, npairs, potnum, 3);
         
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj)                 
-        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs
-        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs*jnum        
+        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs
+        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs*neighmax        
         cpuNeighTripletList(tripletnum, tripletlist, x, rcutsq, pairnum, pairnumsum, pairlist, atomtype, ilist, nb.alist, nb.neighlist, 
-                nb.neighnum, na, jnum, typek, dim);                
+                nb.neighnum, na, neighmax, typek, dim);                
         
         //a list contains the starting positions of the first neighbor 
-        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*jnum]; // npairs+1        
+        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*neighmax]; // npairs+1        
         //Cumsum(tripletnumsum, tripletnum, npairs+1);                                 
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*jnum], npairs+1, backend);                                         
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*neighmax], npairs+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, npairs, common.backend);     
                 
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj, tripletnum, tripletnumsum, tripletlist)         
-        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum]; // ntuples        
-        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples]; // ntuples   
-        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples]; // ntuples   
-        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+3*ntuples]; // ntuples        
-        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+4*ntuples]; // ntuples        
-        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+5*ntuples]; // ntuples        
+        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax]; // ntuples        
+        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples]; // ntuples   
+        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples]; // ntuples   
+        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+3*ntuples]; // ntuples        
+        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+4*ntuples]; // ntuples        
+        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+5*ntuples]; // ntuples        
         dstype *x3ij = &tmp.tmpmem[npairs*(1+dim)]; // ntuples*dim
         dstype *x3ik = &tmp.tmpmem[npairs*(1+dim)+ntuples*dim]; // ntuples*dim
         dstype *q3i = &tmp.tmpmem[npairs*(1+dim)+2*ntuples*dim]; // ntuples*ncq
@@ -561,7 +567,7 @@ void cpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         dstype *q3k = &tmp.tmpmem[npairs*(1+dim)+ntuples*(2*dim+2*ncq)]; // ntuples*ncq       
         
         cpuNeighTriplets(x3ij, x3ik, q3i, q3j, q3k, x, q, a3i, a3j, a3k, t3i, t3j, t3k, tripletnum, tripletlist, tripletnumsum, 
-                nb.alist, atomtype, jnum, npairs, ncq, dim);                      
+                nb.alist, atomtype, neighmax, npairs, ncq, dim);                      
         
         dstype *f3ij = &tmp.tmpmem[npairs*(1+dim)+ntuples*(2*dim+3*ncq)]; // ntuples*dim
         dstype *f3ik = &tmp.tmpmem[npairs*(1+dim)+ntuples*(3*dim+3*ncq)]; // ntuples*dim
@@ -587,19 +593,19 @@ void cpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
                     
         // pairnum, pairnumsum, pairlist, tripletnum, tripletlist, tripletnumsum, t3i, t3j, t3k -> ai, aj, a3i, a3j, a3k
 //         for (int i=0; i<npairs; i++) {
-//             tmp.intmem[i] = tmp.intmem[1+3*na+na*jnum+i]; // ai
-//             tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*jnum+i]; // aj
+//             tmp.intmem[i] = tmp.intmem[1+3*na+na*neighmax+i]; // ai
+//             tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*neighmax+i]; // aj
 //         }
 //         for (int i=0; i<ntuples; i++) {
-//             tmp.intmem[2*npairs+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+i]; //a3i
-//             tmp.intmem[2*npairs+ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples+i]; //a3j
-//             tmp.intmem[2*npairs+2*ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples+i]; //a3k
+//             tmp.intmem[2*npairs+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+i]; //a3i
+//             tmp.intmem[2*npairs+ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples+i]; //a3j
+//             tmp.intmem[2*npairs+2*ntuples+i] = tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples+i]; //a3k
 //         }
-        cpuArrayCopy(&tmp.intmem[0], &tmp.intmem[1+3*na+na*jnum], npairs);
-        cpuArrayCopy(&tmp.intmem[npairs], &tmp.intmem[1+3*na+na*jnum+npairs], npairs);
-        cpuArrayCopy(&tmp.intmem[2*npairs], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum], ntuples);
-        cpuArrayCopy(&tmp.intmem[2*npairs+ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples], ntuples);
-        cpuArrayCopy(&tmp.intmem[2*npairs+2*ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples], ntuples);
+        cpuArrayCopy(&tmp.intmem[0], &tmp.intmem[1+3*na+na*neighmax], npairs);
+        cpuArrayCopy(&tmp.intmem[npairs], &tmp.intmem[1+3*na+na*neighmax+npairs], npairs);
+        cpuArrayCopy(&tmp.intmem[2*npairs], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax], ntuples);
+        cpuArrayCopy(&tmp.intmem[2*npairs+ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples], ntuples);
+        cpuArrayCopy(&tmp.intmem[2*npairs+2*ntuples], &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples], ntuples);
 
         if (decomp==0)
             cpuHalfNeighPairDecomposition(e, f, eij, fij, ai, aj, npairs, dim);
@@ -693,7 +699,7 @@ void cpuQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonst
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -712,11 +718,11 @@ void cpuQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonst
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum    
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax    
         if ((typej>0) && (typek>0) && (typel>0))
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, typel, dim);
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, typel, dim);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
         
         Int *quadrupletnum = &tmp.intmem[na]; // na        
         //for (int ii=0; ii<na; ii++)
@@ -726,11 +732,11 @@ void cpuQuadrupletEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonst
         //a list contains the starting positions of the first neighbor 
         Int *quadrupletnumsum = &tmp.intmem[2*na]; // na+1        
         //Cumsum(quadrupletnumsum, quadrupletnum, na+1, backend);       
-        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(quadrupletnumsum, na, common.backend);     
                         
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
-        cpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
+        cpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *quadrupletlist = &tmp.intmem[1 + 3*na]; // 3*ntuples    (ilist, quadrupletnum, quadrupletnumsum, quadrupletlist)            
         cpuArrayCopy(quadrupletlist, temp, 3*ntuples);
         
@@ -903,7 +909,7 @@ void cpuSingleEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appstr
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -956,7 +962,7 @@ void cpuFullNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -975,26 +981,26 @@ void cpuFullNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                         
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);        
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);        
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim        
         cpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
@@ -1013,7 +1019,7 @@ void cpuHalfNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1032,26 +1038,26 @@ void cpuHalfNeighPairEnergy(dstype *e, neighborstruct &nb, commonstruct &common,
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
         if (typej>0)
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);            
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);            
         else
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, dim);
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, dim);
                                 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);           
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);           
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
         cpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
@@ -1128,7 +1134,7 @@ void cpuBO2Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1147,23 +1153,23 @@ void cpuBO2Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         }                
                         
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum
-        cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1                
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // ntuples        
-        Int *aj = &tmp.intmem[1+3*na+ntuples+na*jnum]; // ntuples        
-        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*jnum]; // ntuples        
-        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*jnum]; // ntuples        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
         dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
         dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
         dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
                         
         dstype *eij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples    
         cpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
@@ -1191,7 +1197,7 @@ void cpuTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appst
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1210,22 +1216,22 @@ void cpuTripletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, appst
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum        
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax        
         if ((typej>0) && (typek>0))
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, dim);
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, dim);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
                 
         Int *tripletnum = &tmp.intmem[na]; // na        
         cpuTripletnum(tripletnum, pairnum, na);
                         
         //a list contains the starting positions of the first neighbor 
         Int *tripletnumsum = &tmp.intmem[2*na]; // na+1        
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                                              
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                                              
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, na, common.backend);     
                 
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
-        cpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, tripletnum, tripletnumsum, pairnum, pairlist, temp)            
+        cpuNeighTripletList(temp, tripletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *tripletlist = &tmp.intmem[1 + 3*na]; // 2*ntuples    (ilist, tripletnum, tripletnumsum, tripletlist)            
         cpuArrayCopy(tripletlist, temp, 2*ntuples);
         
@@ -1290,7 +1296,7 @@ void cpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1309,52 +1315,52 @@ void cpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         }                
                 
         Int *pairnum = &tmp.intmem[na]; // na
-        Int *pairlist = &tmp.intmem[2*na]; // na*jnum       
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax       
         if (typej == typei) {
-            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
         }
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);        
 
         //a list contains the starting positions of the first neighbor 
-        Int *pairnumsum = &tmp.intmem[2*na+na*jnum]; // na+1            
-        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1            
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int npairs = IntArrayGetValueAtIndex(pairnumsum, na, common.backend);     
                 
-        Int *ai = &tmp.intmem[1+3*na+na*jnum]; // npairs    
-        Int *aj = &tmp.intmem[1+3*na+npairs+na*jnum]; // npairs        
-        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs        
-        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // npairs    
+        Int *aj = &tmp.intmem[1+3*na+npairs+na*neighmax]; // npairs        
+        Int *ti = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs        
+        Int *tj = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs        
         dstype *eij = &tmp.tmpmem[0]; // npairs
         dstype *xij = &tmp.tmpmem[npairs*(1)]; // npairs*dim
         dstype *qi = &tmp.tmpmem[npairs*(1+dim)]; // npairs*ncq
         dstype *qj = &tmp.tmpmem[npairs*(1+dim+ncq)]; // npairs*ncq
         dstype *du = &tmp.tmpmem[npairs*(1+dim+2*ncq)]; // npairs
         cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
-                atomtype, na, jnum, ncq, dim);       
+                atomtype, na, neighmax, ncq, dim);       
 
          
         cpuPair(eij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, npairs, potnum, 3);        
                 
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj)                 
-        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*jnum]; // npairs
-        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*jnum]; // npairs*jnum        
+        Int *tripletnum = &tmp.intmem[1+3*na+2*npairs+na*neighmax]; // npairs
+        Int *tripletlist = &tmp.intmem[1+3*na+3*npairs+na*neighmax]; // npairs*neighmax        
         cpuNeighTripletList(tripletnum, tripletlist, x, rcutsq, pairnum, pairnumsum, pairlist, atomtype, ilist, nb.alist, nb.neighlist, 
-                nb.neighnum, na, jnum, typek, dim);                
+                nb.neighnum, na, neighmax, typek, dim);                
                         
         //a list contains the starting positions of the first neighbor 
-        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*jnum]; // npairs+1                 
-        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*jnum], npairs+1, backend);                                         
+        Int *tripletnumsum = &tmp.intmem[1+3*na+3*npairs+(na+npairs)*neighmax]; // npairs+1                 
+        Cumsum(tripletnumsum, tripletnum, &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax], &tmp.intmem[3+3*na+5*npairs+(na+npairs)*neighmax], npairs+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(tripletnumsum, npairs, common.backend);     
         
         // (ilist, pairnum, pairlist, pairnumsum, ai, aj, tripletnum, tripletnumsum, tripletlist)         
-        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum]; // ntuples        
-        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+ntuples]; // ntuples   
-        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+2*ntuples]; // ntuples   
-        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+3*ntuples]; // ntuples        
-        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+4*ntuples]; // ntuples        
-        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*jnum+5*ntuples]; // ntuples        
+        Int *a3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax]; // ntuples        
+        Int *a3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+ntuples]; // ntuples   
+        Int *a3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+2*ntuples]; // ntuples   
+        Int *t3i = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+3*ntuples]; // ntuples        
+        Int *t3j = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+4*ntuples]; // ntuples        
+        Int *t3k = &tmp.intmem[2+3*na+4*npairs+(na+npairs)*neighmax+5*ntuples]; // ntuples        
         dstype *x3ij = &tmp.tmpmem[npairs*(1)]; // ntuples*dim
         dstype *x3ik = &tmp.tmpmem[npairs*(1)+ntuples*dim]; // ntuples*dim
         dstype *q3i = &tmp.tmpmem[npairs*(1)+2*ntuples*dim]; // ntuples*ncq
@@ -1362,7 +1368,7 @@ void cpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
         dstype *q3k = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+2*ncq)]; // ntuples*ncq
         
         cpuNeighTriplets(x3ij, x3ik, q3i, q3j, q3k, x, q, a3i, a3j, a3k, t3i, t3j, t3k, tripletnum, tripletlist, tripletnumsum, 
-                nb.alist, atomtype, jnum, npairs, ncq, dim);          
+                nb.alist, atomtype, neighmax, npairs, ncq, dim);          
         dstype *e3ijk = &tmp.tmpmem[npairs*(1)+ntuples*(2*dim+3*ncq)]; // ntuples
         cpuTriplet(e3ijk, x3ij, x3ik, q3i, q3j, q3k, t3i, t3j, t3k, a3i, a3j, a3k,
                        param, app.eta, app.kappa, dim, ncq, nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);                
@@ -1376,8 +1382,8 @@ void cpuBO3Energy(dstype *e, neighborstruct &nb, commonstruct &common, appstruct
                     
         // pairnum, pairnumsum, pairlist, tripletnum, tripletlist, tripletnumsum, t3i, t3j, t3k -> ai, aj, a3i, a3j, a3k
         for (int i=0; i<npairs; i++) {
-            tmp.intmem[i] = tmp.intmem[1+3*na+na*jnum+i]; // ai
-            tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*jnum+i]; // aj
+            tmp.intmem[i] = tmp.intmem[1+3*na+na*neighmax+i]; // ai
+            tmp.intmem[npairs+i] = tmp.intmem[1+3*na+npairs+na*neighmax+i]; // aj
         }
                 
         if (decomp==0)
@@ -1412,7 +1418,7 @@ void cpuQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, ap
         Int e1 = common.ablks[b];
         Int e2 = common.ablks[b+1];            
         Int na = e2 - e1; // number of atoms in this block
-        Int jnum = common.jnum;
+        Int neighmax = common.neighmax;
         Int ncq = common.ncq;
         Int dim = common.dim;
         Int backend = common.backend;
@@ -1431,22 +1437,22 @@ void cpuQuadrupletEnergy(dstype *e, neighborstruct &nb, commonstruct &common, ap
         }                
                                 
         Int *pairnum  = &tmp.intmem[1 + 3*na]; // na
-        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*jnum    
+        Int *pairlist = &tmp.intmem[1 + 4*na]; // na*neighmax    
         if ((typej>0) && (typek>0) && (typel>0))
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, jnum, typej, typek, typel, dim);
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, typek, typel, dim);
         else
-            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, jnum, dim);        
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
         
         Int *quadrupletnum = &tmp.intmem[na]; // na        
         cpuQuadrupletnum(quadrupletnum, pairnum, na);
         
         //a list contains the starting positions of the first neighbor 
         Int *quadrupletnumsum = &tmp.intmem[2*na]; // na+1        
-        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*jnum+1], &tmp.intmem[4*na+na*jnum+2], na+1, backend);                                         
+        Cumsum(quadrupletnumsum, quadrupletnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
         int ntuples = IntArrayGetValueAtIndex(quadrupletnumsum, na, common.backend);     
                                 
-        Int *temp = &tmp.intmem[1 + 4*na + na*jnum]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
-        cpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, jnum);                                
+        Int *temp = &tmp.intmem[1 + 4*na + na*neighmax]; //  (ilist, quadrupletnum, quadrupletnumsum, pairnum, pairlist, tmp)            
+        cpuNeighQuadrupletList(temp, quadrupletnumsum, pairnum, pairlist, ilist, nb.alist, na, neighmax);                                
         Int *quadrupletlist = &tmp.intmem[1 + 3*na]; // 3*ntuples    (ilist, quadrupletnum, quadrupletnumsum, quadrupletlist)            
         cpuArrayCopy(quadrupletlist, temp, 3*ntuples);
         

@@ -148,6 +148,24 @@ inline void ArraySetValue(dstype *y, dstype a, int n, int backend)
 #endif                  
 }
 
+inline void ArraySetValue(int *y, int a, int n, int backend)
+{
+    if (backend == 1)
+        cpuArraySetValue(y, a, n);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompArraySetValue(y, a, n);
+#endif                             
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipArraySetValue(y, a, n);
+#endif                                     
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuArraySetValue(y, a, n);
+#endif                  
+}
+
 inline void ArraySetValueAtIndex(dstype *y, dstype a, int n, int backend)
 {
     if (backend == 1)
@@ -201,6 +219,42 @@ inline void ArrayTranspose(dstype *A, dstype *B, int m, int n, int backend)
 #ifdef USE_CUDA
 	if (backend == 2)
 		gpuArrayTranspose(A, B, m, n);
+#endif
+}
+
+inline void ArrayPlusAtColumnIndex(dstype *A, dstype *B, int *colind, int m, int n, int backend)
+{
+	if (backend == 1)
+		cpuArrayPlusAtColumnIndex(A, B, colind, m, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompArrayPlusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipArrayPlusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuArrayPlusAtColumnIndex(A, B, colind, m, n);
+#endif
+}
+
+inline void ArrayMinusAtColumnIndex(dstype *A, dstype *B, int *colind, int m, int n, int backend)
+{
+	if (backend == 1)
+		cpuArrayMinusAtColumnIndex(A, B, colind, m, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompArrayMinusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipArrayMinusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuArrayMinusAtColumnIndex(A, B, colind, m, n);
 #endif
 }
 
@@ -2196,22 +2250,22 @@ inline void SetVelocityFinalIntegrate(dstype *x, dstype *v, dstype *f, dstype *m
 
 inline void InitialIntegrate(dstype *x, dstype *v, dstype *f, dstype *mass, dstype *dtarray, 
         dstype *tarray, dstype *eta_mass, dstype *eta, dstype *eta_dot, dstype *eta_dotdot, 
-        dstype *ke, dstype *tmp, dstype vlimitsq, int *type, int *ilist, int eta_mass_flag, 
+        dstype vlimitsq, int *type, int *ilist, int eta_mass_flag, 
         int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum, int backend)
 {
 	if (backend == 1)
 		cpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #ifdef USE_OMP
 	if (backend == 4)
-		ompInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		ompInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 #ifdef USE_HIP
 	if (backend == 3)
-		hipInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		hipInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 #ifdef USE_CUDA
 	if (backend == 2)
-		gpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		gpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 }
 

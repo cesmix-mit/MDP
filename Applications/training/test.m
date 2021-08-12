@@ -42,7 +42,7 @@ app.atommasses = [39.948];
 app.atomcharges = [0];
 
 % Machine learning potential descriptors
-app.descriptor = 0;   % descriptor flag: 0 -> Spherical Harmonics Bessel
+app.descriptor = "shp";   % descriptor flag: 0 -> Spherical Harmonics Bessel
 app.spectrum = 0;     % spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
 app.chemtype = 0;     % 0 -> single atom-type basis functions, 1 -> pair atom-type basis functions  
 app.K = 6;            % number roots of radial basis functions
@@ -59,7 +59,7 @@ app.pot2a = [1];     % list of nonbonded pair potentials
 app.mu2a = [A B];    % parameters for  LJ potential
 app.rcut2a = [8.5];  % cut-off radius 
 
-app.unitstyle = 2;
+app.unitstyle = "lj";
 app.lattice = setlattice("bcc", 3.316);
 app.region = setregion([0 0 0], [8 8 8]);
 

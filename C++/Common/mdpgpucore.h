@@ -29,6 +29,8 @@ template <typename T> void gpuArrayMinusXAtIndex(T *y, T *x, int *ind, int n);
 template <typename T> void gpuArrayAXPYAtIndex(T *y, T *x, T a, int *ind, int n);
 
 template <typename T> void gpuArrayTranspose(T *A, T *B, int m, int n);
+template <typename T> void gpuArrayPlusAtColumnIndex(T *A, T *B, int *colind, int m, int n);
+template <typename T> void gpuArrayMinusAtColumnIndex(T *A, T *B, int *colind, int m, int n);
 template <typename T> void gpuGetArrayAtColumnIndex(T *A, T *B, int *colind, int m, int n);
 template <typename T> void gpuArrayTransposeAtColumnIndex(T *A, T *B, int *colind, int m, int n);
 template <typename T> void gpuGetArrayAtRowIndex(T *A, T *B, int *rowind, int m, int n);
@@ -296,7 +298,7 @@ template <typename T> void gpuSetVelocityFinalIntegrate(T *x, T *v, T *f, T *mas
         T dtf, int *type, int *ilist, int *iparam, int dim, int inum);
 
 template <typename T> void gpuInitialIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,
-        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T *ke, T *tmp, T vlimitsq, int *type, int *ilist,
+        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T vlimitsq, int *type, int *ilist,
         int eta_mass_flag, int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum);
 
 template <typename T> void gpuFinalIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,

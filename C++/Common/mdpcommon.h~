@@ -808,7 +808,6 @@ struct commonstruct {
     int cutofftype=0; // 0 -> single cut-off raidus for all atoms, 1 -> multiple cut-off radii for atom pairs  
     int neighpair=0;  // 0 -> full neighbor list, 1 -> half neighbor list
     int neighcell=0;  // 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
-    int neighcheck=0;
     int decomposition=0;// 0 -> force decomposition, 1 -> atom decomposition
     int bondtype=0;   // 0 -> non-bonded interaction, 1 -> bonded interaction
     int chemtype = 0;   // 0 -> single atom-type basis functions, 1 -> dstype atom-type basis functions 
@@ -822,10 +821,6 @@ struct commonstruct {
     int unitstyle=0;
     int vflag=0;
     int vdeform=0;
-    int neighevery=1;
-    int neighdelay=0;
-    int globalfreq=10;
-    int peratomfreq=50;
     
     int nflags=0;
     int nsolversparam=0;   
@@ -989,7 +984,7 @@ struct commonstruct {
     int nlocal; // number of atoms in the current processor    
     int inum;  // number of atoms in the group    
     int inummax;  // maximum number of atoms in the group
-    int neighmax;  // maximum number of neighbors    
+    int jnum;  // maximum number of neighbors    
     int gnum;  // number of ghost atoms
     int anum;  // (nlocal+gnum) total number of atoms 
     int anummax; // maximum  number of atoms allowed     
@@ -1014,8 +1009,6 @@ struct commonstruct {
     dstype dt = 0.005;   // timestep size     
     dstype time = 0.0; // current simulation time    
     dstype skin = 0.3;
-    dstype neighskin;
-    dstype rcutmax;
     dstype rcutml; // cutoff-radius for machine learning potential;
     dstype rbbvol; // volume of reference bounding box
     dstype volume; // volume of the simulation box
@@ -1061,8 +1054,6 @@ struct commonstruct {
     dstype virial[6];
     dstype ke_tensor[6];
     dstype pres_tensor[6];
-    dstype vcm[3];
-    dstype xvm[3];
     int pbc[3];
     
     int *traininglist;
@@ -1146,7 +1137,7 @@ struct appstruct {
     dstype *snapelemradius=NULL; // SNAP parameters     
     dstype *snapelemweight=NULL; // SNAP parameters     
     dstype *snapcoeff=NULL; // SNAP parameters     
-    dstype *createvelocity=NULL; // SNAP parameters     
+    dstype *createvelo=NULL; // SNAP parameters     
     dstype *eta=NULL; // hyperparameters
     int *atomnumber=NULL;   // a list of atomic numbers for every atom type
     int *kappa=NULL; // integer parameters                  
