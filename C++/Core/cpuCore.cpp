@@ -8,6 +8,7 @@
 #ifndef __CPUCORE
 #define __CPUCORE
 
+#include <stdio.h>
 #include <math.h>
 #include <algorithm>
 

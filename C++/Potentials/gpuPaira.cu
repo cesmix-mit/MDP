@@ -10,10 +10,12 @@ template <typename T>  __global__  void kernelgpuPaira1(T *u, T *xij, T *qi, T *
 		T t4 = xij3*xij3;
 		T t5 = t2+t3+t4;
 		T t6 = sqrt(t5);
-		T t7 = t6*1.0E+4;
-		T t8 = t7-4.0E+4;
+		T t7 = t6*1.0E2;
+		T t8 = t7-4.0E2;
 		T t9 = tanh(t8);
-		u[i] = t9*8.125938683003058E-3-(t9/2.0+1.0/2.0)*(pow(t6-4.0,3.0)*(t6*3.428291787990583E-2-1.827782636402304E-1)+1.625187736600612E-2)+(exp(t6*(-2.308969885292557))*2.16164490013485E+3+exp(t6*(-4.614046060829141))*2.15028801532051E+4+exp(t6*(-3.664438963872198E+1))*1.394671496625875E+4+exp(t6*(-1.079118754693148E+1))*3.91244681854013E+4)/t6-8.125938683003058E-3;
+		T t10 = t6-4.0;
+		T t11 = t10*t10;
+		u[i] = t9*8.125938683003058E-3-(t9*(1.0/2.0)+1.0/2.0)*(t10*t11*(t6*3.428291787990583E-2-1.827782636402304E-1)+1.625187736600612E-2)+1.0/sqrt(t5)*(exp(t6*(-2.308969885292557))*2.16164490013485E3+exp(t6*(-4.614046060829141))*2.15028801532051E4+exp(t6*(-3.664438963872198E1))*1.394671496625875E4+exp(t6*(-1.079118754693148E1))*3.91244681854013E4)-8.125938683003058E-3;
 		i += blockDim.x * gridDim.x;
 	}
 }
@@ -26,6 +28,7 @@ template <typename T> void gpuPaira1(T *u, T *xij, T *qi, T *qj, int *ti, int *t
 	kernelgpuPaira1<<<gridDim, blockDim>>>(u, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
 }
 
+#ifdef _ENZYME
 template <typename T>  __device__  void devicegpuPaira1(T *__restrict__ u, T *__restrict__ xij, T *__restrict__ qi, T *__restrict__ qj, int *__restrict__ ti, int *__restrict__ tj, int *__restrict__ ai, int *__restrict__ aj, T *__restrict__ mu, T *__restrict__ eta, int *__restrict__ kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -38,10 +41,12 @@ template <typename T>  __device__  void devicegpuPaira1(T *__restrict__ u, T *__
 		T t4 = xij3*xij3;
 		T t5 = t2+t3+t4;
 		T t6 = sqrt(t5);
-		T t7 = t6*1.0E+4;
-		T t8 = t7-4.0E+4;
+		T t7 = t6*1.0E2;
+		T t8 = t7-4.0E2;
 		T t9 = tanh(t8);
-		u[i] = t9*8.125938683003058E-3-(t9/2.0+1.0/2.0)*(pow(t6-4.0,3.0)*(t6*3.428291787990583E-2-1.827782636402304E-1)+1.625187736600612E-2)+(exp(t6*(-2.308969885292557))*2.16164490013485E+3+exp(t6*(-4.614046060829141))*2.15028801532051E+4+exp(t6*(-3.664438963872198E+1))*1.394671496625875E+4+exp(t6*(-1.079118754693148E+1))*3.91244681854013E+4)/t6-8.125938683003058E-3;
+		T t10 = t6-4.0;
+		T t11 = t10*t10;
+		u[i] = t9*8.125938683003058E-3-(t9*(1.0/2.0)+1.0/2.0)*(t10*t11*(t6*3.428291787990583E-2-1.827782636402304E-1)+1.625187736600612E-2)+1.0/sqrt(t5)*(exp(t6*(-2.308969885292557))*2.16164490013485E3+exp(t6*(-4.614046060829141))*2.15028801532051E4+exp(t6*(-3.664438963872198E1))*1.394671496625875E4+exp(t6*(-1.079118754693148E1))*3.91244681854013E4)-8.125938683003058E-3;
 		i += blockDim.x * gridDim.x;
 	}
 }
@@ -71,6 +76,7 @@ template <typename T> void gpuPaira1Gradient(T *u, T *du, T *u_xij, T *xij, T *q
 	gridDim = (gridDim>1024)? 1024 : gridDim;
 	kernelgpuPaira1Gradient<<<gridDim, blockDim>>>(u, du, u_xij, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
 }
+#endif
 
 template <typename T> void gpuPaira(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum)
 {
@@ -80,6 +86,7 @@ template <typename T> void gpuPaira(T *u, T *xij, T *qi, T *qj, int *ti, int *tj
 template void gpuPaira(double *, double *, double *, double *, int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int);
 template void gpuPaira(float *, float *, float *, float *, int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int);
 
+#ifdef _ENZYME
 template <typename T> void gpuPairaGradient(T *u, T *du, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum)
 {
 	if (potnum == 1)
@@ -87,3 +94,4 @@ template <typename T> void gpuPairaGradient(T *u, T *du, T *u_xij, T *xij, T *qi
 }
 template void gpuPairaGradient(double *, double *, double*, double *, double *, double *, int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int);
 template void gpuPairaGradient(float *, float *, float*, float *, float *, float *, int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int);
+#endif

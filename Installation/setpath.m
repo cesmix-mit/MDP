@@ -10,6 +10,7 @@ addpath(char(sourcepath + "Matlab/Gencode"));
 addpath(char(sourcepath + "Matlab/Preprocessing"));
 addpath(char(sourcepath + "Matlab/Postprocessing"));
 addpath(char(sourcepath + "C++/Main"));
+addpath(char(sourcepath + "Installation"));
 
 % Set Matlab's PATH enviroment variable so that Exasim can call external packages    
 setenv('PATH', '/usr/local/bin:/usr/bin:/opt/local/bin:/bin:/usr/sbin:/sbin');

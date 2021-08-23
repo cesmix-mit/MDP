@@ -106,10 +106,9 @@ function u = Paira(xij, qi, qj, ti, tj, mu, eta, kappa)
     souter = sw5 + t*t*t * (sw3 + sw4*t);
     
     % switching function
-    a = 0.5 + 0.5*tanh(1e4*t); % a = 0 when t<0, and a = 1 when t>0 
+    a = 0.5 + 0.5*tanh(1e2*t); % a = 0 when t<0, and a = 1 when t>0 
     s = a*souter + (1-a)*sinner;
-    u = u + s;
-      
+    u = u + s;      
 end
 
 % two-body bonded potentials 

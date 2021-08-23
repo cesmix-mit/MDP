@@ -18,6 +18,7 @@ public:
     sysstruct sys;     
     tempstruct tmp;    
     shstruct sh;
+    snastruct sna;
     
     // default constructor 
     CCalculation(){}; 
@@ -56,16 +57,24 @@ public:
     void EmpiricalPotentialDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam);     
     void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam); 
     void EmpiricalPotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam); 
+    void EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *q, dstype *param, Int *nparam); 
+    void EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam); 
     
     // Machine learning potentials
     void RadialSphericalHarmonicDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int nparam);     
     void RadialSphericalHarmonicDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int nparam);     
     void RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int nparam);     
+    void RadialSphericalHarmonicEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *coeff, dstype *q, dstype *param, Int nparam);     
     
     // Combined empirical + ML potentials
     void PotentialDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int *nparam);     
     void PotentialDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam);     
+    void PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *param, Int *nparam);     
     void PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam);     
+    void PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *param, Int *nparam);     
+    void PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam);     
+    
+    void ThermoOutput(int flag);
 };
 
 

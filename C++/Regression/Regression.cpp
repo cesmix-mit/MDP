@@ -234,7 +234,7 @@ void CRegression::LinearRegression(CCalculation &CCal)
     
 }
 
-void CRegression::ValidateLinearRegression(CCalculation &CCal, dstype *x, dstype *e, dstype *f, dstype *q)
+void CRegression::ValidateLinearRegression(CCalculation &CCal)
 {
     string filename = "validation.bin";
     ofstream out(filename.c_str(), ios::out | ios::binary);    
@@ -243,6 +243,12 @@ void CRegression::ValidateLinearRegression(CCalculation &CCal, dstype *x, dstype
     }    
     writedouble(out, (double) CCal.common.validatenum);        
             
+    dstype *x, *e, *f, *q;
+    x = &CCal.sys.x[0];
+    e = &CCal.sys.e[0];
+    f = &CCal.sys.f[0];
+    q = &CCal.sys.q[0];        
+    
     // check linear regression errors
     for (int i=0; i<CCal.common.validatenum; i++) { // loop over each configuration             
         int ci = CCal.common.validatelist[i]; // configuration ci

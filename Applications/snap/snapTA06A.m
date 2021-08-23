@@ -1,26 +1,6 @@
-cdir = pwd(); ii = strfind(cdir, "Applications");
-sourcepath = cdir(1:(ii-1));
-run(sourcepath + "Installation/setpath.m");
-
-app = initializeapp(sourcepath,version);
-app.appname = "snapTA06A";
-app.currentdir = cdir; % current directory
-app.cpucompiler = "/usr/local/Cellar/llvm/11.1.0/bin/clang++";
-app.cpumacros = "-std=c++11 -D _ENZYME";
-app.cpuflags = "-Xclang -load -Xclang /usr/local/lib/ClangEnzyme-11.dylib";
-% app.cpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
-% app.cpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
-% app.cpumacros = "-std=c++11 -D _ENZYME";
-% app.gpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
-% app.gpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
-% app.gpumacros = "--cuda-gpu-arch=sm_60 -std=c++11 -D _ENZYME";
-app.buildcorelib = 1;
-
-% unit, boundary condition, and force calculation
-app.unitstyle = "metal";
-app.pbc = [1 1 1];    % periodic boundary conditions
-app.decomposition = 0;% 0 -> force decomposition, 1 -> atom decomposition
-app.potentialform = 0;% 0 -> empirical potential, 1 -> ML potential, 2 -> hybrid empirical+ML potential    
+app = initializeapp();
+app.unitstyle = "metal"; % unit system
+app.pbc = [1 1 1];       % periodic boundary conditions
 
 %  neighbor list
 app.neighskin = 1.0;
@@ -37,8 +17,9 @@ app.atommasses = [180.88];
 app.atomcharges = [0];
 
 % lattice, region, domain
+nlattice = 4;  % note that # of atoms = 2 * nlattice^3 
 app.lattice = setlattice("bcc", 3.316);
-app.region = setregion([0 0 0], [4 4 4]);
+app.region = setregion([0 0 0], [nlattice nlattice nlattice]);
 
 % nonparametric potential descriptors
 app.descriptor = "snap";    % (snap, shp)
@@ -73,10 +54,6 @@ app.ensemblemode = "nve";
 app.time = 0.0;             % initial time
 app.dt = 0.5e-3;            % time step size
 app.ntimesteps = 100;       % # time steps
-app.globalfreq = 10;        % frequency to print and save default global outputs (pe, ke, ce, te, temp, press)
-app.peratomfreq = 20;       % frequency to save default peratom outputs (id, t, x, f)
-% app.globaloutputs = ["stresses"];    % additional global outputs (stresses, com, vcm)
-% app.peratomoutputs = ["velocity", "mass", "image"];   % additional peratom outputs (velocity, mass, virial, image)
 
 temp = 300;  seed0 = 4928459; distflag = 0; sumflag = 0; loopflag = 2; momflag = 1; rotflag = 0;
 app.createvelocity = [temp, seed0, distflag, sumflag, loopflag, momflag, rotflag];

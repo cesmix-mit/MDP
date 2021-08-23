@@ -11,7 +11,7 @@
    pair virial = riFi + rjFj = (ri-rj) Fi = rij*fij
  ------------------------------------------------------------------------- */
 template <typename T> __global__ void gpuKernelVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int dim, int ijnum)
+        int *ai, int dim, int inum, int ijnum)
 { 
     int ii = threadIdx.x + blockIdx.x * blockDim.x;
     while (ii < ijnum) {
@@ -22,34 +22,39 @@ template <typename T> __global__ void gpuKernelVirialPairTally(T *vatom, T *fij,
         T fx = fij[0+dim*ii];
         T fy = fij[1+dim*ii];
         T fz = (dim==3) ? fij[2+dim*ii] : 0.0;    
-        vatom[0+6*i] += factor*dx*fx;
-        vatom[1+6*i] += factor*dy*fy;
-        vatom[2+6*i] += factor*dz*fz;
-        vatom[3+6*i] += factor*dx*fy;
-        vatom[4+6*i] += factor*dx*fz;
-        vatom[5+6*i] += factor*dy*fz;        
-
+//         vatom[0+6*i] += factor*dx*fx;
+//         vatom[1+6*i] += factor*dy*fy;
+//         vatom[2+6*i] += factor*dz*fz;
+//         vatom[3+6*i] += factor*dx*fy;
+//         vatom[4+6*i] += factor*dx*fz;
+//         vatom[5+6*i] += factor*dy*fz;                
+        atomicAdd(&vatom[0*inum+i], factor*dx*fx);
+        atomicAdd(&vatom[1*inum+i], factor*dy*fy);
+        atomicAdd(&vatom[2*inum+i], factor*dz*fz);
+        atomicAdd(&vatom[3*inum+i], factor*dx*fy);
+        atomicAdd(&vatom[4*inum+i], factor*dx*fz);
+        atomicAdd(&vatom[5*inum+i], factor*dy*fz);                
         ii += blockDim.x * gridDim.x;
     }
 }
 template <typename T> void gpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int dim, int ijnum)
+        int *ai, int dim, int inum, int ijnum)
 {
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
     gpuKernelVirialPairTally<<<gridDim, blockDim>>>(vatom, fij, rij, factor, 
-        ai, dim, ijnum);
+        ai, dim, inum, ijnum);
 }
-template void gpuVirialPairTally(double*, double*, double*, double, int*, int, int);
-template void gpuVirialPairTally(float*, float*, float*, float, int*, int, int);
+template void gpuVirialPairTally(double*, double*, double*, double, int*, int, int, int);
+template void gpuVirialPairTally(float*, float*, float*, float, int*, int, int, int);
 
 /* ----------------------------------------------------------------------
    tally virial into per-atom accumulators for pair interactions
    virial = riFi + rjFj = (ri-rj) Fi 
  ------------------------------------------------------------------------- */
 template <typename T> __global__ void gpuKernelVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int *aj, int dim, int ijnum)
+        int *ai, int *aj, int dim, int inum, int ijnum)
 { 
     int ii = threadIdx.x + blockIdx.x * blockDim.x;
     while (ii < ijnum) {
@@ -68,35 +73,42 @@ template <typename T> __global__ void gpuKernelVirialPairTally(T *vatom, T *fij,
         T v4 = factor*dx*fz;
         T v5 = factor*dy*fz;      
         
-        vatom[0+6*i] += v0; vatom[1+6*i] += v1;
-        vatom[2+6*i] += v2; vatom[3+6*i] += v3;
-        vatom[4+6*i] += v4; vatom[5+6*i] += v5;        
+//         vatom[0+6*i] += v0; vatom[1+6*i] += v1;
+//         vatom[2+6*i] += v2; vatom[3+6*i] += v3;
+//         vatom[4+6*i] += v4; vatom[5+6*i] += v5;        
+//         
+//         vatom[0+6*j] += v0; vatom[1+6*j] += v1;
+//         vatom[2+6*j] += v2; vatom[3+6*j] += v3;
+//         vatom[4+6*j] += v4; vatom[5+6*j] += v5;        
+        vatom[0*inum+i] += v0; vatom[1*inum+i] += v1;
+        vatom[2*inum+i] += v2; vatom[3*inum+i] += v3;
+        vatom[4*inum+i] += v4; vatom[5*inum+i] += v5;        
         
-        vatom[0+6*j] += v0; vatom[1+6*j] += v1;
-        vatom[2+6*j] += v2; vatom[3+6*j] += v3;
-        vatom[4+6*j] += v4; vatom[5+6*j] += v5;        
+        vatom[0*inum+j] += v0; vatom[1*inum+j] += v1;
+        vatom[2*inum+j] += v2; vatom[3*inum+j] += v3;
+        vatom[4*inum+j] += v4; vatom[5*inum+j] += v5;                
 
         ii += blockDim.x * gridDim.x;
     }
 }
 template <typename T> void gpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int *aj, int dim, int ijnum)
+        int *ai, int *aj, int dim, int inum, int ijnum)
 {
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
     gpuKernelVirialPairTally<<<gridDim, blockDim>>>(vatom, fij, rij, factor, 
-        ai, aj, dim, ijnum);
+        ai, aj, dim, inum, ijnum);
 }
-template void gpuVirialPairTally(double*, double*, double*, double, int*, int*, int, int);
-template void gpuVirialPairTally(float*, float*, float*, float, int*, int*, int, int);
+template void gpuVirialPairTally(double*, double*, double*, double, int*, int*, int, int, int);
+template void gpuVirialPairTally(float*, float*, float*, float, int*, int*, int, int, int);
 
 /* ----------------------------------------------------------------------
    tally virial into per-atom accumulators for triplet interactions
    virial = riFi + rjFj + rkFk = (rj-ri) Fj + (rk-ri) Fk = rij*fij + rik*fik
  ------------------------------------------------------------------------- */
 template <typename T> __global__ void gpuKernelVirialTripletTally(T *vatom, T *fij, T *fik, T *rij, 
-        T *rik, T factor, int *ai, int *aj, int *ak, int dim, int ijnum)
+        T *rik, T factor, int *ai, int *aj, int *ak, int dim, int inum, int ijnum)
 { 
     int ii = threadIdx.x + blockIdx.x * blockDim.x;
     while (ii < ijnum) {
@@ -115,41 +127,51 @@ template <typename T> __global__ void gpuKernelVirialTripletTally(T *vatom, T *f
             v4 = factor*(rij[0]*fij[2] + rik[0]*fik[2]);
             v5 = factor*(rij[1]*fij[2] + rik[1]*fik[2]);
         }                
-        vatom[0+6*i] += v0; vatom[1+6*i] += v1;
-        vatom[2+6*i] += v2; vatom[3+6*i] += v3;
-        vatom[4+6*i] += v4; vatom[5+6*i] += v5;        
+//         vatom[0+6*i] += v0; vatom[1+6*i] += v1;
+//         vatom[2+6*i] += v2; vatom[3+6*i] += v3;
+//         vatom[4+6*i] += v4; vatom[5+6*i] += v5;        
+//         
+//         vatom[0+6*j] += v0; vatom[1+6*j] += v1;
+//         vatom[2+6*j] += v2; vatom[3+6*j] += v3;
+//         vatom[4+6*j] += v4; vatom[5+6*j] += v5;        
+//         
+//         vatom[0+6*k] += v0; vatom[1+6*k] += v1;
+//         vatom[2+6*k] += v2; vatom[3+6*k] += v3;
+//         vatom[4+6*k] += v4; vatom[5+6*k] += v5;        
+        vatom[0*inum+i] += v0; vatom[1*inum+i] += v1;
+        vatom[2*inum+i] += v2; vatom[3*inum+i] += v3;
+        vatom[4*inum+i] += v4; vatom[5*inum+i] += v5;        
         
-        vatom[0+6*j] += v0; vatom[1+6*j] += v1;
-        vatom[2+6*j] += v2; vatom[3+6*j] += v3;
-        vatom[4+6*j] += v4; vatom[5+6*j] += v5;        
+        vatom[0*inum+j] += v0; vatom[1*inum+j] += v1;
+        vatom[2*inum+j] += v2; vatom[3*inum+j] += v3;
+        vatom[4*inum+j] += v4; vatom[5*inum+j] += v5;        
         
-        vatom[0+6*k] += v0; vatom[1+6*k] += v1;
-        vatom[2+6*k] += v2; vatom[3+6*k] += v3;
-        vatom[4+6*k] += v4; vatom[5+6*k] += v5;        
-
+        vatom[0*inum+k] += v0; vatom[1*inum+k] += v1;
+        vatom[2*inum+k] += v2; vatom[3*inum+k] += v3;
+        vatom[4*inum+k] += v4; vatom[5*inum+k] += v5;                
         ii += blockDim.x * gridDim.x;
     }
 }
 template <typename T> void gpuVirialTripletTally(T *vatom, T *fij, T *fik, T *rij, 
-        T *rik, T factor, int *ai, int *aj, int *ak, int dim, int ijnum)
+        T *rik, T factor, int *ai, int *aj, int *ak, int dim, int inum, int ijnum)
 {
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
     gpuKernelVirialTripletTally<<<gridDim, blockDim>>>(vatom, fij, fik, rij, rik, factor, 
-        ai, aj, ak, dim, ijnum);
+        ai, aj, ak, dim, inum, ijnum);
 }
 template void gpuVirialTripletTally(double*, double*, double*, double*, double*,
-        double, int*, int*, int*, int, int);
+        double, int*, int*, int*, int, int, int);
 template void gpuVirialTripletTally(float*, float*, float*,  float*, float*, 
-        float, int*, int*, int*, int, int);
+        float, int*, int*, int*, int, int, int);
 
 /* ----------------------------------------------------------------------
    tally virial into per-atom accumulators for quadruplet interactions
    virial = riFi + rjFj + rkFk + rmFm = (rj-ri) Fj + (rk-ri) Fk + (rm-ri) Fm = rij*fij + rik*fik + rim*fim
  ------------------------------------------------------------------------- */
 template <typename T> __global__ void gpuKernelVirialQuadrupletTally(T *vatom, T *fij, T *fik, T *fim, 
-        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int ijnum)
+        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int inum, int ijnum)
 { 
     int ii = threadIdx.x + blockIdx.x * blockDim.x;
     while (ii < ijnum) {
@@ -169,36 +191,51 @@ template <typename T> __global__ void gpuKernelVirialQuadrupletTally(T *vatom, T
             v4 = factor*(rij[0]*fij[2] + rik[0]*fik[2] + rim[0]*fim[2]);
             v5 = factor*(rij[1]*fij[2] + rik[1]*fik[2] + rim[1]*fim[2]);
         }                
-        vatom[0+6*i] += v0; vatom[1+6*i] += v1;
-        vatom[2+6*i] += v2; vatom[3+6*i] += v3;
-        vatom[4+6*i] += v4; vatom[5+6*i] += v5;        
+//         vatom[0+6*i] += v0; vatom[1+6*i] += v1;
+//         vatom[2+6*i] += v2; vatom[3+6*i] += v3;
+//         vatom[4+6*i] += v4; vatom[5+6*i] += v5;        
+//         
+//         vatom[0+6*j] += v0; vatom[1+6*j] += v1;
+//         vatom[2+6*j] += v2; vatom[3+6*j] += v3;
+//         vatom[4+6*j] += v4; vatom[5+6*j] += v5;        
+//         
+//         vatom[0+6*k] += v0; vatom[1+6*k] += v1;
+//         vatom[2+6*k] += v2; vatom[3+6*k] += v3;
+//         vatom[4+6*k] += v4; vatom[5+6*k] += v5;        
+//         
+//         vatom[0+6*m] += v0; vatom[1+6*m] += v1;
+//         vatom[2+6*m] += v2; vatom[3+6*m] += v3;
+//         vatom[4+6*m] += v4; vatom[5+6*m] += v5;        
+        vatom[0*inum+i] += v0; vatom[1*inum+i] += v1;
+        vatom[2*inum+i] += v2; vatom[3*inum+i] += v3;
+        vatom[4*inum+i] += v4; vatom[5*inum+i] += v5;        
         
-        vatom[0+6*j] += v0; vatom[1+6*j] += v1;
-        vatom[2+6*j] += v2; vatom[3+6*j] += v3;
-        vatom[4+6*j] += v4; vatom[5+6*j] += v5;        
+        vatom[0*inum+j] += v0; vatom[1*inum+j] += v1;
+        vatom[2*inum+j] += v2; vatom[3*inum+j] += v3;
+        vatom[4*inum+j] += v4; vatom[5*inum+j] += v5;        
         
-        vatom[0+6*k] += v0; vatom[1+6*k] += v1;
-        vatom[2+6*k] += v2; vatom[3+6*k] += v3;
-        vatom[4+6*k] += v4; vatom[5+6*k] += v5;        
+        vatom[0*inum+k] += v0; vatom[1*inum+k] += v1;
+        vatom[2*inum+k] += v2; vatom[3*inum+k] += v3;
+        vatom[4*inum+k] += v4; vatom[5*inum+k] += v5;        
         
-        vatom[0+6*m] += v0; vatom[1+6*m] += v1;
-        vatom[2+6*m] += v2; vatom[3+6*m] += v3;
-        vatom[4+6*m] += v4; vatom[5+6*m] += v5;        
-
+        vatom[0*inum+m] += v0; vatom[1*inum+m] += v1;
+        vatom[2*inum+m] += v2; vatom[3*inum+m] += v3;
+        vatom[4*inum+m] += v4; vatom[5*inum+m] += v5;                
+ 
         ii += blockDim.x * gridDim.x;
     }
 }
 template <typename T> void gpuVirialQuadrupletTally(T *vatom, T *fij, T *fik, T *fim, 
-        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int ijnum)
+        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int inum, int ijnum)
 {
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
     gpuKernelVirialQuadrupletTally<<<gridDim, blockDim>>>(vatom, fij, fik, fim, rij, rik, rim, factor, 
-        ai, aj, ak, am, dim, ijnum);
+        ai, aj, ak, am, dim, inum, ijnum);
 }
 template void gpuVirialQuadrupletTally(double*, double*, double*, double*, double*, double*, double*,
-        double, int*, int*, int*, int*, int, int);
+        double, int*, int*, int*, int*, int, int, int);
 template void gpuVirialQuadrupletTally(float*, float*, float*, float*, float*, float*, float*,  
-        float, int*, int*, int*, int*, int, int);
+        float, int*, int*, int*, int*, int, int, int);
 

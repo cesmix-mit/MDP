@@ -340,6 +340,15 @@ void printArray3D(dstype* a, Int m, Int n, Int p, Int backend)
         print3darray(a, m, n, p);
 }
 
+int checknan(dstype *a, int n) 
+{
+    for (int i=0; i<n; i++)
+        if (isnan(a[i]) || fabs(a[i])>1e14) 
+            return 1;
+            
+    return 0;
+}
+
 struct latticestruct {     
     dstype *atombasis=NULL;//[12*3]; // fractional coords of each basis atom within unit cell (0 <= coord < 1)
     dstype *primitive=NULL;//[9]; // lattice <-> box transform matrices
@@ -679,6 +688,29 @@ struct regionstruct {
     dstype *xcenter=NULL;//[3];    // translated/rotated center of cylinder/sphere (only used if varshape)
     dstype *prev=NULL;//[5];       // stores displacement (X3), angle and if
     
+    void printout(int backend)
+    {
+        printf("boxlo: "); printArray2D(boxlo, 1, 3, backend);
+        printf("boxhi: "); printArray2D(boxhi, 1, 3, backend);
+        printf("boxtilt: "); printArray2D(boxtilt, 1, 3, backend);
+        printf("clo: "); printArray2D(clo, 1, 3, backend);
+        printf("chi: "); printArray2D(chi, 1, 3, backend);
+        printf("extent_lo: "); printArray2D(extent_lo, 1, 3, backend);
+        printf("extent_hi: "); printArray2D(extent_hi, 1, 3, backend);
+        printf("a: "); printArray2D(a, 1, 3, backend);
+        printf("b: "); printArray2D(b, 1, 3, backend);
+        printf("c: "); printArray2D(c, 1, 3, backend);
+        printf("scale: "); printArray2D(scale, 1, 3, backend);
+        printf("h: "); printArray2D(h, 1, 6, backend);
+        printf("h_inv: "); printArray2D(h_inv, 1, 6, backend);
+        printf("dx: "); printArray2D(dx, 1, 3, backend);
+        printf("v: "); printArray2D(v, 1, 3, backend);
+        printf("rpoint: "); printArray2D(rpoint, 1, 3, backend);
+        printf("omega: "); printArray2D(omega, 1, 3, backend);
+        printf("xcenter: "); printArray2D(xcenter, 1, 3, backend);
+        printf("prev: "); printArray2D(prev, 1, 5, backend);
+    }    
+    
     void allocatememory(int backend)
     {
         TemplateMalloc(&face, 18, backend);
@@ -963,6 +995,14 @@ struct commonstruct {
     dstype *fsetvelocity=NULL;
     dstype *ffixvelocity=NULL;
         
+    dstype *nveparam=NULL; // NVE parameters     
+    dstype *nvtparam=NULL; // NVT parameters     
+    dstype *snaparam=NULL; // SNAP parameters     
+    dstype *snapelemradius=NULL; // SNAP parameters     
+    dstype *snapelemweight=NULL; // SNAP parameters     
+    dstype *snapcoeff=NULL; // SNAP parameters     
+    dstype *createvelocity=NULL; // SNAP parameters     
+    
     // time integration parameters
     dstype dtarray[10];
     dstype tarray[10];
@@ -1065,8 +1105,8 @@ struct commonstruct {
     dstype xvm[3];
     int pbc[3];
     
-    int *traininglist;
-    int *validatelist;
+    int *traininglist=NULL;
+    int *validatelist=NULL;
     int trainingnum=0;
     int validatenum=0;
             
@@ -1101,12 +1141,65 @@ struct commonstruct {
         CPUFREE(atom2c);
         CPUFREE(atom3b);
         CPUFREE(atom3c);
-        CPUFREE(atom4b); 
+        CPUFREE(atom4b);         
+        CPUFREE(gsetforce); 
+        CPUFREE(glineforce); 
+        CPUFREE(gplaneforce); 
+        CPUFREE(gaveforce); 
+        CPUFREE(gdragforce); 
+        CPUFREE(ggravityforce); 
+        CPUFREE(gwallreflect); 
+        CPUFREE(gwallharmonic); 
+        CPUFREE(gwalllj93); 
+        CPUFREE(gwalllj126); 
+        CPUFREE(gwalllj1043); 
+        CPUFREE(gwallmorse); 
+        CPUFREE(gfixforce); 
+        CPUFREE(gsetvelocity); 
+        CPUFREE(gfixvelocity);                 
+        CPUFREE(isetforce); 
+        CPUFREE(ilineforce); 
+        CPUFREE(iplaneforce); 
+        CPUFREE(iaveforce); 
+        CPUFREE(idragforce); 
+        CPUFREE(igravityforce); 
+        CPUFREE(iwallreflect); 
+        CPUFREE(iwallharmonic); 
+        CPUFREE(iwalllj93); 
+        CPUFREE(iwalllj126); 
+        CPUFREE(iwalllj1043); 
+        CPUFREE(iwallmorse); 
+        CPUFREE(ifixforce); 
+        CPUFREE(isetvelocity); 
+        CPUFREE(ifixvelocity); 
+        CPUFREE(fsetforce); 
+        CPUFREE(flineforce); 
+        CPUFREE(fplaneforce); 
+        CPUFREE(faveforce); 
+        CPUFREE(fdragforce); 
+        CPUFREE(fgravityforce); 
+        CPUFREE(fwallreflect); 
+        CPUFREE(fwallharmonic); 
+        CPUFREE(fwalllj93); 
+        CPUFREE(fwalllj126); 
+        CPUFREE(fwalllj1043); 
+        CPUFREE(fwallmorse); 
+        CPUFREE(ffixforce); 
+        CPUFREE(fsetvelocity); 
+        CPUFREE(ffixvelocity); 
+        CPUFREE(nveparam); 
+        CPUFREE(nvtparam); 
+        CPUFREE(snaparam); 
+        CPUFREE(snapelemradius); 
+        CPUFREE(snapelemweight); 
+        CPUFREE(snapcoeff); 
+        CPUFREE(createvelocity); 
         CPUFREE(traininglist); 
-        CPUFREE(validatelist); 
+        CPUFREE(validatelist);         
+        
         lat.freememory(0);
         reg.freememory(0);
-        dom.freememory(0);        
+        //dom.freememory(0);        
     }                         
 };
 
@@ -1118,21 +1211,21 @@ struct appstruct {
     int *bcs=NULL;           // boundary conditions
     int *pbc=NULL;           // periodic boundary conditions        
                         
-    dstype *boxhi=NULL;
-    dstype *boxlo=NULL;
-    dstype *boxtilt=NULL;
-    dstype *boxhi_lamda=NULL;
-    dstype *boxlo_lamda=NULL;
+//     dstype *boxhi=NULL;
+//     dstype *boxlo=NULL;
+//     dstype *boxtilt=NULL;
+//     dstype *boxhi_lamda=NULL;
+//     dstype *boxlo_lamda=NULL;
 //     dstype *boxhi_bound=NULL;
 //     dstype *boxlo_bound=NULL;
 //     dstype *subhi=NULL;
 //     dstype *sublo=NULL;
 //     dstype *subhi_lamda=NULL;
 //     dstype *sublo_lamda=NULL;
-    dstype *h=NULL;
-    dstype *h_inv=NULL;
-    dstype *h_rate=NULL;
-    dstype *box; // 9 parameters for the simulation box
+//     dstype *h=NULL;
+//     dstype *h_inv=NULL;
+//     dstype *h_rate=NULL;
+//     dstype *box; // 9 parameters for the simulation box
     dstype *boxoffset=NULL;  
     
     dstype *atommass=NULL; //  a list of atomic mass for every atom type
@@ -1140,13 +1233,13 @@ struct appstruct {
     dstype *simulaparam=NULL; // simulation parameters   
     dstype *solversparam=NULL; // solvers parameters              
     dstype *physicsparam=NULL; // general physical parameters
-    dstype *nveparam=NULL; // NVE parameters     
-    dstype *nvtparam=NULL; // NVT parameters     
-    dstype *snaparam=NULL; // SNAP parameters     
-    dstype *snapelemradius=NULL; // SNAP parameters     
-    dstype *snapelemweight=NULL; // SNAP parameters     
-    dstype *snapcoeff=NULL; // SNAP parameters     
-    dstype *createvelocity=NULL; // SNAP parameters     
+//     dstype *nveparam=NULL; // NVE parameters     
+//     dstype *nvtparam=NULL; // NVT parameters     
+//     dstype *snaparam=NULL; // SNAP parameters     
+//     dstype *snapelemradius=NULL; // SNAP parameters     
+//     dstype *snapelemweight=NULL; // SNAP parameters     
+//     dstype *snapcoeff=NULL; // SNAP parameters     
+//     dstype *createvelocity=NULL; // SNAP parameters     
     dstype *eta=NULL; // hyperparameters
     int *atomnumber=NULL;   // a list of atomic numbers for every atom type
     int *kappa=NULL; // integer parameters                  
@@ -1290,6 +1383,36 @@ struct appstruct {
         TemplateFree(atom3b, backend);
         TemplateFree(atom3c, backend);
         TemplateFree(atom4b, backend);
+        TemplateFree(isetforce, backend); 
+        TemplateFree(ilineforce, backend); 
+        TemplateFree(iplaneforce, backend); 
+        TemplateFree(iaveforce, backend); 
+        TemplateFree(idragforce, backend); 
+        TemplateFree(igravityforce, backend); 
+        TemplateFree(iwallreflect, backend); 
+        TemplateFree(iwallharmonic, backend); 
+        TemplateFree(iwalllj93, backend); 
+        TemplateFree(iwalllj126, backend); 
+        TemplateFree(iwalllj1043, backend); 
+        TemplateFree(iwallmorse, backend); 
+        TemplateFree(ifixforce, backend); 
+        TemplateFree(isetvelocity, backend); 
+        TemplateFree(ifixvelocity, backend); 
+        TemplateFree(fsetforce, backend); 
+        TemplateFree(flineforce, backend); 
+        TemplateFree(fplaneforce, backend); 
+        TemplateFree(faveforce, backend); 
+        TemplateFree(fdragforce, backend); 
+        TemplateFree(fgravityforce, backend); 
+        TemplateFree(fwallreflect, backend); 
+        TemplateFree(fwallharmonic, backend); 
+        TemplateFree(fwalllj93, backend); 
+        TemplateFree(fwalllj126, backend); 
+        TemplateFree(fwalllj1043, backend); 
+        TemplateFree(fwallmorse, backend); 
+        TemplateFree(ffixforce, backend); 
+        TemplateFree(fsetvelocity, backend); 
+        TemplateFree(ffixvelocity, backend);         
         lat.freememory(backend);
         reg.freememory(backend);
         dom.freememory(backend);        
@@ -1359,6 +1482,14 @@ struct neighborstruct {
     int *mask=NULL;   
     int *tag=NULL;       
     
+    void printout(int inum, int gnum, int neighmax, int backend)
+    {
+        printf("atomtype: \n"); printArray2D(atomtype, 1, inum, backend);
+        printf("alist: \n"); printArray2D(alist, 1, inum+gnum, backend);
+        printf("neighnum: \n"); printArray2D(neighnum, 1, inum, backend);
+        printf("neighlist: \n"); printArray2D(neighlist, neighmax, inum, backend);
+    }
+    
     void freememory(int backend)
     {
         TemplateFree(a, backend); 
@@ -1394,6 +1525,7 @@ struct sysstruct {
     dstype *s=NULL;    // stresses    
     dstype *d=NULL;    // descriptors
     dstype *dd=NULL;   // derivatives of descriptors
+    dstype *vv=NULL;   // derivatives of descriptors
     dstype *c=NULL;    // vector of coeffcients associated with the basis functions            
     dstype *A=NULL;    // Regression matrix A 
     dstype *b=NULL;    // Regression vector b
@@ -1401,6 +1533,15 @@ struct sysstruct {
     dstype *vatom=NULL;
     dstype *xhold=NULL;
     int *image=NULL;   
+    
+    void printout(int dim, int inum, int backend)
+    {
+        printf("position: \n"); printArray2D(x, dim, inum, backend);
+        printf("velocity: \n"); printArray2D(v, dim, inum, backend);
+        printf("energy: \n"); printArray2D(e, 1, inum, backend);
+        printf("force: \n"); printArray2D(f, dim, inum, backend);        
+        printf("virial: \n"); printArray2D(vatom, inum, 6, backend);
+    }
     
     void freememory(int backend)
     {

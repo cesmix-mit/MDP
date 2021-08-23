@@ -213,14 +213,23 @@ template <typename T> void gpuJAtomDecomposition(T *f, T *fij, int *jlist, int *
 template <typename T> void gpuTripletForceDecomposition(T *f3ik, T *eij, T *d3ij, 
         int *tripletnum, int *tripletnumsum, int npairs, int dim);
 
+// template <typename T> void gpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
+//         int *ai, int dim, int ijnum);
+// template <typename T> void gpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
+//         int *ai, int *aj, int dim, int ijnum);
+// template <typename T> void gpuVirialTripletTally(T *vatom, T *fij, T *fik, T *rij, T *rik, T factor, 
+//         int *ai, int *aj, int *ak, int dim, int ijnum);
+// template <typename T> void gpuVirialQuadrupletTally(T *vatom, T *fij, T *fik, T *fim, 
+//         T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int ijnum);
+
 template <typename T> void gpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int dim, int ijnum);
+        int *ai, int dim, int inum, int ijnum);
 template <typename T> void gpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int *aj, int dim, int ijnum);
-template <typename T> void gpuVirialTripletTally(T *vatom, T *fij, T *fik, T *rij, T *rik, T factor, 
-        int *ai, int *aj, int *ak, int dim, int ijnum);
+        int *ai, int *aj, int dim, int inum, int ijnum);
+template <typename T> void gpuVirialTripletTally(T *vatom, T *fij, T *fik, T *rij, 
+        T *rik, T factor, int *ai, int *aj, int *ak, int dim, int inum, int ijnum);
 template <typename T> void gpuVirialQuadrupletTally(T *vatom, T *fij, T *fik, T *fim, 
-        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int ijnum);
+        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int inum, int ijnum);
 
 //***************************  Compute Outputs ***************************************//
 template <typename T> void gpuPackIntProperty(T *buf, int *prop, int *ilist, 
@@ -340,7 +349,6 @@ template <typename T> void gpuFixWallLJ1043(T *x, T *v, T *f, T *eatom, T *vatom
 template <typename T> void gpuFixWallMorse(T *x, T *v, T *f, T *eatom, T *vatom, T *fparam, 
         int *iparam, int *ilist, int eflag_atom, int vflag_atom, int dim, int inum);
 
-
 //***************************  Empirical Potentials ***************************************//
 template <typename T> void gpuSinglea(T *u, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
 template <typename T> void gpuSingleb(T *u, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
@@ -355,10 +363,24 @@ template <typename T> void gpuTripletcPair(T *u, T *xij, T *qi, T *qj, int *ti, 
 template <typename T> void gpuTripletcDensity(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
 template <typename T> void gpuQuadrupleta(T *u, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
 template <typename T> void gpuQuadrupletb(T *u, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
-template <typename T> void gpuLJ(T *u, T *f, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng);
-template <typename T> void gpuGradientLJ(T *u, T *du, T *xij, T *u_x, T *qi, T *qj, int *ti, int *tj, 
-        int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, 
-                int nmu, int neta, int nkappa, int ng);
+// template <typename T> void gpuLJ(T *u, T *f, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng);
+// template <typename T> void gpuGradientLJ(T *u, T *du, T *xij, T *u_x, T *qi, T *qj, int *ti, int *tj, 
+//         int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, 
+//                 int nmu, int neta, int nkappa, int ng);
+
+template <typename T> void gpuSingleaGradient(T *u, T *u_xi, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuSinglebGradient(T *u, T *u_xi, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuPairaGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuPairbGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuPaircGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuPaircDensityGradient(T *u, T *u_rho, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuTripletaGradient(T *u, T *u_xij, T *u_xik, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuTripletbGradient(T *u, T *u_xij, T *u_xik, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuTripletcGradient(T *u, T *u_xij, T *u_xik, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuTripletcPairGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuTripletcDensityGradient(T *u, T *u_rho, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuQuadrupletaGradient(T *u, T *u_xij, T *u_xik, T *u_xil, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void gpuQuadrupletbGradient(T *u, T *u_xij, T *u_xik, T *u_xil, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
 
 template <typename T> void gpuSingleaGradient(T *u, T *du, T *u_xi, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
 template <typename T> void gpuSinglebGradient(T *u, T *du, T *u_xi, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
@@ -423,9 +445,13 @@ template <typename T> void gpuAddUarraytot(T *ulisttot_r, T *ulisttot_i, T *ulis
 template <typename T> void gpuComputeBeta2(T *beta, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
+// template <typename T> void gpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
+//         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
+//         int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum);
+
 template <typename T> void gpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum);
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum);
 
 template <typename T> void gpuComputeZi(T *zlist_r, T *zlist_i, T *ulisttot_r, T *ulisttot_i, T *cglist,
         int *idxz, int *idxu_block, int *idxcg_block, int twojmax, int idxu_max, int idxz_max, int nelements, 
@@ -440,17 +466,30 @@ template <typename T> void gpuComputeBi(T *blist, T *zlist_r, T *zlist_i, T *uli
         int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements, int bzero_flag, 
         int wselfall_flag, int chemflag, int inum);
 
-template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
-        int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
-        int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
+// template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
+//         int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
+//         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
 
-template <typename T> void gpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
-        T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag);
+template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, 
+        T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, 
+        int *map, int *ai, int *aj, int *ti, int *tj, int twojmax, int idxb_max, int idxu_max, int idxz_max, 
+        int nelements, int bnorm_flag, int chemflag, int ijnum);
 
-template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
-        int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
-        int chemflag, int ijnum); 
+// template <typename T> void gpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
+//         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
+//         int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag);
+
+template <typename T> void gpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, 
+    T *rootpqarray, T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block,
+    int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag);
+
+// template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
+//         int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
+//         int chemflag, int ijnum); 
+
+template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, 
+        T *dulist_r, T *dulist_i, int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj,
+        int nelements, int twojmax, int idxu_max, int chemflag, int ijnum); 
 
 template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
         int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
@@ -477,9 +516,14 @@ template <typename T> void gpuComputeSnav2(T *snav, T *dblist, T *blist, T *x, i
 template <typename T> void gpuSnapTallyEnergyFull(T *eatom, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
-template <typename T> void gpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int ijnum);
+//template <typename T> void gpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int ijnum);
 
-template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum);
+template <typename T> void gpuSnapTallyForceFull(T *fatom, T *fij, int *ai, 
+        int *aj, int *alist, int ijnum);
+
+//template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum);
+
+template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int inum, int ijnum);
 
 template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim);
@@ -487,10 +531,13 @@ template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T
 template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes);
 
+// template <typename T> void gpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
+//       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
+//       int *atomtype, int inum, int jnum, int dim);
+
 template <typename T> void gpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
-      int *atomtype, int inum, int jnum, int dim);
-
+      int *atomtype, int *alist, int inum, int jnum, int dim);
 
 #endif  
 

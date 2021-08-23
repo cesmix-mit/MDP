@@ -915,7 +915,7 @@ template <typename T> __device__ T gpuPolarPrefactor(int l, int m, T MY_4PI, T c
   for (int i=l-mabs+1; i < l+mabs+1; ++i)
     prefactor *= (T) i;
 
-  prefactor = sqrt(static_cast<T>(2*l+1)/(MY_4PI*prefactor))
+  prefactor = sqrtf(static_cast<T>(2*l+1)/(MY_4PI*prefactor))
     * gpuAssociatedLegendre(l,mabs,costheta);
 
   if ((m < 0) && (m % 2)) prefactor = -prefactor;
@@ -1006,7 +1006,7 @@ template <typename T> __device__ void gpuCalcBoop(T *qn, T *rlist, T *cglist, T 
   int jj = 0;
   for (int il = 0; il < nqlist; il++) {
     int l = qlist[il];
-    T qnormfac = sqrt(MY_4PI/(2*l+1));
+    T qnormfac = sqrtf(MY_4PI/(2*l+1));
     T qm_sum = 0.0;
     for(int m = 0; m < 2*l+1; m++)
       qm_sum += qnm_r[il*mmax+m]*qnm_r[il*mmax+m] + qnm_i[il*mmax+m]*qnm_i[il*mmax+m];
@@ -1029,7 +1029,7 @@ template <typename T> __device__ void gpuCalcBoop(T *qn, T *rlist, T *cglist, T 
           idxcg_count++;
         }
       }
-      qn[jj++] = wlsum/sqrt(2*l+1);
+      qn[jj++] = wlsum/sqrtf( (T) (2*l+1) );
     }
   }
 
@@ -1052,9 +1052,9 @@ template <typename T> __device__ void gpuCalcBoop(T *qn, T *rlist, T *cglist, T 
       if (qn[il] < QEPSILON)
         qn[jj++] = 0.0;
       else {
-        T qnormfac = sqrt(MY_4PI/(2*l+1));
+        T qnormfac = sqrtf(MY_4PI/((T) (2*l+1)));
         T qnfac = qnormfac/qn[il];
-        qn[jj++] = wlsum/sqrt(2*l+1)*(qnfac*qnfac*qnfac);
+        qn[jj++] = wlsum/sqrtf(2*l+1)*(qnfac*qnfac*qnfac);
       }
     }
   }
@@ -1070,7 +1070,7 @@ template <typename T> __device__ void gpuCalcBoop(T *qn, T *rlist, T *cglist, T 
         qn[jj++] = 0.0;
       }
     else {
-      T qnormfac = sqrt(MY_4PI/(2*l+1));
+      T qnormfac = sqrtf(MY_4PI/(2*l+1));
       T qnfac = qnormfac/qn[il];
       for(int m = 0; m < 2*l+1; m++) {
         qn[jj++] = qnm_r[il*mmax+m] * qnfac;

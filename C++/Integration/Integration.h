@@ -23,7 +23,7 @@ public:
     void PostInitialIntegration(CCalculation &CCal);
     void DynamicLoadBalancing(CCalculation &CCal);
     void ProcessorsCommunication(CCalculation &CCal);
-    int NeighborListRebuild(CCalculation &CCal, int istep);
+    void NeighborListRebuild(CCalculation &CCal, dstype *xstart, int istep);
     //void ForceComputation(CCalculation &CCal);
     void PostForceComputation(CCalculation &CCal);
     void FinalIntegration(CCalculation &CCal);

@@ -77,13 +77,13 @@ void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int 
     common.validatelist = readiarrayfromdouble(in, app.nsize[51]);        
     common.trainingnum = app.nsize[50];
     common.validatenum = app.nsize[51];
-    readarray(in, &app.nveparam, app.nsize[52]);    
-    readarray(in, &app.nvtparam, app.nsize[53]);    
-    readarray(in, &app.snaparam, app.nsize[54]);    
-    readarray(in, &app.snapelemradius, app.nsize[55]);    
-    readarray(in, &app.snapelemweight, app.nsize[56]);    
-    readarray(in, &app.snapcoeff, app.nsize[57]);    
-    readarray(in, &app.createvelocity, app.nsize[58]);    
+    readarray(in, &common.nveparam, app.nsize[52]);    
+    readarray(in, &common.nvtparam, app.nsize[53]);    
+    readarray(in, &common.snaparam, app.nsize[54]);    
+    readarray(in, &common.snapelemradius, app.nsize[55]);    
+    readarray(in, &common.snapelemweight, app.nsize[56]);    
+    readarray(in, &common.snapcoeff, app.nsize[57]);    
+    readarray(in, &common.createvelocity, app.nsize[58]);    
     
     int n = 0;
     for (int i=13; i<=22; i++) 
@@ -311,7 +311,7 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
     common.globalfreq = app.ndims[13]; 
     common.peratomfreq = app.ndims[14]; 
         
-    common.descriptor = app.flags[0];   // descriptor flag: 0 -> Spherical Harmonics Bessel
+    common.descriptor = app.flags[0];   // descriptor flag: 0 -> Spherical Harmonics Bessel, 1 -> SNAP
     common.spectrum = app.flags[1];     // spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     common.training = app.flags[2];     // 0 -> no training, 1 -> Linear regression, 2 -> Gaussian process, 3 -> Neural net
     common.runMD = app.flags[3];        // 0 no MD simulation, 1 -> run MD simulation
@@ -403,40 +403,33 @@ void implSetCommonStruct(commonstruct &common, appstruct &app, configstruct &con
             if (config.natoms[i] > common.inummax)
                 common.inummax = config.natoms[i];   
     }
-    
-#ifdef HAVE_MPI        
-    MPI_Allreduce(&common.nlocal, &common.natoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-#else    
-    common.natoms = common.nlocal;
-#endif    
-    common.tdof = (common.natoms-1)*common.dim;    
-            
+                    
     for (int i=0; i<common.dim; i++) {       
         common.pbc[i] = app.pbc[i];
         common.boxoffset[i] = app.boxoffset[i];
     }
     
     common.dtarray[0] = common.dt;     // dt
-    common.dtarray[1] = 0.5*common.dt; // dtf
+    common.dtarray[1] = 0.5*common.dt*common.ftm2v; // dtf
     common.dtarray[2] = common.dt;     // dtv
     common.dtarray[3] = 0;             // beginstep 
     common.dtarray[4] = common.ntimesteps; // endstep
     common.dtarray[5] = common.currentstep;      
     
     if (common.ensemblemode == 1) { // NVE limit ensemble                
-      common.vlimitsq = (app.nveparam[0]/common.dt) * (app.nveparam[0]/common.dt);
+      common.vlimitsq = (common.nveparam[0]/common.dt) * (common.nveparam[0]/common.dt);
     }
     
     if (common.ensemblemode == 2) { // NVT ensemble                
-        common.tarray[0] = app.nvtparam[0]; // temp start
-        common.tarray[1] = app.nvtparam[1]; // temp stop
-        common.tarray[2] = 1/app.nvtparam[2]; // temp frequency    
+        common.tarray[0] = common.nvtparam[0]; // temp start
+        common.tarray[1] = common.nvtparam[1]; // temp stop
+        common.tarray[2] = 1/common.nvtparam[2]; // temp frequency    
         common.tarray[5] = common.tdof; 
         common.tarray[6] = common.boltz; 
-        common.tarray[7] = (app.nsize[53]>3) ? app.nvtparam[3] : 0.0; // drag factor added to barostat/thermostat         
+        common.tarray[7] = (app.nsize[53]>3) ? common.nvtparam[3] : 0.0; // drag factor added to barostat/thermostat         
         common.tarray[8] = common.mvv2e; 
-        common.mtchain   = (app.nsize[53]>4) ? (int) app.nvtparam[4] : 3;         
-        common.nc_tchain = (app.nsize[53]>5) ? (int) app.nvtparam[5] : 1;                 
+        common.mtchain   = (app.nsize[53]>4) ? (int) common.nvtparam[4] : 3;         
+        common.nc_tchain = (app.nsize[53]>5) ? (int) common.nvtparam[5] : 1;                 
     }
     
     if (common.readconfig==0) {
@@ -499,7 +492,21 @@ void implSetDomainStruct(domainstruct &dom, commonstruct &common, regionstruct &
             common.dom.boxhi[i] = common.reg.boxhi[i]; 
             common.dom.boxlo[i] = common.reg.boxlo[i]; 
             common.dom.boxtilt[i] = common.reg.boxtilt[i]; 
+            common.dom.boxlo_lamda[i] = 0.0;
+            common.dom.boxhi_lamda[i] = 1.0;                    
         }
+        cpuSetGlobalBox(common.dom.h, common.dom.h_inv, common.dom.boxlo_bound, common.dom.boxhi_bound, 
+                common.dom.boxhi, common.dom.boxlo, common.dom.boxtilt, common.dom.triclinic);                
+        cpuSetLocalOrthBox(common.dom.subhi, common.dom.sublo, common.dom.boxhi, common.dom.boxlo, 
+                common.dom.subhi_lamda, common.dom.sublo_lamda, 3);
+                
+        dstype epsilon[3]; 
+        for (int i=0; i<3; i++) epsilon[i] = 1e-6*(common.dom.boxhi[i]-common.dom.boxlo[i]);
+        cpuShiftedSubbox(common.dom.ssublo, common.dom.ssubhi, common.dom.boxlo, common.dom.boxhi, 
+                common.dom.boxlo_lamda, common.dom.boxhi_lamda, common.dom.sublo, common.dom.subhi, 
+                common.dom.sublo_lamda, common.dom.subhi_lamda, epsilon, common.pbc, common.dom.triclinic);
+        cpuBoundingSubbox(common.dom.bsublo, common.dom.bsubhi, common.dom.sublo, common.dom.subhi,   
+                common.dom.sublo_lamda, common.dom.subhi_lamda, common.dom.boxlo, common.dom.h, common.dom.triclinic);                                                
     }
     else {
         cpuLattice(common.lat.atombasis, common.lat.primitive, common.lat.rotaterow, common.lat.primitinv, 
@@ -534,8 +541,7 @@ void implSetDomainStruct(domainstruct &dom, commonstruct &common, regionstruct &
                 common.lat.primitive, common.lat.rotaterow, common.lat.primitinv, common.lat.rotatecol, 
                 common.lat.origin, common.lat.spacing, common.lat.scale);
         common.lat.latticebounds();        
-    }
-     
+    }     
 }
 
 void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app, commonstruct &common, regionstruct &reg, latticestruct &lat)
@@ -581,13 +587,13 @@ void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app
     for (int i=0; i<nlocal; i++) ilist[i] = i;
         
     if (app.nsize[58]>0) {
-        dstype t_desired = app.createvelocity[0];
-        int seed0 = (int) app.createvelocity[1];
-        int dist_flag = (int) app.createvelocity[2];
-        int sum_flag = (int) app.createvelocity[3];
-        int loop_flag = (int) app.createvelocity[4];
-        int momentum_flag = (int) app.createvelocity[5];         
-        int rotation_flag = (int) app.createvelocity[6];     
+        dstype t_desired = common.createvelocity[0];
+        int seed0 = (int) common.createvelocity[1];
+        int dist_flag = (int) common.createvelocity[2];
+        int sum_flag = (int) common.createvelocity[3];
+        int loop_flag = (int) common.createvelocity[4];
+        int momentum_flag = (int) common.createvelocity[5];         
+        int rotation_flag = (int) common.createvelocity[6];     
 
         int natom=nlocal;
         cpuVelocityCreate(config.x, config.v, app.atommass, common.second, common.seed, common.save, ilist, 
@@ -602,33 +608,36 @@ void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app
         common.nv = 1;
     }
     
-    free(y); free(ilist); free(amass);   
-        
-//     printf("%g %g %g\n", common.masstotal, common.tfactor, common.temp);
-//     printArray2D(config.v, common.dim, 10, 1);
-//     printArray2D(common.vcm, 1, 3, 1);    
-    //error("here");        
+    free(y); free(ilist); free(amass);           
 }
 
+  
 void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &common, 
         string filein, string fileout, Int mpiprocs, Int mpirank, Int backend)
-{    
-    implReadAppStruct(app, common, filein, mpiprocs, mpirank, backend);    
-    common.readconfig = implReadConfigStruct(config, filein, mpiprocs, mpirank, backend);      
-    common.readlattice = implReadLatticeStruct(common.lat, filein);
-    common.readregion = implReadRegionStruct(common.reg, filein);
-    common.readdomain = implReadDomainStruct(common.dom, filein);    
-    implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);         
-    
-    if (common.readdomain==0)
-        implSetDomainStruct(common.dom, common, common.reg, common.lat);
-    
-    if (common.readconfig==0)
-        implSetConfigStruct(config, common.dom, app, common, common.reg, common.lat);    
-    
+{        
+    implReadAppStruct(app, common, filein, mpiprocs, mpirank, backend);        
+    common.readconfig = implReadConfigStruct(config, filein, mpiprocs, mpirank, backend);          
+    common.readlattice = implReadLatticeStruct(common.lat, filein);    
+    common.readregion = implReadRegionStruct(common.reg, filein);    
+    common.readdomain = implReadDomainStruct(common.dom, filein);        
+    implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);             
+    if (common.readdomain==0) {
+        implSetDomainStruct(common.dom, common, common.reg, common.lat);        
+    }    
+    if (common.readconfig==0) {
+        implSetConfigStruct(config, common.dom, app, common, common.reg, common.lat);            
+    }
+        
     common.triclinic = common.dom.triclinic;
     app.dom.allocatememory(backend);
-    copydomain(app.dom, common.dom, backend);
+    copydomain(app.dom, common.dom, backend);       
+    
+#ifdef HAVE_MPI        
+    MPI_Allreduce(&common.nlocal, &common.natoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#else    
+    common.natoms = common.nlocal;
+#endif    
+    common.tdof = (common.natoms-1)*common.dim;        
 }
 
 #endif

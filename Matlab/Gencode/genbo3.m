@@ -8,15 +8,15 @@
 function genbo3(filename, u, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, rho, mu, eta, kappa, natomtype)
 
 [n,m] = size(u);
-if (n==0) || (n == 1)
-    m = 0;    
-elseif (n == natomtype+2)
-    if u(end,1) == 0
-        m = 0;
-    end    
-else
-    error("Number of functions for the two-body bond order potential must be equal to 1 plus the number of atom types");
-end
+% if (n==0) || (n == 1)
+%     m = 0;    
+% elseif (n == natomtype+2)
+%     if u(end,1) == 0
+%         m = 0;
+%     end    
+% else
+%     error("Number of functions for the two-body bond order potential must be equal to 1 plus the number of atom types");
+% end
 
 gen = 1;
 ifile = 0;
@@ -32,9 +32,9 @@ for i = 1:m
     if ui(end) ~= 0
         potnum = potnum+1;        
         [stropu0, strcpu0, strgpu0] = gentriplet(filename+num2str(potnum), ui(1:end-2), xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, kappa, gen, ifile);        
-        stropu0 = modifystr(stropu0, natomtype);
-        strcpu0 = modifystr(strcpu0, natomtype);
-        strgpu0 = modifystr(strgpu0, natomtype);
+%         stropu0 = modifystr(stropu0, natomtype);
+%         strcpu0 = modifystr(strcpu0, natomtype);
+%         strgpu0 = modifystr(strgpu0, natomtype);
         [stropu1, strcpu1, strgpu1] = genpair(fp+num2str(potnum), ui(end-1), xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, gen, ifile);        
         [stropu2, strcpu2, strgpu2] = gendensity(fn+num2str(potnum), ui(end), rho, mu, eta, kappa, gen, ifile);
         stropu = stropu + stropu0 + "\n" + stropu1 + "\n" + stropu2 + "\n"; 
@@ -84,7 +84,8 @@ else
     tmpgpu = strrep(tmpgpu, "(u,", "Gradient(u, du, u_xij,");   
     tmpgpu = strrep(tmpgpu, "(double *", "Gradient(double *, double *, double*");   
     tmpgpu = strrep(tmpgpu, "(float *", "Gradient(float *, float *, float*");   
-    strgpu = strgpu + "\n" + tmpgpu;  
+    %strgpu = strgpu + "\n" + tmpgpu;      
+    strgpu = strgpu + "\n" + "#ifdef _ENZYME\n" + tmpgpu + "#endif\n";     
     
     [sp0, sp1, sp2, sp3] = getpotstr(0);
     sp0 = strrep(sp0, "int ng)", "int ng, int potnum)");
@@ -100,7 +101,8 @@ else
     tmpgpu = strrep(tmpgpu, "(u,", "Gradient(u, du, u_rho,");   
     tmpgpu = strrep(tmpgpu, "(double *", "Gradient(double *, double *, double*");   
     tmpgpu = strrep(tmpgpu, "(float *", "Gradient(float *, float *, float*");   
-    strgpu = strgpu + "\n" + tmpgpu;  
+    %strgpu = strgpu + "\n" + tmpgpu;  
+    strgpu = strgpu + "\n" + "#ifdef _ENZYME\n" + tmpgpu + "#endif\n";     
     
     cppfiles(filename, stropu, strcpu, strgpu, 0);
 end    

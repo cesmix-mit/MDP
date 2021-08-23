@@ -222,13 +222,13 @@ template <typename T> void cpuIAtomDecomposition(T *f, T *fij, int *ilist, int *
 template <typename T> void cpuJAtomDecomposition(T *f, T *fij, int *jlist, int *bnumsum, int *index, int dim, int jnum);
 
 template <typename T> void cpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int dim, int ijnum);
+        int *ai, int dim, int inum, int ijnum);
 template <typename T> void cpuVirialPairTally(T *vatom, T *fij, T *rij, T factor, 
-        int *ai, int *aj, int dim, int ijnum);
+        int *ai, int *aj, int dim, int inum, int ijnum);
 template <typename T> void cpuVirialTripletTally(T *vatom, T *fij, T *fik, T *rij, T *rik, T factor, 
-        int *ai, int *aj, int *ak, int dim, int ijnum);
+        int *ai, int *aj, int *ak, int dim, int inum, int ijnum);
 template <typename T> void cpuVirialQuadrupletTally(T *vatom, T *fij, T *fik, T *fim, 
-        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int ijnum);
+        T *rij, T *rik, T *rim, T factor, int *ai, int *aj, int *ak, int *am, int dim, int inum, int ijnum);
 
 // template <typename T> void cpuHalfForceDecomposition2D(T *fi, T *fij, int *ai, int *aj, int ijnum);
 // template <typename T> void cpuIAtomDecomposition2D(T *fi, T *fij, int *ilist, int *anumsum, int inum);
@@ -366,6 +366,35 @@ template <typename T> void cpuFixWallLJ1043(T *x, T *v, T *f, T *eatom, T *vatom
 template <typename T> void cpuFixWallMorse(T *x, T *v, T *f, T *eatom, T *vatom, T *fparam, 
         int *iparam, int *ilist, int eflag_atom, int vflag_atom, int dim, int inum);
 
+//***************************  Empirical Potentials ***************************************//
+template <typename T> void opuSinglea(T *u, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuSingleb(T *u, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPaira(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPairb(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPairc(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPaircDensity(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripleta(T *u, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletb(T *u, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletc(T *u, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletcPair(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletcDensity(T *u, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuQuadrupleta(T *u, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuQuadrupletb(T *u, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+
+template <typename T> void opuSingleaGradient(T *u, T *u_xi, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuSinglebGradient(T *u, T *u_xi, T *xi, T *qi, int *ti, int *ai, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPairaGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPairbGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPaircGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuPaircDensityGradient(T *u, T *u_rho, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletaGradient(T *u, T *u_xij, T *u_xik, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletbGradient(T *u, T *u_xij, T *u_xik, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletcGradient(T *u, T *u_xij, T *u_xik, T *xij, T *xik, T *qi, T *qj, T *qk, int *ti, int *tj, int *tk, int *ai, int *aj, int *ak, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletcPairGradient(T *u, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuTripletcDensityGradient(T *u, T *u_rho, T *rho, T *mu, T *eta, int *kappa, int nrho, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuQuadrupletaGradient(T *u, T *u_xij, T *u_xik, T *u_xil, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+template <typename T> void opuQuadrupletbGradient(T *u, T *u_xij, T *u_xik, T *u_xil, T *xij, T *xik, T *xil, T *qi, T *qj, T *qk, T *ql, int *ti, int *tj, int *tk, int *tl, int *ai, int *aj, int *ak, int *al, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng, int potnum);
+
 //***************************  spherical harmonic potentials ***************************************//
 void cpuGetIndk(int *indk, int K);
 template <typename T> T clebschgordan(int j1, int m1, int j2, int m2, int j, int m, T *fac);
@@ -418,9 +447,13 @@ template <typename T> void cpuAddUarraytot(T *ulisttot_r, T *ulisttot_i, T *ulis
 template <typename T> void cpuComputeBeta2(T *beta, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
+// template <typename T> void cpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
+//         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
+//         int *type, int *alist, int *ai, int *aj, int twojmax, int idxu_max, int ijnum);
+ 
 template <typename T> void cpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum);
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum);
 
 template <typename T> void cpuComputeZi(T *zlist_r, T *zlist_i, T *ulisttot_r, T *ulisttot_i, T *cglist,
         int *idxz, int *idxu_block, int *idxcg_block, int twojmax, int idxu_max, int idxz_max, int nelements, 
@@ -435,21 +468,29 @@ template <typename T> void cpuComputeBi(T *blist, T *zlist_r, T *zlist_i, T *uli
         int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements, int bzero_flag, 
         int wselfall_flag, int chemflag, int inum);
 
+// template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
+//         int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
+//         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
+
 template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
-        int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
+        int *idxb, int *idxu_block, int *idxz_block, int *map, int *ai, int *aj, int *ti, int *tj, int twojmax, 
         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
+
+// template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
+//         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
+//         int *type, int *alist, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag);
 
 template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag);
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag);
+
+// template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
+//         int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
+//        int chemflag, int ijnum); 
 
 template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
-        int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
-        int chemflag, int ijnum); 
-
-template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
-        int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
-        int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
+        int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj, int nelements, int twojmax, int idxu_max, 
+        int chemflag, int ijnum) ;
 
 template <typename T> void cpuComputeSna(T *sna, T *blist, int *ilist, int *mask, 
         int ncoeff, int nrows, int inum, int quadraticflag);
@@ -472,19 +513,23 @@ template <typename T> void cpuComputeSnav2(T *snav, T *dblist, T *blist, T *x, i
 template <typename T> void cpuSnapTallyEnergyFull(T *eatom, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
-template <typename T> void cpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int ijnum);
+template <typename T> void cpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int *alist, int ijnum);
 
-template <typename T> void cpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum);
+//template <typename T> void cpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum);
+template <typename T> void cpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int inum, int ijnum);
 
 template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim);
 
 template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes);
+// template <typename T> void cpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
+//       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
+//       int *atomtype, int inum, int jnum, int dim);
 
 template <typename T> void cpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
-      int *atomtype, int inum, int jnum, int dim);
+      int *atomtype, int *alist, int inum, int jnum, int dim);
 
 //*************************** Lattice, Region, Domain ***********************************************//
 template <typename T> int cpuLattice(T *basis, T *primitive, T *rotaterow, T *priminv, T *rotatecol, T *origin, 

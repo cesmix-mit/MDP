@@ -1461,6 +1461,7 @@ template void gpuArrayDG2CG2(float*, float*, int*, int*, int, int);
 
 template int gpuArrayGetValueAtIndex(int*, int);
 template void gpuArrayCopy(int*, int*, int);
+template void gpuArraySetValue(int*, int, int);
 
 template void gpuArrayTranspose(double *A, double *B, int m, int n);
 template void gpuArrayTranspose(float *A, float *B, int m, int n);

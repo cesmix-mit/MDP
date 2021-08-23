@@ -116,7 +116,6 @@ template <typename T> void cpuVelocityCreate(T *x, T *v, T *mass, T *second,
     seed[0] = 1;    
     for (i = 0; i < nlocal; i++) {
         cpuRandomResetSeed(seed,save,seed0,&x[i*dim]);        
-        //if (i<10) printf("%i %i %i %g %g %g\n",i, seed0, seed[0], x[i*dim], x[i*dim+1], x[i*dim+2]);                    
         if (dist_flag == 0) {
           vx = cpuRandomUniform(seed) - 0.5;
           vy = cpuRandomUniform(seed) - 0.5;
@@ -335,7 +334,7 @@ template <typename T> void cpuNVEFinalIntegrate(T *x, T *v, T *f, T *mass, T dtf
         T dtfm = dtf / mass[type[i]];
         v[i*dim+0] += dtfm * f[i*dim+0];
         v[i*dim+1] += dtfm * f[i*dim+1];
-        if (dim==3) v[i*dim+2] += dtfm * f[i*dim+2];
+        if (dim==3) v[i*dim+2] += dtfm * f[i*dim+2];        
     }  
 }
 

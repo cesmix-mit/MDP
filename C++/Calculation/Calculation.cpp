@@ -15,8 +15,8 @@ CCalculation::CCalculation(string filein, string fileout, Int mpiprocs, Int mpir
 {
     if (backend == 2) {
         appstruct happ; 
-        implReadInputFiles(happ, config, common, filein, fileout, mpiprocs, mpirank, backend);    
-        implSetAppStruct(app, happ, backend);  
+        implReadInputFiles(happ, config, common, filein, fileout, mpiprocs, mpirank, backend);            
+        implSetAppStruct(app, happ, backend);          
 #ifdef HAVE_CUDA            
         // create cuda event handle
         CUDA_CHECK(cudaEventCreate(&common.eventHandle));
@@ -25,7 +25,7 @@ CCalculation::CCalculation(string filein, string fileout, Int mpiprocs, Int mpir
         CHECK_CUBLAS(cublasCreate(&common.cublasHandle));
         CHECK_CUBLAS(cublasSetPointerMode(common.cublasHandle, CUBLAS_POINTER_MODE_HOST));                     
         //     CHECK_CUBLAS(cublasSetPointerMode(common.cublasHandle, CUBLAS_POINTER_MODE_DEVICE)); 
-#endif        
+#endif                
     }
     else
         implReadInputFiles(app, config, common, filein, fileout, mpiprocs, mpirank, backend);    
@@ -40,17 +40,23 @@ CCalculation::~CCalculation()
     sys.freememory(common.backend);     
     app.freememory(common.backend);       
     sh.freememory(common.backend);       
+    sna.freememory(common.backend);       
     config.freememory(); // always in cpu memory    
     common.freememory(); // always in cpu memory
 }
 
 void CCalculation::SetConfiguration(Int ci)
 {
-    implSetConfiguration(nb, tmp, sys, app, config, common, ci);    
-    if (common.K > 0)
-        InitSphericalHarmonics(sh, common);            
-    implSetTempStruct(tmp, common);  
-        
+    implSetConfiguration(nb, tmp, sys, app, config, common, ci);       
+    
+    if (common.descriptor == 0) {// spherical harmonic
+        InitSphericalHarmonics(sh, common);                  
+    }
+    else if (common.descriptor == 1) {// snap
+        InitSnap(sna, common);                
+    }
+    implSetTempStruct(tmp, common, sna, sh);              
+    
     int M = common.Ncoeff + common.Nempot;
     //printf("%i %i %i\n",M, common.Ncoeff, common.Nempot);
     TemplateMalloc(&sys.c, M, common.backend);  
@@ -66,7 +72,7 @@ void CCalculation::SetConfiguration(Int ci)
     else if (common.potential==1)
         common.M = common.Ncoeff;
     else if (common.potential==2)
-        common.M = M;
+        common.M = M;    
 }
 
 void CCalculation::GetPositions(dstype *x, Int ci)
@@ -215,6 +221,12 @@ void CCalculation::RadialSphericalHarmonicEnergyForce(dstype *e, dstype *f, dsty
         implSphericalHarmonicBesselEnergyForce(e, f, nb, common, app, tmp, sh, x, coeff, q, param, nparam);              
 }
 
+void CCalculation::RadialSphericalHarmonicEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype* x, dstype *coeff, dstype *q, dstype *param, Int nparam) 
+{    
+    if ((common.descriptor==0) && (common.K > 0))
+        implSphericalHarmonicBesselEnergyForceVirial(e, f, v, nb, common, app, tmp, sh, x, coeff, q, param, nparam);              
+}
+
 void CCalculation::PotentialDescriptors(dstype *e, dstype* x, dstype *q, dstype *param, Int *nparam) 
 {    
     if (common.potential == 0)
@@ -260,55 +272,152 @@ void CCalculation::PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype 
         error("Potential is not implemented");        
 }
 
+void CCalculation::PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *param, Int *nparam) 
+{     
+    ArraySetValue(e, 0.0, common.inum, common.backend);  
+    ArraySetValue(f, 0.0, common.inum*common.dim, common.backend);  
 
-// void CCalculation::NonbondedSingleEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implNonbondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::BondedSingleEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implBondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::NonbondedPairEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implNonbondedPairEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::BondedPairEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implBondedPairEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::BondOrderPairEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implBoPairEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::NonbondedTripletEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implNonbondedTripletEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::BondedTripletEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implBondedTripletEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::BondOrderTripletEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implBoTripletEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::NonbondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implNonbondedQuadrupletEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
-// 
-// void CCalculation::BondedQuadrupletEnergyForce(dstype *e, dstype *f, dstype* x, dstype *q, dstype *param, Int nparam) 
-// {    
-//     implBondedQuadrupletEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);              
-// }
+    if (common.potential == 0)
+        this->EmpiricalPotentialEnergyForce(e, f, x, sys.q, param, nparam);              
+//     else if (common.potential == 1)
+//         this->RadialSphericalHarmonicEnergyForce(e, f, x, coeff, sys.q, param, 0);            
+//     else if (common.potential == 2) {
+//         this->EmpiricalPotentialEnergyForce(e, f, x, coeff, sys.q, param, nparam);   
+//         this->RadialSphericalHarmonicEnergyForce(e, f, x, &coeff[common.Nempot], sys.q, param, 0);  
+//     }    
+//     else
+//         error("Potential is not implemented");        
+}
+
+void CCalculation::EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{        
+    //implEmpiricalPotentialEnergyForce(e, f, nb, common, app, tmp, x, q, param, nparam);       
+    if (common.backend == 1)
+        cpuEmpiricalPotentialEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, nparam);       
+#ifdef USE_OMP
+    if (common.backend == 4)
+        ompEmpiricalPotentialEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, nparam);       
+#endif                          
+#ifdef USE_HIP
+    if (common.backend == 3)
+        hipEmpiricalPotentialEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, nparam);       
+#endif                                  
+#ifdef USE_CUDA            
+    if (common.backend == 2)
+        gpuEmpiricalPotentialEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, nparam);       
+#endif                
+}
+
+void CCalculation::EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype* x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
+{        
+    Int dim = common.dim;
+    Int inum = common.inum;
+    Int Nempot = common.Nempot;    
+    
+    ArraySetValue(sys.ee, 0.0, inum*Nempot, common.backend);  
+    ArraySetValue(sys.dd, 0.0, dim*inum*Nempot, common.backend);  
+    ArraySetValue(sys.vv, 0.0, 6*inum*Nempot, common.backend);  
+    
+    //implEmpiricalPotentialDescriptors(sys.ee, sys.dd, nb, common, app, tmp, x, q, param, nparam);       
+    if (common.backend == 1)
+        cpuEmpiricalPotentialDescriptors(sys.ee, sys.dd, sys.vv, nb, common, app, tmp, x, q, param, nparam);       
+#ifdef USE_OMP
+    if (common.backend == 4)
+        ompEmpiricalPotentialDescriptors(sys.ee, sys.dd, sys.vv, nb, common, app, tmp, x, q, param, nparam);       
+#endif                          
+#ifdef USE_HIP
+    if (common.backend == 3)
+        hipEmpiricalPotentialDescriptors(sys.ee, sys.dd, sys.vv, nb, common, app, tmp, x, q, param, nparam);       
+#endif                                  
+#ifdef USE_CUDA            
+    if (common.backend == 2)
+        gpuEmpiricalPotentialDescriptors(sys.ee, sys.dd, sys.vv, nb, common, app, tmp, x, q, param, nparam);       
+#endif                                     
+    PGEMNV(common.cublasHandle, inum, Nempot, &one, sys.ee, inum, coeff, inc1, &zero, e, inc1, common.backend);    
+    PGEMNV(common.cublasHandle, dim*inum, Nempot, &minusone, sys.dd, dim*inum, coeff, inc1, &zero, f, inc1, common.backend);    
+    PGEMNV(common.cublasHandle, 6*inum, Nempot, &minusone, sys.vv, 6*inum, coeff, inc1, &zero, f, inc1, common.backend);    
+}
+
+void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
+{     
+    ArraySetValue(e, 0.0, common.inum, common.backend);  
+    ArraySetValue(f, 0.0, common.inum*common.dim, common.backend);  
+    ArraySetValue(v, 0.0, common.inum*6, common.backend);  
+    
+    this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, coeff, sys.q, param, nparam);              
+    
+    if (common.descriptor == 1) // snap
+        ComputePairSnap(e, f, v, sna, common, sys, nb, tmp);  
+    else if (common.descriptor == 0) // spherical harmonic
+        this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x,  &coeff[common.Nempot], sys.q, param, 0);            
+
+//     if (common.potential == 0) {
+//         this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, coeff, q, param, nparam);              
+// //     else if (common.potential == 1)
+// //         this->RadialSphericalHarmonicEnergyForce(e, f, v, x, coeff, q, param, 0);            
+// //     else if (common.potential == 2) {
+// //         this->EmpiricalPotentialEnergyForce(e, f, v, x, coeff, q, param, nparam);   
+// //         this->RadialSphericalHarmonicEnergyForce(e, f, v, x, &coeff[common.Nempot], q, param, 0);  
+//     }    
+//     else
+//         error("Potential is not implemented");        
+}
+
+void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *param, Int *nparam) 
+{     
+    ArraySetValue(e, 0.0, common.inum, common.backend);  
+    ArraySetValue(f, 0.0, common.inum*common.dim, common.backend);  
+    ArraySetValue(v, 0.0, common.inum*6, common.backend);  
+     
+//     if (common.potential == 0) 
+//         this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, sys.q, param, nparam);              
+//     else if (common.potential == 1)
+//         this->RadialSphericalHarmonicEnergyForce(e, f, v, x, coeff, q, param, 0);            
+//     else if (common.potential == 2) {
+//         this->EmpiricalPotentialEnergyForce(e, f, v, x, coeff, q, param, nparam);   
+//         this->RadialSphericalHarmonicEnergyForce(e, f, v, x, &coeff[common.Nempot], q, param, 0);  
+//     }   
+    
+    this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, sys.q, param, nparam);              
+    
+    if (common.descriptor == 1) // snap
+        ComputePairSnap(e, f, v, sna, common, sys, nb, tmp);  
+    else if (common.descriptor == 0) // spherical harmonic
+        this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x, sys.c, sys.q, param, 0);            
+                    
+}
+
+void CCalculation::ThermoOutput(int flag)
+{
+    int dim = common.dim;
+    int inum = common.inum;    
+    int backend = common.backend;
+    int *atomtype = nb.atomtype;            
+    int *ilist = nb.alist;    
+    
+    dstype *tmpmem = tmp.tmpmem;    
+    dstype *mass = app.atommass;    
+    dstype *scalars = common.scalars;
+    dstype mvv2e = common.mvv2e;            
+    dstype boltz = common.boltz;            
+    dstype nktv2p = common.nktv2p;    
+    dstype tdof = (inum-1)*dim;    
+    dstype tfactor = mvv2e/(tdof * boltz);
+    dstype inv_volume = 1.0 / (common.dom.h[0] * common.dom.h[1] * common.dom.h[2]);  
+    
+    int nout;
+    if (flag == 0) {
+        nout=8;
+        ArraySumEveryColumn(tmpmem, sys.e, 1, inum, backend);    
+        ArraySumEveryColumn(&tmpmem[1], sys.vatom, 6, inum, backend);    
+        ComputeKEAtom(&tmpmem[inum+nout], mass, sys.v, 2.0, atomtype, ilist, dim, inum, backend);    
+        ArraySumEveryColumn(&tmpmem[7], &tmpmem[inum+nout], 1, inum, backend);
+        TemplateCopytoHost(scalars, tmpmem, nout, backend);        
+        common.pe = scalars[0]/inum;                
+        common.temp = tfactor*scalars[7];    
+        common.ke = 0.5 * tdof * boltz * common.temp/inum;                          
+        common.pres = (tdof * boltz * common.temp + scalars[1] + scalars[2] + scalars[3]) / 3.0 * inv_volume * nktv2p;
+    }
+}
 
 #endif        

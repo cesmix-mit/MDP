@@ -72,7 +72,7 @@ else
         tmpgpu = strrep(tmpgpu, "(double *", "Gradient(double *, double *, double*, double*, double*");   
         tmpgpu = strrep(tmpgpu, "(float *", "Gradient(float *, float *, float*, float*, float*");      
     end
-    strgpu = strgpu + "\n" + tmpgpu;  
+    strgpu = strgpu + "\n" + "#ifdef _ENZYME\n" + tmpgpu + "#endif\n";      
     
     cppfiles(filename, stropu, strcpu, strgpu, 0);
 end    

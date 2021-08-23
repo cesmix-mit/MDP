@@ -7,7 +7,7 @@
 
 function gencode(app)
 
-disp("Generate C++ code...");
+disp("Generate C++ code ...");
 if ~exist(char("app"), 'dir')
     mkdir(char("app"));
 else
@@ -35,8 +35,10 @@ mu = sym('mu',[app.ncmu1a 1]);
 if isfield(pot, char(filename))    
     u = pot.Singlea(xi, qi, ti, mu, eta, kappa);     
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 filename = "Singleb";
@@ -44,8 +46,10 @@ mu = sym('mu',[app.ncmu1b 1]);
 if isfield(pot, char(filename))        
     u = pot.Singleb(xi, qi, ti, mu, eta, kappa);    
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 potform = 2;
@@ -54,8 +58,10 @@ mu = sym('mu',[app.ncmu2a 1]);
 if isfield(pot, char(filename))    
     u = pot.Paira(xij, qi, qj, ti, tj, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 filename = "Pairb";
@@ -63,8 +69,10 @@ mu = sym('mu',[app.ncmu2b 1]);
 if isfield(pot, char(filename))    
     u = pot.Pairb(xij, qi, qj, ti, tj, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 filename = "Pairc";
@@ -73,6 +81,7 @@ rho = sym('rho',[1 1]);
 if isfield(pot, char(filename))    
     u = pot.Pairc(xij, qi, qj, ti, tj, rho, mu, eta, kappa);    
     genbo2(filename, u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
+    genbo2grad(filename + "Gradient", u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
 else
     ifile = 0;
     gen = 0;    
@@ -82,6 +91,7 @@ else
     strcpu = strcpu  + "\n" + tmpcpu + "\n";
     strgpu = strgpu  + "\n" + tmpgpu + "\n";    
     cppfiles(filename, stropu, strcpu, strgpu, 1);
+    genbo2grad(filename + "Gradient", [], xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
 end
 
 potform = 3;
@@ -90,8 +100,10 @@ mu = sym('mu',[app.ncmu3a 1]);
 if isfield(pot, char(filename))    
     u = pot.Tripleta(xij, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 filename = "Tripletb";
@@ -99,8 +111,10 @@ mu = sym('mu',[app.ncmu3b 1]);
 if isfield(pot, char(filename))    
     u = pot.Tripletb(xij, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 filename = "Tripletc";
@@ -109,6 +123,7 @@ rho = sym('rho',[1 1]);
 if isfield(pot, char(filename))    
     u = pot.Tripletc(xij, xik, qi, qj, qk, ti, tj, tk, rho, mu, eta, kappa);
     genbo3(filename, u, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, rho, mu, eta, kappa, app.natomtype);
+    genbo3grad(filename+"Gradient", u, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, rho, mu, eta, kappa, app.natomtype);
 else
     ifile = 0;
     gen = 0;
@@ -121,6 +136,7 @@ else
     strcpu = strcpu  + "\n" + tmqcpu + "\n" + tmpcpu + "\n";
     strgpu = strgpu  + "\n" + tmqgpu + "\n" + tmpgpu + "\n";    
     cppfiles(filename, stropu, strcpu, strgpu, 1);    
+    genbo3grad(filename+"Gradient", [], xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, rho, mu, eta, kappa, app.natomtype);
 end
 
 potform = 4;
@@ -129,8 +145,10 @@ mu = sym('mu',[app.ncmu4a 1]);
 if isfield(pot, char(filename))    
     u = pot.Quadrupleta(xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, mu,  eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 filename = "Quadrupletb";
@@ -138,8 +156,10 @@ mu = sym('mu',[app.ncmu4b 1]);
 if isfield(pot, char(filename))    
     u = pot.Quadrupletb(xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, mu, eta, kappa);
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
 end
 
 movefile('app/*', char(app.sourcepath + "C++/Potentials"));

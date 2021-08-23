@@ -12,9 +12,6 @@
 
 CIntegration::CIntegration(CCalculation &CCal)
 {
-//     int M = CCal.common.M;
-//     int backend = CCal.common.backend;    
-//     TemplateMalloc(&CCal.sys.A, M*M, backend);   
 }
 
 void CIntegration::VelocityVerlet(CCalculation &CCal)
@@ -28,27 +25,20 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
   for (int istep = 0; istep < ntimesteps; istep++) {    
     CCal.common.currentstep += 1; // current time step    
     CCal.common.time += CCal.common.dt; // current simulation time          
-    printf("\nTimestep :  %d,   Time : %g\n",CCal.common.currentstep, CCal.common.time);        
+    //printf("\nTimestep :  %d,   Time : %g\n",CCal.common.currentstep, CCal.common.time);        
     
     int dim = CCal.common.dim;
-    int inum = CCal.common.inum;
-    int gnum = CCal.common.gnum;
+    int inum = CCal.common.inum;    
     int backend = CCal.common.backend;
     
     // copy atoms I to xstart  
     ArrayCopy(xstart, CCal.sys.x, dim*inum, backend);
-    printArray2D(CCal.sys.x, dim, inum, backend);        
-    printArray2D(CCal.sys.f, dim, inum, backend);      
     
     // initial integration of the velocity vertlet method: update velocity and position    
     this->InitialIntegration(CCal);
-    //printArray2D(CCal.sys.x, 3, 128, 1);
     
     // impose position/velocity constraints and periodic boundary conditions
     this->PostInitialIntegration(CCal);
-        
-    //printArray2D(CCal.sys.x, 3, 128, 1);    
-    //error("here");
     
     // redistribute atoms among processors to balance computation load
     this->DynamicLoadBalancing(CCal);
@@ -57,40 +47,37 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     this->ProcessorsCommunication(CCal);
     
     // rebuild neighbor list if necessary
-    int build = this->NeighborListRebuild(CCal, istep);
-                
-    if (build == 0) {
-        // calculate the distance between x and xstart: xstart = x - xstart
-        ArrayAXPBY(xstart, CCal.sys.x, xstart, one, minusone, dim*inum, backend);
-        // shift periodic images of atoms I by the above distance
-        ArrayPlusAtColumnIndex(&CCal.sys.x[dim*inum], xstart, &CCal.nb.alist[inum], dim, gnum, backend);        
-    }
-    
+    this->NeighborListRebuild(CCal, xstart, istep);
+                    
     // calculate atomic forces
-    CCal.PotentialEnergyForce(CCal.sys.e, CCal.sys.f, CCal.sys.x, CCal.sys.c, CCal.sys.q, CCal.app.muep, CCal.common.nmu);                     
-    
-    printArray2D(CCal.sys.x, dim, inum, backend);       
-    printArray2D(CCal.sys.f, dim, inum, backend);        
-    error("here");
-    
+    CCal.PotentialEnergyForceVirial(CCal.sys.e, CCal.sys.f, CCal.sys.vatom, CCal.sys.x, CCal.app.muep, CCal.common.nmu);                         
+        
     // // impose force constraints if any
     this->PostForceComputation(CCal);
         
     // final integration of the velocity vertlet method: update velocity after computing force    
     this->FinalIntegration(CCal);    
-            
+                
     // fix velocity and rescale velocity if necessary to control the temperature
     this->PostFinalIntegration(CCal);        
     
     // compute output, print on screen, and save it into binary files
-    this->TimestepCompletion(CCal);           
+    this->TimestepCompletion(CCal);                   
   }    
 }
 
 void CIntegration::IntegrationSetup(CCalculation &CCal)
 {
     CCal.NeighborList(CCal.sys.x);
-    CCal.PotentialEnergyForce(CCal.sys.e, CCal.sys.f, CCal.sys.x, CCal.sys.c, CCal.sys.q, CCal.app.muep, CCal.common.nmu);                         
+    //CCal.nb.printout(CCal.common.inum, CCal.common.gnum, CCal.common.neighmax, CCal.common.backend);    
+    CCal.PotentialEnergyForceVirial(CCal.sys.e, CCal.sys.f, CCal.sys.vatom, CCal.sys.x, CCal.app.muep, CCal.common.nmu);                         
+    //CCal.sys.printout(CCal.common.dim, CCal.common.inum, CCal.common.backend);
+    CCal.ThermoOutput(0);         
+    if (CCal.common.mpiRank==0) {
+        printf("Total number of atoms = %i\n", CCal.common.natoms);
+        printf("Time step     Temperature     Potential energy     Total energy     Pressure \n"); 
+        printf("\t%i  \t %g   \t\t  %g   \t     %g   \t  %g\n", 0, CCal.common.temp, CCal.common.pe, CCal.common.ke+CCal.common.pe, CCal.common.pres);                    
+    }
 }
 
 void CIntegration::InitialIntegration(CCalculation &CCal)
@@ -158,13 +145,7 @@ void CIntegration::PostInitialIntegration(CCalculation &CCal)
         dstype *fparam = &CCal.app.fwallreflect[i];        
         FixWallReflect(x, v, f, eatom, vatom, fparam, 
             iparam, ilist, eflag_atom, vflag_atom, dim, inum, backend);    
-    }
-        
-//     int inum = CCal.common.inum;        
-//     // move out-of-box atoms back to the simulation box to impose periodic boundary conditions
-//     PBC(x, v, CCal.sys.image, CCal.app.dom.boxhi, CCal.app.dom.boxlo, CCal.app.dom.boxhi_lamda, 
-//             CCal.app.dom.boxlo_lamda, CCal.app.dom.h, CCal.app.dom.h_inv, CCal.app.dom.h_rate, 
-//             CCal.app.pbc, CCal.common.vdeform, CCal.common.triclinic, dim, inum, backend);    
+    }        
 }
 
 void CIntegration::DynamicLoadBalancing(CCalculation &CCal)
@@ -177,7 +158,7 @@ void CIntegration::ProcessorsCommunication(CCalculation &CCal)
     
 }
 
-int CIntegration::NeighborListRebuild(CCalculation &CCal, int istep)
+void CIntegration::NeighborListRebuild(CCalculation &CCal, dstype *xstart, int istep)
 {    
     int build = 0;    
     int ago = istep + 1;
@@ -200,19 +181,10 @@ int CIntegration::NeighborListRebuild(CCalculation &CCal, int istep)
             ArrayDistSquareSum(y, CCal.sys.x, CCal.sys.xhold, dim, inum, backend);
             dstype maxdistsquare = ArrayMax(y, z, inum, backend);
             if (maxdistsquare > 0.25*skin*skin)
-                build = 1;
-            
-//             printArray2D(CCal.sys.image, dim, inum, backend);
-//             printArray2D(CCal.sys.x, dim, inum, backend);
-//             printArray2D(z, dim, inum, backend);
-//             printArray2D(CCal.sys.xhold, dim, inum, backend);
-//             cout<<maxdistsquare<<" "<<skin<<endl;
+                build = 1;            
         }        
     } 
 
-//     printf("%i %i %i %i %i", distcheck, ago, every, delay, build);
-//     error("here");
-    
     if (build == 1) {
         if (CCal.common.mpiRank==0)
             printf("Rebuild neighbor list ...\n");
@@ -222,9 +194,13 @@ int CIntegration::NeighborListRebuild(CCalculation &CCal, int istep)
                 CCal.app.pbc, CCal.common.vdeform, CCal.common.triclinic, dim, inum, backend);  
         
         CCal.NeighborList(CCal.sys.x);       
-    }
-    
-    return build;
+    } else {
+        int gnum = CCal.common.gnum;
+        // calculate the distance between x and xstart: xstart = x - xstart
+        ArrayAXPBY(xstart, CCal.sys.x, xstart, one, minusone, dim*inum, backend);
+        // shift periodic images of atoms I by the above distance
+        ArrayPlusAtColumnIndex(&CCal.sys.x[dim*inum], xstart, &CCal.nb.alist[inum], dim, gnum, backend);                
+    }    
 }
 
 void CIntegration::PostForceComputation(CCalculation &CCal)
@@ -236,7 +212,7 @@ void CIntegration::PostForceComputation(CCalculation &CCal)
     dstype *v = CCal.sys.v;
     dstype *eatom = CCal.sys.eatom;
     dstype *vatom = CCal.sys.vatom;    
-    dstype *box = CCal.app.box;
+    dstype *box = CCal.app.dom.h;
     int *pbc = CCal.app.pbc;
     int *image = CCal.sys.image;    
     
@@ -407,7 +383,7 @@ void CIntegration::FinalIntegration(CCalculation &CCal)
 //     int *ilist = CCal.nb.atomgroups[ensemblegroup];
     int inum = CCal.common.inum;
     int *ilist = CCal.nb.alist;    
-    
+
     FinalIntegrate(x, v, f, mass, dtarray, tarray, CCal.common.eta_mass, CCal.common.eta, 
             CCal.common.eta_dot, CCal.common.eta_dotdot, CCal.tmp.tmpmem, &CCal.tmp.tmpmem[inum], 
             vlimitsq, atomtype, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, ensemblemode, dim, inum, backend);           
@@ -454,121 +430,10 @@ void CIntegration::PostFinalIntegration(CCalculation &CCal)
 }
 
 void CIntegration::TimestepCompletion(CCalculation &CCal)
-{
-            
-    dstype *x = CCal.sys.x;
-    dstype *e = CCal.sys.e;
-    dstype *f = CCal.sys.f;
-    dstype *v = CCal.sys.v;
-    dstype *vatom = CCal.sys.vatom;
-    dstype *mass = CCal.app.atommass;        
-    dstype *tarray = CCal.common.tarray;
-    dstype *scalars = CCal.common.scalars;
-    dstype *tmpmem = CCal.tmp.tmpmem;
-    
-    int backend = CCal.common.backend;
-    int dim = CCal.common.dim;
-    int ensemblemode = CCal.common.ensemblemode; 
-    int mtchain = CCal.common.mtchain;
-    int *atomtype = CCal.nb.atomtype;            
-    int *ilist = CCal.nb.atomgroups[0];
-    int inum = CCal.common.inumgroup[0];        
-            
-    dstype mvv2e = CCal.common.mvv2e;            
-    dstype boltz = CCal.common.boltz;            
-    dstype nktv2p = CCal.common.nktv2p;    
-    dstype volume = CCal.common.volume;    
-    dstype masstotal = CCal.common.masstotal;    
-            
-    int ncol = 14;    
-    // potential energy
-    ArrayCopy(tmpmem, e, inum, backend);    
-    // kinetic energy
-    ComputeKEAtom(&tmpmem[inum], mass, v, mvv2e, atomtype, ilist, dim, inum, backend);
-    // kinetic energy symmetric tensor
-    ComputeStressAtom(&tmpmem[2*inum], mass, vatom, v, mvv2e, one, 
-            atomtype, ilist, 0, 1, dim, inum, backend);   
-    // per-atom virial    
-    ArrayTranspose(&tmpmem[8*inum], vatom, 6, inum, backend);        
-    
-    // tmpmem : inum x ncol,  onevec : inum x 1
-    dstype *onevec =  &tmpmem[ncol*inum];  // inum
-    ArraySetValue(onevec, one, inum, backend);
-    PGEMTV(CCal.common.cublasHandle, inum, ncol, &one, tmpmem, inum, onevec, 
-            inc1, &one, &tmpmem[(ncol+1)*inum], inc1, &tmpmem[(ncol+1)*inum+ncol], backend);        
-    
-    // copy to host memory
-    TemplateCopytoHost(scalars, &tmpmem[(ncol+1)*inum], ncol, backend);
-        
-    CCal.common.pe = scalars[0];
-    CCal.common.ke = scalars[1];
-    CCal.common.tdof = (CCal.common.natoms-1)*dim;
-    CCal.common.temp = 2.0*CCal.common.ke/ (CCal.common.tdof * boltz);    
-    for(int i=0; i<6; i++) 
-        CCal.common.ke_tensor[i] = scalars[2+i];    
-    
-    for(int i=0; i<6; i++) 
-        CCal.common.virial[i] = scalars[8+i];
-    cpuComputePressureSymTensor(CCal.common.pres_tensor, CCal.common.virial, 
-            CCal.common.ke_tensor, volume, nktv2p, dim);
-    CCal.common.pres = cpuComputePressureScalar(CCal.common.virial, volume, CCal.common.temp, 
-            CCal.common.tdof, boltz, nktv2p, dim);
-    CCal.common.enthalpy = CCal.common.pe + CCal.common.ke + CCal.common.pres*volume;    
-
-    // couple energy
-    if (ensemblemode==2) 
-        CCal.common.nvtenergy = cpuComputeNVTEnergy(tarray, CCal.common.eta, CCal.common.eta_mass,
-                CCal.common.eta_dot, mtchain);        
-    else 
-        CCal.common.nvtenergy = 0.0;           
-    dstype localce = CCal.common.nvtenergy + CCal.common.vrtenergy;    
-#ifdef  HAVE_MPI          
-#ifdef USE_FLOAT         
-    MPI_Allreduce(&localce, &CCal.common.ce, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-#else            
-    MPI_Allreduce(&localce, &CCal.common.ce, n, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#endif    
-#endif
-    
-    printf("# atoms:  %d,   total mass: %g,   volume: %g\n",CCal.common.natoms, masstotal, volume);        
-    printf("potential energy:  %g,   kinetic energy: %g,   couple energy: %g\n",CCal.common.pe, CCal.common.ke, CCal.common.ce);        
-    printf("temperature:  %g,   total pressure: %g,   enthalpy: %g\n",CCal.common.temp, CCal.common.pres, CCal.common.enthalpy);            
-    printf("temperature tensor: "); print1darray(CCal.common.ke_tensor, 6);
-    printf("virial: "); print1darray(CCal.common.virial, 6);
-    printf("pressure tensor: "); print1darray(CCal.common.pres_tensor, 6);
-    
-//     ComputeXCM(&scalars[10], tmpmem, x, &tmpmem[3*inum], mass, CCal.app.box, masstotal, 
-//             ilist, atomtype, CCal.sys.image, CCal.common.triclinic, dim, inum, backend);
-//     
-//     ComputeVCM(&scalars[13], tmpmem, v, &tmpmem[3*inum], mass, 
-//             masstotal, ilist, atomtype, dim, inum, backend);
-    
-//     printf("\nPotential energy :  %g,   kinetic energy : %g\n",CCal.common.currentstep, CCal.common.time);        
-//     
-//     ComputeXCM(xcm, axcm, x, tmp, mass, box, masstotal, ilist, type, image, triclinic, dim, inum, backend);
-//     ComputeVCM(vcm, avcm, v, tmp, mass, masstotal, ilist, type, dim, inum);
-//     gyr = ComputeGyration(ag, xcm, x, tmp, mass, box, masstotal, ilist, type, image, triclinic, dim, inum);
-//     ComputeAngmom(lmom, p, xcm, x, v, tmp, mass, box, ilist, type, image, triclinic, dim, inum);
-//     ComputeTorque(tq, q, xcm, x, f, tmp, box, ilist, image, triclinic, dim, inum);
-//     ComputeInertia(inertia, ione, xcm, x, tmp, mass, box, ilist, type, image, triclinic, dim, inum);
-//     
-//     ComputeKEAtom(keatom, mass, v, mvv2e, type, ilist, dim, inum, backend);
-//     ComputeStressAtom(stress, mass, vatom, v, mvv2e, nktv2p, type, ilist,  vflag, keflag, dim, inum, backend);
-//     ComputeDisplaceAtom(displace, x, xoriginal, box, pbc, ilist,  triclinic, dim, inum);
-//     
-//     temp = ComputeTempScalar(keatom, v, tmp, mass, tfactor, type, ilist, dim, inum, backend);
-//     press = ComputePressureScalar(virial, volume, temp, tempdof, boltz, nktv2p, dim, backend);
-//     ComputeTempSymTensor(ke_tensor, stress, v, tmp, mass, tfactor, type, ilist, dim, inum);
-//     ComputePressureSymTensor(press_tensor, virial, ke_tensor, volume, nktv2p, dim);
-//     ComputeHeatFlux(vector, jc, ke, pe, stress, v, tmp, nktv2p, ilist,  pressatomflag, dim, inum);
-//     ComputeMSD(msd, vec, x, xoriginal, box, xcm, tmp, ilist, image, naverage, avflag, triclinic, nmsd, dim,  inum);
-//     ComputeVACF(vacf, vec, v, voriginal, tmp, ilist, nvacf, dim,  inum);
-//     
-//     ComputeCoordAtomCutoff(cvec, x, rcutsq, type, ilist, neighlist, neighnum, typelo, typehi, jgroupbit, dim, ntypes, jnum, inum);
-//     ComputeCoordAtomCutoff(carray, x, rcutsq, type, ilist, neighlist, neighnum, typelo, typehi, jgroupbit, ncol, dim, ntypes, jnum, inum);
-    
+{           
+    CCal.ThermoOutput(0);            
+    printf("\t%i  \t %g   \t\t  %g   \t     %g   \t  %g\n", CCal.common.currentstep, CCal.common.temp, CCal.common.pe, CCal.common.ke+CCal.common.pe, CCal.common.pres);                        
 }
-
         
 #endif        
 

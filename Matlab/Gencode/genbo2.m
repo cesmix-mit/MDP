@@ -65,7 +65,8 @@ else
     tmpgpu = strrep(tmpgpu, "(u,", "Gradient(u, du, u_xij,");   
     tmpgpu = strrep(tmpgpu, "(double *", "Gradient(double *, double *, double*");   
     tmpgpu = strrep(tmpgpu, "(float *", "Gradient(float *, float *, float*");   
-    strgpu = strgpu + "\n" + tmpgpu;  
+    %strgpu = strgpu + "\n" + tmpgpu;  
+    strgpu = strgpu + "\n" + "#ifdef _ENZYME\n" + tmpgpu + "#endif\n";     
 
     [sp0, sp1, sp2, sp3] = getpotstr(0);
     sp0 = strrep(sp0, "int ng)", "int ng, int potnum)");
@@ -81,7 +82,8 @@ else
     tmpgpu = strrep(tmpgpu, "(u,", "Gradient(u, du, u_rho,");   
     tmpgpu = strrep(tmpgpu, "(double *", "Gradient(double *, double *, double*");   
     tmpgpu = strrep(tmpgpu, "(float *", "Gradient(float *, float *, float*");   
-    strgpu = strgpu + "\n" + tmpgpu;  
+    %strgpu = strgpu + "\n" + tmpgpu;  
+    strgpu = strgpu + "\n" + "#ifdef _ENZYME\n" + tmpgpu + "#endif\n";     
     
     cppfiles(filename, stropu, strcpu, strgpu, 0);
 end    

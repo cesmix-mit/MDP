@@ -8,7 +8,7 @@
 #ifndef __GPUAPP
 #define __GPUAPP
 
-#include <math.h>
+//#include <math.h>
 
 
 // #ifdef HAVE_ENZYME                
@@ -51,16 +51,25 @@ template <typename T> void gpuComputeSingleEnergyForce(T *__restrict__ u,
             T *__restrict__ eta, 
             int *__restrict__ kappa, 
             int dim, int ncq, int nmu, int neta, int nkappa, int inum, int potnum, int bondtype)
-{
-    gpuArraySetValue(d_u, (T) 1.0, inum);
+{    
     gpuArraySetValue(u_x, (T) 0.0, dim*inum);
-    
+ 
+#ifdef HAVE_ENZYME        
+    gpuArraySetValue(d_u, (T) 1.0, inum);
     if (bondtype==0)  {
         gpuSingleaGradient(u, d_u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
     }    
     else if (bondtype==1) {
         gpuSinglebGradient(u, d_u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
     }    
+#else
+    if (bondtype==0)  {
+        gpuSingleaGradient(u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
+    }    
+    else if (bondtype==1) {
+        gpuSinglebGradient(u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
+    }        
+#endif
     
 //     //T *d_u = new T[inum];
 //     gpuArraySetValue(d_u, (T) 1.0, inum);
@@ -137,8 +146,7 @@ template <typename T> void gpuComputePairEnergyForce(T *__restrict__ u,
                                     int nkappa, int ijnum, int potnum, int bondtype)
 {
     //T *d_u = new T[ijnum];
-    printf("called gpuComputePairEnergyForce\n");
-    gpuArraySetValue(d_u, (T) 1.0, ijnum);
+    //printf("called gpuComputePairEnergyForce\n");    
     gpuArraySetValue(u_x, (T) 0.0, dim*ijnum);
 
     //gpuLJ(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
@@ -147,6 +155,8 @@ template <typename T> void gpuComputePairEnergyForce(T *__restrict__ u,
 //             dim, ncq, nmu, neta, nkappa, ijnum);
     //printf("Called gpuGradient u_x[0]=%f d_u[0]=%f\n", u_x[0], d_u[0]);
     
+#ifdef HAVE_ENZYME        
+    gpuArraySetValue(d_u, (T) 1.0, ijnum);
     if (bondtype==0) {
         gpuPairaGradient(u, d_u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
@@ -163,7 +173,24 @@ template <typename T> void gpuComputePairEnergyForce(T *__restrict__ u,
         gpuTripletcPairGradient(u, d_u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);     
     }    
-    
+#else
+    if (bondtype==0) {
+        gpuPairaGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+    }    
+    else if (bondtype==1) {
+        gpuPairbGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+    }    
+    else if (bondtype==2) {
+        gpuPaircGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);     
+    }    
+    else if (bondtype==3) {
+        gpuTripletcPairGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);     
+    }        
+#endif            
 // #ifdef HAVE_ENZYME    
 //     __enzyme_autodiff((void*)gpuPair<T>, 
 //                         enzyme_dup, u, d_u,
@@ -242,11 +269,12 @@ template <typename T> void gpuComputeTripletEnergyForce(T *__restrict__ u,
                                     int *__restrict__ kappa, 
                                     int dim, int ncq, int nmu, int neta, 
                                     int nkappa, int ijknum, int potnum, int bondtype)
-{    
-    gpuArraySetValue(d_u, (T) 1.0, ijknum);
+{        
     gpuArraySetValue(u_xij, (T) 0.0, dim*ijknum);
     gpuArraySetValue(u_xik, (T) 0.0, dim*ijknum);
     
+#ifdef HAVE_ENZYME        
+    gpuArraySetValue(d_u, (T) 1.0, ijknum);
     if (bondtype==0) {
         gpuTripletaGradient(u, d_u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);        
@@ -259,7 +287,20 @@ template <typename T> void gpuComputeTripletEnergyForce(T *__restrict__ u,
         gpuTripletcGradient(u, d_u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
     }    
-    
+#else
+    if (bondtype==0) {
+        gpuTripletaGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+                kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);        
+    }    
+    else if (bondtype==1) {
+        gpuTripletbGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+                kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
+    }    
+    else if (bondtype==2) {
+        gpuTripletcGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+                kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
+    }        
+#endif        
 //     //T *d_u = new T[ijknum];
 //     gpuArraySetValue(d_u, (T) 1.0, ijknum);
 //     gpuArraySetValue(u_xij, (T) 0.0, dim*ijknum);
@@ -356,12 +397,13 @@ template <typename T> void gpuComputeQuadrupletEnergyForce(T *__restrict__ u,
                                     int *__restrict__ kappa, 
                                     int dim, int ncq, int nmu, int neta, 
                                     int nkappa, int ijklnum, int potnum, int bondtype)
-{
-    gpuArraySetValue(d_u, (T) 1.0, ijklnum);
+{    
     gpuArraySetValue(u_xij, (T) 0.0, dim*ijklnum);
     gpuArraySetValue(u_xik, (T) 0.0, dim*ijklnum);
     gpuArraySetValue(u_xil, (T) 0.0, dim*ijklnum);
     
+#ifdef HAVE_ENZYME        
+    gpuArraySetValue(d_u, (T) 1.0, ijklnum);
     if (bondtype==0) {
         gpuQuadrupletaGradient(u, d_u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
                 mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);        
@@ -369,8 +411,17 @@ template <typename T> void gpuComputeQuadrupletEnergyForce(T *__restrict__ u,
     else if (bondtype==1) {
         gpuQuadrupletbGradient(u, d_u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, 
                 mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);
-    }            
-    
+    } 
+#else
+    if (bondtype==0) {
+        gpuQuadrupletaGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
+                mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);        
+    }    
+    else if (bondtype==1) {
+        gpuQuadrupletbGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, 
+                mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);
+    }     
+#endif    
     //T *d_u = new T[ijklnum];
 //     gpuArraySetValue(d_u, (T) 1.0, ijklnum);
 //     gpuArraySetValue(u_xij, (T) 0.0, dim*ijklnum);
@@ -409,6 +460,53 @@ template void gpuComputeQuadrupletEnergyForce(float *, float *, float *, float *
         float *, float *, float *, float *, float *, float *, int *, int *, int *, int *, int *, 
         int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
 
+template <typename T> void gpuPairDensityGradient(T *__restrict__ u,
+                                    T *__restrict__ d_u,                     
+                                    T *__restrict__ u_rho,   
+                                    T *__restrict__ rho,   
+                                    T *__restrict__ mu, 
+                                    T *__restrict__ eta, 
+                                    int *__restrict__ kappa, 
+                                    int nrho, int nmu, int neta, 
+                                    int nkappa, int inum, int potnum)
+{
+    gpuArraySetValue(u_rho, (T) 0.0, inum);    
+    
+#ifdef HAVE_ENZYME            
+    gpuArraySetValue(d_u, (T) 1.0, inum);
+    gpuPaircDensityGradient(u, du, u_rho, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, inum, potnum);
+#else
+    gpuPaircDensityGradient(u, u_rho, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, inum, potnum);
+#endif    
+}
+template void gpuPairDensityGradient(double *, double *, double *, double *, double *, double *,
+        int*, int, int, int, int, int, int);
+template void gpuPairDensityGradient(float *, float *, float *, float *, float *, float *,
+        int *, int, int, int, int, int, int);
+
+template <typename T> void gpuTripletDensityGradient(T *__restrict__ u,
+                                    T *__restrict__ d_u,                     
+                                    T *__restrict__ u_rho,   
+                                    T *__restrict__ rho,   
+                                    T *__restrict__ mu, 
+                                    T *__restrict__ eta, 
+                                    int *__restrict__ kappa, 
+                                    int nrho, int nmu, int neta, 
+                                    int nkappa, int inum, int potnum)
+{
+    gpuArraySetValue(u_rho, (T) 0.0, inum);    
+    
+#ifdef HAVE_ENZYME            
+    gpuArraySetValue(d_u, (T) 1.0, inum);
+    gpuTripletcDensityGradient(u, du, u_rho, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, inum, potnum);
+#else
+    gpuTripletcDensityGradient(u, u_rho, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, inum, potnum);
+#endif    
+}
+template void gpuTripletDensityGradient(double *, double *, double *, double *, double *, double *,
+        int*, int, int, int, int, int, int);
+template void gpuTripletDensityGradient(float *, float *, float *, float *, float *, float *,
+        int *, int, int, int, int, int, int);
 
 // void gpuElectronDensity(dstype *rhoi, dstype *rhoij, int *pairnum, int *pairnumsum, int inum) 
 // {

@@ -47,7 +47,6 @@
 #include <chrono>
 #endif
 
-//using namespace std;
 using std::cout;
 using std::endl;
 using std::string;
@@ -135,11 +134,11 @@ int main(int argc, char** argv)
           
     if (backend==2) {
         if (mpirank==0) 
-            printf("Using %d processors to solve the problem on GPU platform...\n", mpiprocs);
+            printf("Run MDP with %d MPI processes on GPU platform...\n", mpiprocs);
     }
     else {
         if (mpirank==0) 
-            printf("Using %d processors to solve the problem on CPU platform...\n", mpiprocs);
+            printf("Run MDP with %d MPI processes on CPU platform...\n", mpiprocs);
     }
     
 #ifdef HAVE_CUDA            
@@ -157,46 +156,63 @@ int main(int argc, char** argv)
     if (backend==2)
         ngpus = 1;
              
-    // Read input files
+    // Read input files and set up Calculation class
     CCalculation CCal(filein, fileout, mpiprocs, mpirank, backend);       
     
-    // set up configuration and allocate memory
-    CCal.SetConfiguration(0);
-    CCal.sys.c[0] = 1.0;
-        
-//     CCal.NeighborList(CCal.sys.x);        
-//     CCal.PotentialEnergyForce(CCal.sys.e, CCal.sys.f, CCal.sys.x, CCal.sys.c, CCal.sys.q, CCal.app.muep, CCal.common.nmu);                     
+    if (CCal.common.runMD) { 
+        // set up configuration and allocate memory
+        CCal.SetConfiguration(0);
+
+        // construct integration object
+        CIntegration CInt(CCal);
+
+        // perform MD simulation using velocity verlet algorithm
+        CInt.VelocityVerlet(CCal);
+    } else if (CCal.common.training>0) {
+        // construct regression object
+        CRegression CReg(CCal);
+
+        // fit the potential using linear regression 
+        CReg.LinearRegression(CCal);    
+
+        do {
+           cout <<"Potential fitting is done! Press RETURN key to continue potential validation.";
+        } while (std::cin.get() != '\n');
+
+        // Validate linear regression potential
+        CReg.ValidateLinearRegression(CCal);
+    }        
+            
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif 
     
-    // construct regression object
-    CIntegration CInt(CCal);
-    //CInt.IntegrationSetup(CCal);    
-    CInt.VelocityVerlet(CCal);
-    
-//     // construct regression object
-//     CRegression CReg(CCal);
-    
-//     do {
-//        cout <<"Initialization is done! Press RETURN key to train the potential.";
-//     } while (std::cin.get() != '\n');
-    
-//     // train the potential using linear regression 
-//     CReg.LinearRegression(CCal);    
-//     
-//     do {
-//        cout <<"Training is done! Press RETURN key to validate the potential.";
-//     } while (std::cin.get() != '\n');
-// 
-//     // Validate linear regression potential
-//     dstype *x, *e, *f, *q;
-//     x = &CCal.sys.x[0];
-//     e = &CCal.sys.e[0];
-//     f = &CCal.sys.f[0];
-//     q = &CCal.sys.q[0];    
-//     CReg.ValidateLinearRegression(CCal, x, e, f, q);
-//     
-//     
-    
-    
+    return 0;             
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //     // check linear regression errors
 //     for (int i=0; i<CCal.common.validatenum; i++) { // loop over each configuration             
 //         int ci = CCal.common.validatelist[i]; // configuration ci
@@ -258,10 +274,3 @@ int main(int argc, char** argv)
 //         cout<<"Atom forces: "<<endl;
 //         printArray2D(f, CCal.common.dim, CCal.common.inum, backend);
 //     }
-        
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif 
-    
-    return 0;             
-}

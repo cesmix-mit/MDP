@@ -179,10 +179,19 @@ void implSetAppStruct(appstruct &app, appstruct &happ, Int backend)
     TemplateMalloc(&app.atom3c, happ.nsize[47], backend); 
     TemplateMalloc(&app.atom4b, happ.nsize[48], backend);                
     
+//     readarray(in, &app.nveparam, app.nsize[52]);    
+//     readarray(in, &app.nvtparam, app.nsize[53]);    
+//     readarray(in, &app.snaparam, app.nsize[54]);    
+//     readarray(in, &app.snapelemradius, app.nsize[55]);    
+//     readarray(in, &app.snapelemweight, app.nsize[56]);    
+//     readarray(in, &app.snapcoeff, app.nsize[57]);    
+//     readarray(in, &app.createvelocity, app.nsize[58]);    
+    
     int n = 0;
     for (int i=13; i<=22; i++) 
         n += happ.nsize[i];
     TemplateMalloc(&app.muep, n, backend); 
+    
     
     if (backend==2) { // GPU
 #ifdef HAVE_CUDA        
@@ -703,7 +712,7 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     }           
 }
 
-void implSetTempStruct(tempstruct & tmp, commonstruct &common)
+void implSetTempStruct(tempstruct & tmp, commonstruct &common, snastruct &sna, shstruct &sh)
 {
     // need to check size of tmp.intmem and tmp.tmpmem
     Int anummax= common.anummax;
@@ -711,6 +720,7 @@ void implSetTempStruct(tempstruct & tmp, commonstruct &common)
     Int neighmax = common.neighmax;
     Int pnum = common.pnum;
     Int nabmax = common.nabmax;
+    int ijnum = nabmax*neighmax;
     
     Int n1 = pnum*inum + 2*inum + 1;
     Int n2 = 4*anummax;    
@@ -718,11 +728,23 @@ void implSetTempStruct(tempstruct & tmp, commonstruct &common)
     common.nintmem = max(max(n1, n2), n3);
     TemplateMalloc(&tmp.intmem, common.nintmem, common.backend);  
     
-    Int nbasis = common.K*(common.L+1)*(common.L+1);    
-    n1 = nabmax*neighmax*(7*common.dim+3*common.ncq+1);
-    n2 = 2*nabmax*nbasis + nabmax*neighmax*(8*nbasis) + nabmax*common.Nbf;
-    n3 = 2*nabmax*nbasis + nabmax*neighmax*(6*nbasis) + 3*nabmax*neighmax*common.Nbf;    
-    common.ntmpmem = max(max(n1, n2), n3);    
+    n1 = ijnum*(7*common.dim+3*common.ncq+1);
+    common.ntmpmem = n1;    
+    if (common.descriptor == 0) {
+        Int nbasis = common.K*(common.L+1)*(common.L+1);        
+        n2 = 2*nabmax*nbasis + ijnum*(8*nbasis) + nabmax*common.Nbf;
+        n3 = 2*nabmax*nbasis + ijnum*(6*nbasis) + 3*nabmax*neighmax*common.Nbf;    
+        common.ntmpmem = max(max(n1, n2), n3);    
+    } else if (common.descriptor == 1) {
+        int dim = common.dim;
+        n2 = ijnum*dim;
+        n2 += max(max(sna.idxu_max*ijnum, sna.idxz_max*sna.ndoubles*nabmax), sna.idxu_max*sna.nelements*nabmax); 
+        n2 += max(max(sna.idxu_max*ijnum, sna.idxz_max*sna.ndoubles*nabmax), sna.idxu_max*sna.nelements*nabmax); 
+        n2 += sna.idxu_max*dim*ijnum;
+        n2 += sna.idxu_max*dim*ijnum;    
+        n2 += max(2*sna.idxu_max*sna.nelements*nabmax + sna.ncoeff*nabmax + sna.idxb_max*sna.ntriples*nabmax, dim*ijnum);        
+        common.ntmpmem = max(n1, n2);   
+    }
     
     printf("Temporary memory for integer array: %i\n", common.nintmem);
     printf("Temporary memory for float array: %i\n", common.ntmpmem);
@@ -734,6 +756,7 @@ void implSetSysStruct(sysstruct & sys, commonstruct &common, configstruct &confi
 {   
     TemplateMalloc(&sys.e, common.inummax, common.backend);      
     TemplateMalloc(&sys.f, common.dim*common.inummax, common.backend);      
+    TemplateMalloc(&sys.vatom, 6*common.inummax, common.backend);      
     TemplateMalloc(&sys.image, common.dim*common.inummax, common.backend);  
     ArraySetValue(sys.image, 0, common.dim*common.inummax, common.backend);  
     

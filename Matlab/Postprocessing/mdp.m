@@ -15,7 +15,8 @@ gencode(app);
 
 % compile code
 cd(char(app.sourcepath + "C++/Main"));
-compile(app);
+%compile(app);
+buildpotlib(app);
 
 % run code
 if app.platform == "cpu"
@@ -25,12 +26,54 @@ elseif app.platform == "gpu"
 end
 
 cd(char(app.currentdir));
- 
-% if app.training > 0
-%     filename = app.sourcepath + "C++/Main/coefficients.bin";
-%     fileID = fopen(filename,'r');
-%     app.coeff = fread(fileID,'double');
-%     fclose(fileID);
-% end
+
+if app.training > 0
+    filename = app.sourcepath + "C++/Main/coefficients.bin";
+    fileID = fopen(filename,'r');
+    app.coeff = fread(fileID,'double');
+    fclose(fileID);
+end
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% cdir = pwd(); ii = strfind(cdir, "Applications");
+% sourcepath = cdir(1:(ii-1));
+% run(sourcepath + "Installation/setpath.m");
+% 
+% app = initializeapp(sourcepath);
+% app.appname = "snapTA06A";
+% app.currentdir = cdir; % current directory
+% app.cpucompiler = "/usr/local/Cellar/llvm/11.1.0/bin/clang++";
+% app.cpuflags = "-Xclang -load -Xclang /usr/local/lib/ClangEnzyme-11.dylib";
+% app.cpumacros = "-std=c++11 -D _ENZYME";
+% app.cpuflags = "";
+% app.cpumacros = "-std=c++11";
+% app.cpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
+% app.cpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
+% app.cpumacros = "-std=c++11 -D _ENZYME";
+% app.gpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
+% app.gpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so";
+% app.gpumacros = "--cuda-gpu-arch=sm_60 -std=c++11 -D _ENZYME";
+% app.buildcorelib = 1;
+% app.globalfreq = 10;        % frequency to print and save default global outputs (pe, ke, ce, te, temp, press)
+% app.peratomfreq = 20;       % frequency to save default peratom outputs (id, t, x, f)
+% app.globaloutputs = ["stresses"];    % additional global outputs (stresses, com, vcm)
+% app.peratomoutputs = ["velocity", "mass", "image"];   % additional peratom outputs (velocity, mass, virial, image)

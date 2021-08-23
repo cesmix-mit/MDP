@@ -145,7 +145,8 @@ else
     st4 = strrep(st4, "u, xij,", "u, du, u_xij, xij,");   
     st4 = strrep(st4, "<<<", "Gradient<<<");   
     st2 = st2 + "\n" + st4;
-    strgpu = strgpu + "\n" + st1 + "\n" + st2;    
+    %strgpu = strgpu + "\n" + st1 + "\n" + st2;    
+    strgpu = strgpu + "\n" +  "#ifdef _ENZYME\n" + st1 + "\n" + st2 + "#endif\n";    
     
     strcpu = strrep(stropu, 'opu', "cpu");
     strcpu = strrep(strcpu, "for (int i = 0; i <ng; i++) {", "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");

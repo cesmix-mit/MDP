@@ -10,6 +10,27 @@
 
 #include "opuApp.cpp" 
        
+void cpuElectronDensity(dstype *rhoi, dstype *rhoij, int *pairnum, int *pairnumsum, int inum) 
+{
+    for (int i=0; i<inum; i++) {
+        int jnum = pairnum[i];
+        int start = pairnumsum[i];
+        rhoi[i] = 0.0;
+        for (int j=0; j<jnum; j++) 
+            rhoi[i] += rhoij[start+j];        
+    }
+}
+
+void cpuEmbedingForce(dstype *fij, dstype *d_rhoi, int *pairnum, int *pairnumsum, int inum)
+{    
+    for (int i=0; i<inum; i++) {
+        int jnum = pairnum[i];
+        int start = pairnumsum[i];
+        for (int j=0; j<jnum; j++)             
+            fij[start+j] = d_rhoi[i]*fij[start+j];                
+    }        
+}
+
 void cpuSingleEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
         dstype* x, dstype *q, dstype* param, Int *atomtype, Int nparam, Int typei, Int potnum)
 {        
@@ -119,22 +140,18 @@ void cpuFullNeighPairEnergyForce(dstype *e, dstype *f, neighborstruct &nb, commo
         dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
         cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
                 nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
+                        
         if (decomp==0) // force decomposition
             cpuFullNeighPairDecomposition(e, f, eij, fij, ai, ntuples, dim);
         else // atom decomposition
             cpuCenterAtomPairDecomposition(e, f, eij, fij, ilist, pairnumsum, na, dim);     
-        
-//         printArray2D(x, dim, 10, common.backend);
-//         printArray2D(f, dim, 10, common.backend);  
-//         printArray2D(xij, dim, 10, common.backend);
-//         printArray2D(fij, dim, 10, common.backend);        
+                
 #ifdef HAVE_DEBUG                      
         writearray2file("xijcpu.bin", xij, ntuples*dim, common.backend); 
         writearray2file("eijcpu.bin", eij, ntuples, common.backend); 
         writearray2file("fijcpu.bin", fij, ntuples*dim, common.backend); 
         writearray2file("ecpu.bin", e, common.inum, common.backend); 
         writearray2file("fcpu.bin", f, common.inum*dim, common.backend); 
-    //error("here");    
 #endif                                                        
     }        
 }
@@ -1567,6 +1584,306 @@ void cpuEmpiricalPotentialDescriptors(dstype *ei, neighborstruct &nb, commonstru
 //     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                            
 }
 
+void cpuFullNeighPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int decomp, Int potnum)
+{        
+    for (Int b=0; b<common.nba; b++) {
+        Int e1 = common.ablks[b];
+        Int e2 = common.ablks[b+1];            
+        Int na = e2 - e1; // number of atoms in this block
+        Int neighmax = common.neighmax;
+        Int ncq = common.ncq;
+        Int dim = common.dim;
+        Int backend = common.backend;
+                
+        Int *ilist = &tmp.intmem[0]; //na     
+        if (typei>0) {               
+            Int *olist = &tmp.intmem[na]; //na        
+            cpuArrayFill(olist, e1, na);        
+
+            Int *t0 = &tmp.intmem[2*na]; //na        
+            Int *t1 = &tmp.intmem[3*na]; //na        
+            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+        }
+        else {
+            cpuArrayFill(ilist, e1, na);        
+        }                
+                        
+        Int *pairnum = &tmp.intmem[na]; // na
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        if (typej>0)
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
+        else
+            cpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
+                        
+        //a list contains the starting positions of the first neighbor              
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
+        int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
+        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
+        dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
+        dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
+        dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
+        cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, neighmax, ncq, dim);       
+        
+        //printArray2D(f, dim, 10, common.backend);        
+        
+        dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
+        dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
+        cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+                nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
+                        
+        if (decomp==0) {// force decomposition
+            cpuFullNeighPairDecomposition(e, f, eij, fij, ai, ntuples, dim);            
+        } else {// atom decomposition
+            cpuCenterAtomPairDecomposition(e, f, eij, fij, ilist, pairnumsum, na, dim);     
+        }
+                
+        // virial tally
+        cpuVirialPairTally(v, fij, xij, -0.5, ai, dim, common.inum, ntuples);        
+                
+#ifdef HAVE_DEBUG                      
+        writearray2file("xijcpu.bin", xij, ntuples*dim, common.backend); 
+        writearray2file("eijcpu.bin", eij, ntuples, common.backend); 
+        writearray2file("fijcpu.bin", fij, ntuples*dim, common.backend); 
+        writearray2file("ecpu.bin", e, common.inum, common.backend); 
+        writearray2file("fcpu.bin", f, common.inum*dim, common.backend); 
+#endif                                                        
+    }        
+}
+
+void cpuHalfNeighPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int decomp, Int potnum)
+{        
+    for (Int b=0; b<common.nba; b++) {
+        Int e1 = common.ablks[b];
+        Int e2 = common.ablks[b+1];            
+        Int na = e2 - e1; // number of atoms in this block
+        Int neighmax = common.neighmax;
+        Int ncq = common.ncq;
+        Int dim = common.dim;
+        Int backend = common.backend;
+                
+        Int *ilist = &tmp.intmem[0]; //na     
+        if (typei>0) {               
+            Int *olist = &tmp.intmem[na]; //na        
+            cpuArrayFill(olist, e1, na);        
+
+            Int *t0 = &tmp.intmem[2*na]; //na        
+            Int *t1 = &tmp.intmem[3*na]; //na        
+            na = cpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+        }
+        else {
+            cpuArrayFill(ilist, e1, na);        
+        }                
+                        
+        Int *pairnum = &tmp.intmem[na]; // na
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        if (typej>0)
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);            
+        else
+            cpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, dim);
+                                
+        //a list contains the starting positions of the first neighbor 
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
+        int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
+                
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
+        dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
+        dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
+        dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
+        cpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, neighmax, ncq, dim);       
+                        
+        dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
+        dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
+        cpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+                nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
+        if (decomp==0) // force decomposition
+            cpuHalfNeighPairDecomposition(e, f, eij, fij, ai, aj, ntuples, dim);
+        else { // atom decomposition
+            cpuCenterAtomPairDecomposition(e, f, eij, fij, ilist, pairnumsum, na, dim);   
+            cpuArrayCopy(tmp.intmem, aj, ntuples);
+            Int *jlist = &tmp.intmem[ntuples];   
+            Int *bnumsum = &tmp.intmem[2*ntuples]; 
+            Int *index = &tmp.intmem[3*ntuples]; // ntuples       
+            Int *p0 = &tmp.intmem[4*ntuples]; // ntuples       
+            Int *p1 = &tmp.intmem[5*ntuples]; // ntuples       
+            Int *p2 = &tmp.intmem[6*ntuples]; // ntuples       
+            Int *p3 = &tmp.intmem[7*ntuples]; // ntuples       
+            Int naj = cpuUniqueSort(jlist, bnumsum, index, p0, tmp.intmem, p1, p2, p3, ntuples);            
+            cpuNeighborAtomPairDecomposition(e, f, eij, fij, jlist, bnumsum, index, naj, dim);        
+        }                        
+        
+        // virial tally
+        cpuVirialPairTally(v, fij, xij, -0.5, ai, aj, dim, common.inum, ntuples);                
+    }        
+}
+
+void cpuNonbondedPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, Int nparam)
+{    
+    common.bondtype = 0; // non-bonded interaction
+    if (common.neighpair == 0) {
+        for (int i = 0; i < common.npot2a; i++)
+            cpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2a[i], 
+                nb.atomtype, nparam, 0, 0, common.decomposition, common.pot2a[i]);            
+    }
+    else {
+        for (int i = 0; i < common.npot2a; i++)
+            cpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2a[i], 
+                nb.atomtype, nparam, 0, 0, common.decomposition, common.pot2a[i]);                    
+    }        
+}
+void cpuBondedPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, Int nparam)
+{    
+    common.bondtype = 1; // bonded interaction
+    if (common.neighpair == 0) {
+        for (int i = 0; i < common.npot2b; i++) {
+            if (common.atom2b[2*i] == common.atom2b[1+2*i]) {
+                cpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);            
+            }
+            else {
+                cpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);            
+                cpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[1+2*i], common.atom2b[2*i], common.decomposition, common.pot2b[i]);            
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < common.npot2b; i++)
+            if (common.atom2b[2*i] == common.atom2b[1+2*i]) {
+                cpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);                    
+            }
+            else {
+                cpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);                    
+                cpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[1+2*i], common.atom2b[2*i], common.decomposition, common.pot2b[i]);                    
+            }
+    }            
+}
+
+void cpuEmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, 
+        appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    if (common.npot1a > 0)
+        cpuNonbondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+
+    if (common.npot1b > 0)
+        cpuBondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+
+    if (common.npot2a > 0)
+        cpuNonbondedPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+
+    if (common.npot2b > 0)
+        cpuBondedPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+    
+    
+//     if (common.npot2c > 0)    
+//         cpuBoPairEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+// 
+//     if (common.npot3a > 0)    
+//         cpuNonbondedTripletEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+//     
+//     if (common.npot3b > 0)
+//         cpuBondedTripletEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+// 
+//     if (common.npot3c > 0)    
+//         cpuBoTripletEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+// 
+//     if (common.npot4a > 0)
+//         cpuNonbondedQuadrupletEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+// 
+//     if (common.npot4b > 0)
+//         cpuBondedQuadrupletEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);              
+    
+    ArrayMinus(f, f, common.dim*common.inum, common.backend);
+}
+
+void cpuEmpiricalPotentialDescriptors(dstype *ei, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, 
+        appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    int inum = common.inum;
+    int dim = common.dim;
+    
+    int m = 0;
+    int n = 0;
+    int k = 0;
+    if (common.npot1a > 0)
+        cpuNonbondedSingleEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+
+    m += common.npot1a*inum;
+    n += common.npot1a*dim*inum;
+    if (common.npot1b > 0)
+        cpuBondedSingleEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+
+    m += common.npot1b*inum;
+    n += common.npot1b*dim*inum;    
+    if (common.npot2a > 0)
+        cpuNonbondedPairEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+
+    m += common.npot2a*inum;
+    n += common.npot2a*dim*inum;
+    k += common.npot2a*6*inum;
+    if (common.npot2b > 0)
+        cpuBondedPairEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+
+//     m += common.npot2b*inum;
+//     n += common.npot2b*dim*inum;
+//    k += common.npot2b*6*inum;
+//     if (common.npot2c > 0)    
+//         cpuBoPairEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+// 
+//     m += common.npot2c*inum;
+//     n += common.npot2c*dim*inum;
+//    k += common.npot2c*6*inum;
+//     if (common.npot3a > 0)    
+//         cpuNonbondedTripletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+//     
+//     m += common.npot3a*inum;
+//     n += common.npot3a*dim*inum;
+//    k += common.npot3a*6*inum;
+//     if (common.npot3b > 0)
+//         cpuBondedTripletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+// 
+//     m += common.npot3b*inum;
+//     n += common.npot3b*dim*inum;
+//    k += common.npot3b*6*inum;
+//     if (common.npot3c > 0)    
+//         cpuBoTripletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+// 
+//     m += common.npot3c*inum;
+//     n += common.npot3c*dim*inum;
+//    k += common.npot3c*6*inum;
+//     if (common.npot4a > 0)
+//         cpuNonbondedQuadrupletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+// 
+//     m += common.npot4a*inum;
+//     n += common.npot4a*dim*inum;
+//    k+= common.npot4a*6*inum;
+//     if (common.npot4b > 0)
+//         cpuBondedQuadrupletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
+    
+//     dstype *onevec =  &tmp.tmpmem[0];  
+//     ArraySetValue(onevec, 1.0, inum, common.backend);
+//     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                                
+}
 
 #endif
 

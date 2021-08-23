@@ -10,25 +10,12 @@
 
 #include <math.h>
 
-#include "opuSinglea.cpp"
-#include "opuSingleb.cpp"
-#include "opuPaira.cpp"
-#include "opuPairb.cpp"
-#include "opuPairc.cpp"
-#include "opuTripleta.cpp"
-#include "opuTripletb.cpp"
-#include "opuTripletc.cpp"
-#include "opuQuadrupleta.cpp"
-#include "opuQuadrupletb.cpp"
-
 #ifdef HAVE_ENZYME                
 template <typename... Args>
 void __enzyme_autodiff(void*, Args... args);
 int enzyme_const, enzyme_dup;
 #endif        
 
- 
-// TO DO: Use Enzyme to calculate the potential derivatives
 template <typename T> void cpuSingle(T *__restrict__ u, 
             T *__restrict__ xi, 
             T *__restrict__ qi, 
@@ -50,6 +37,30 @@ template void cpuSingle(double *, double *, double *, int *, int *, double *, do
         int*, int, int, int, int, int, int, int, int);
 template void cpuSingle(float *, float *, float *, int *, int *, float *, float *, 
         int *, int, int, int, int, int, int, int, int);
+
+// #ifndef HAVE_ENZYME    
+// template <typename T> void cpuSingleGradient(T *__restrict__ u, T *__restrict__ u_xi, 
+//             T *__restrict__ xi, 
+//             T *__restrict__ qi, 
+//             int *__restrict__ ti, 
+//             int *__restrict__ ai, 
+//             T *__restrict__ mu, 
+//             T *__restrict__ eta, 
+//             int *__restrict__ kappa, 
+//             int dim, int ncq, int nmu, int neta, int nkappa, int inum, int potnum, int bondtype)
+// {
+//     if (bondtype==0)  {
+//         opuSingleaGradient(u, u_xi, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
+//     }    
+//     else if (bondtype==1) {
+//         opuSinglebGradient(u, u_xi, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
+//     }    
+// }
+// template void cpuSingleGradient(double *, double *, double *, double *, int *, int *, double *, double *,
+//         int*, int, int, int, int, int, int, int, int);
+// template void cpuSingleGradient(float *, float *, float *, float *, int *, int *, float *, float *, 
+//         int *, int, int, int, int, int, int, int, int);    
+// #endif
 
 template <typename T> void cpuComputeSingleEnergyForce(T *__restrict__ u,
             T *__restrict__ d_u,
@@ -78,6 +89,14 @@ template <typename T> void cpuComputeSingleEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, inum, potnum, bondtype);
+#else
+    //cpuSingleGradient(u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum, bondtype);    
+    if (bondtype==0)  {
+        opuSingleaGradient(u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
+    }    
+    else if (bondtype==1) {
+        opuSinglebGradient(u, u_x, xi, qi, ti, ai, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, inum, potnum);    
+    }        
 #endif
 }
 template void cpuComputeSingleEnergyForce(double *, double *, double *, double *, double *, 
@@ -121,6 +140,44 @@ template void cpuPair(double *, double *, double *, double *, int *, int *, int 
 template void cpuPair(float *, float *, float *, float *, int *, int *, int *, int *, 
         float *, float *, int *, int, int, int, int, int, int, int, int);
 
+// #ifndef HAVE_ENZYME    
+// template <typename T> void cpuPairGradient(T *__restrict__ u, T *__restrict__ u_xij, 
+//                                     T *__restrict__ xij,
+//                                     T *__restrict__ qi, 
+//                                     T *__restrict__ qj, 
+//                                     int *__restrict__ ti, 
+//                                     int *__restrict__ tj, 
+//                                     int *__restrict__ ai, 
+//                                     int *__restrict__ aj, 
+//                                     T *__restrict__ mu, 
+//                                     T *__restrict__ eta, 
+//                                     int *__restrict__ kappa, 
+//                                     int dim, int ncq, int nmu, int neta, 
+//                                     int nkappa, int ijnum, int potnum, int bondtype)
+// {
+//     if (bondtype==0) {
+//         opuPairaGradient(u, u_xij, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+//                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+//     }    
+//     else if (bondtype==1) {
+//         opuPairbGradient(u, u_xij, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+//                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+//     }    
+//     else if (bondtype==2) {
+//         opuPaircGradient(u, u_xij, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+//                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+//     }    
+//     else if (bondtype==3) {
+//         opuTripletcPairGradient(u, u_xij, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+//                 dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+//     }    
+// }
+// template void cpuPairGradient(double *, double *,  double *, double *, double *, int *, int *, int *, int *, 
+//         double *, double *, int*, int, int, int, int, int, int, int, int);
+// template void cpuPairGradient(float *, float *, float *, float *, float *, int *, int *, int *, int *, 
+//         float *, float *, int *, int, int, int, int, int, int, int, int);
+// #endif
+
 template <typename T> void cpuComputePairEnergyForce(T *__restrict__ u,
                                     T *__restrict__ d_u,
                                     T *__restrict__ u_x,
@@ -156,6 +213,25 @@ template <typename T> void cpuComputePairEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, ijnum, potnum, bondtype);  
+#else
+//     cpuPairGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+//                 dim, ncq, nmu, neta, nkappa, ijnum, potnum, bondtype);    
+    if (bondtype==0) {
+        opuPairaGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+    }    
+    else if (bondtype==1) {
+        opuPairbGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+    }    
+    else if (bondtype==2) {
+        opuPaircGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+    }    
+    else if (bondtype==3) {
+        opuTripletcPairGradient(u, u_x, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, 
+                dim, ncq, nmu, neta, nkappa, ijnum, potnum);    
+    }        
 #endif        
 }
 template void cpuComputePairEnergyForce(double *, double *, double *, double *, double *, double *, 
@@ -198,6 +274,45 @@ template void cpuTriplet(double *, double *, double *, double *, double *, doubl
         int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int, int);
 template void cpuTriplet(float *, float *, float *, float *, float *, float *, int *, int *, 
         int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
+
+// #ifndef HAVE_ENZYME    
+// template <typename T> void cpuTripletGradient(T *__restrict__ u,
+//                                     T *__restrict__ u_xij, T *__restrict__ u_xik,
+//                                     T *__restrict__ xij,
+//                                     T *__restrict__ xik,
+//                                     T *__restrict__ qi, 
+//                                     T *__restrict__ qj, 
+//                                     T *__restrict__ qk,         
+//                                     int *__restrict__ ti, 
+//                                     int *__restrict__ tj, 
+//                                     int *__restrict__ tk,         
+//                                     int *__restrict__ ai, 
+//                                     int *__restrict__ aj, 
+//                                     int *__restrict__ ak,         
+//                                     T *__restrict__ mu, 
+//                                     T *__restrict__ eta, 
+//                                     int *__restrict__ kappa, 
+//                                     int dim, int ncq, int nmu, int neta, 
+//                                     int nkappa, int ijknum, int potnum, int bondtype)
+// {
+//     if (bondtype==0) {
+//         opuTripletaGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+//                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);        
+//     }    
+//     else if (bondtype==1) {
+//         opuTripletbGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+//                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
+//     }    
+//     else if (bondtype==2) {
+//         opuTripletcGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+//                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
+//     }    
+// }
+// template void cpuTripletGradient(double *, double *, double *, double *, double *, double *, double *, double *, int *, int *, 
+//         int *, int *, int *, int *, double *, double *, int*, int, int, int, int, int, int, int, int);
+// template void cpuTripletGradient(float *, float *, float *, float *, float *, float *, float *, float *, int *, int *, 
+//         int *, int *, int *, int *, float *, float *, int *, int, int, int, int, int, int, int, int);
+// #endif
 
 template <typename T> void cpuComputeTripletEnergyForce(T *__restrict__ u,
                                     T *__restrict__ d_u,        
@@ -244,6 +359,21 @@ template <typename T> void cpuComputeTripletEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, ijknum, potnum, bondtype);  
+#else
+//     cpuTripletGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+//                 kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum, bondtype);        
+    if (bondtype==0) {
+        opuTripletaGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+                kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);        
+    }    
+    else if (bondtype==1) {
+        opuTripletbGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+                kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
+    }    
+    else if (bondtype==2) {
+        opuTripletcGradient(u, u_xij, u_xik, xij, xik, qi, qj, qk, ti, tj, tk, ai, aj, ak, mu, eta, 
+                kappa, dim, ncq, nmu, neta, nkappa, ijknum, potnum);
+    }        
 #endif    
 }
 template void cpuComputeTripletEnergyForce(double *, double *, double *, double *, double *, double *, double *, 
@@ -290,6 +420,47 @@ template void cpuQuadruplet(double *, double *, double *, double *, double *, do
 template void cpuQuadruplet(float *, float *, float *, float *, float *, float *, float *, 
         float *, int *, int *, int *, int *, int *, int *, int *, int *, float *, float *, 
         int *, int, int, int, int, int, int, int, int);
+
+// #ifndef HAVE_ENZYME    
+// template <typename T> void cpuQuadrupletGradient(T *__restrict__ u,
+//                                     T *__restrict__ u_xij, T *__restrict__ u_xik, T *__restrict__ u_xil,
+//                                     T *__restrict__ xij,
+//                                     T *__restrict__ xik,
+//                                     T *__restrict__ xil,        
+//                                     T *__restrict__ qi, 
+//                                     T *__restrict__ qj, 
+//                                     T *__restrict__ qk,
+//                                     T *__restrict__ ql,        
+//                                     int *__restrict__ ti, 
+//                                     int *__restrict__ tj, 
+//                                     int *__restrict__ tk,    
+//                                     int *__restrict__ tl,            
+//                                     int *__restrict__ ai, 
+//                                     int *__restrict__ aj, 
+//                                     int *__restrict__ ak,    
+//                                     int *__restrict__ al,            
+//                                     T *__restrict__ mu, 
+//                                     T *__restrict__ eta, 
+//                                     int *__restrict__ kappa, 
+//                                     int dim, int ncq, int nmu, int neta, 
+//                                     int nkappa, int ijklnum, int potnum, int bondtype)
+// {
+//     if (bondtype==0) {
+//         opuQuadrupletaGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
+//                 mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);        
+//     }    
+//     else if (bondtype==1) {
+//         opuQuadrupletbGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, 
+//                 mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);
+//     }            
+// }
+// template void cpuQuadrupletGradient(double *, double *, double *, double *, double *, double *, double *, 
+//         double *, double *, double *, double *, int *, int *, int *, int *, int *, int *, int *, int *, 
+//         double *, double *, int*, int, int, int, int, int, int, int, int);
+// template void cpuQuadrupletGradient(float *, float *, float *, float *, float *, float *, float *, 
+//         float *, float *, float *, float *, int *, int *, int *, int *, int *, int *, int *, int *, 
+//         float *, float *, int *, int, int, int, int, int, int, int, int);
+// #endif
 
 template <typename T> void cpuComputeQuadrupletEnergyForce(T *__restrict__ u,
                                     T *__restrict__ d_u,             
@@ -346,7 +517,18 @@ template <typename T> void cpuComputeQuadrupletEnergyForce(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         dim, ncq, nmu, neta, nkappa, ijklnum, potnum, bondtype);  
-#endif    
+#else
+//     cpuQuadrupletGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
+//                 mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum, bondtype);        
+    if (bondtype==0) {
+        opuQuadrupletaGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al,
+                mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);        
+    }    
+    else if (bondtype==1) {
+        opuQuadrupletbGradient(u, u_xij, u_xik, u_xil, xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, 
+                mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ijklnum, potnum);
+    }                
+#endif        
 }
 template void cpuComputeQuadrupletEnergyForce(double *, double *, double *, double *, double *, double *, 
         double *, double *, double *, double *, double *, double *, int *, int *, int *, int *, int *, 
@@ -378,6 +560,8 @@ template <typename T> void cpuPaircDensityGradient(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         1, nmu, neta, nkappa, inum, potnum);  
+#else
+    opuPaircDensityGradient(u, u_rho, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, inum, potnum);
 #endif
 }
 template void cpuPaircDensityGradient(double *, double *, double *, double *, double *, double *,
@@ -407,33 +591,14 @@ template <typename T> void cpuTripletcDensityGradient(T *__restrict__ u,
                         enzyme_const, eta,
                         enzyme_const, kappa,
                         1, nmu, neta, nkappa, inum, potnum);  
+#else
+    opuTripletcDensityGradient(u, u_rho, rho, mu, eta, kappa, nrho, nmu, neta, nkappa, inum, potnum);
 #endif    
 }
 template void cpuTripletcDensityGradient(double *, double *, double *, double *, double *, double *,
         int*, int, int, int, int, int, int);
 template void cpuTripletcDensityGradient(float *, float *, float *, float *, float *, float *,
         int *, int, int, int, int, int, int);
-
-void cpuElectronDensity(dstype *rhoi, dstype *rhoij, int *pairnum, int *pairnumsum, int inum) 
-{
-    for (int i=0; i<inum; i++) {
-        int jnum = pairnum[i];
-        int start = pairnumsum[i];
-        rhoi[i] = 0.0;
-        for (int j=0; j<jnum; j++) 
-            rhoi[i] += rhoij[start+j];        
-    }
-}
-
-void cpuEmbedingForce(dstype *fij, dstype *d_rhoi, int *pairnum, int *pairnumsum, int inum)
-{    
-    for (int i=0; i<inum; i++) {
-        int jnum = pairnum[i];
-        int start = pairnumsum[i];
-        for (int j=0; j<jnum; j++)             
-            fij[start+j] = d_rhoi[i]*fij[start+j];                
-    }        
-}
 
 // template <typename T> void primal_opuLJ1pot(T *__restrict__ u,
 //                                     T *__restrict__ xij,

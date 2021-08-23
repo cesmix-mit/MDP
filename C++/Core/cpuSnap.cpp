@@ -250,7 +250,7 @@ template <typename T> void cpuZeroUarraytot(T *ulisttot_r, T *ulisttot_i, T wsel
         ulisttot_r[ii*nelements*idxu_max+jelem*idxu_max+jju] = 0.0;
         ulisttot_i[ii*nelements*idxu_max+jelem*idxu_max+jju] = 0.0;
                 
-        int ielem = (chemflag) ? map[type[ai[ii]]]: 0;                
+        int ielem = (chemflag) ? map[type[ii]]: 0;                
         // utot(j,ma,ma) = wself, sometimes
         if (jelem == ielem || wselfall_flag)
           if (ma==mb)
@@ -401,7 +401,7 @@ template void cpuAddUarraytot(float*, float*, float*, float*, float*, float*, fl
         
 template <typename T> void cpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum)
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum)
 {
   T rsq, r, x, y, z, z0, theta0, rcutij;
  
@@ -412,9 +412,9 @@ template <typename T> void cpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray,
     rsq = x * x + y * y + z * z;
     r = sqrt(rsq);
 
-    int ii = ai[j];
-    int jj = aj[j];
-    rcutij = (radelem[type[ii]]+radelem[type[jj]])*rcutfac;
+    //int ii = ai[j];
+    //int jj = alist[aj[j]];
+    rcutij = (radelem[ti[j]]+radelem[tj[j]])*rcutfac;
     theta0 = (r - rmin0) * rfac0 * M_PI / (rcutij - rmin0);
     //    theta0 = (r - rmin0) * rscale0;
     z0 = r / tan(theta0);    
@@ -426,9 +426,9 @@ template <typename T> void cpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray,
   }
 };
 template void cpuComputeUij(double*, double*, double*, double*, double*, double, 
-        double, double, int*, int*, int*, int*, int, int, int);
+        double, double, int*, int*, int*, int*, int*, int, int, int);
 template void cpuComputeUij(float*, float*, float*, float*, float*, float,  float,
-        float, int*, int*, int*, int*, int, int, int);
+        float, int*, int*, int*, int*, int*, int, int, int);
 
 template <typename T> void cpuComputeZi(T *zlist_r, T *zlist_i, T *ulisttot_r, T *ulisttot_i, T *cglist,
         int *idxz, int *idxu_block, int *idxcg_block, int twojmax, int idxu_max, int idxz_max, int nelements, 
@@ -715,7 +715,7 @@ template <typename T> void cpuComputeBi(T *blist, T *zlist_r, T *zlist_i, T *uli
   if (bzero_flag) {
     if (!wselfall_flag) {
       for (int ii=0; ii<inum; ii++) {        
-          int ielem = (chemflag) ? map[type[ilist[ii]]]: 0;                
+          int ielem = (chemflag) ? map[type[ilist[ii]]] : 0;                
           int itriple = (ielem*nelements+ielem)*nelements+ielem;
           for (int jjb = 0; jjb < idxb_max; jjb++) {
             //const int j = idxb[jjb].j;
@@ -940,7 +940,7 @@ template int cpuComputeDuidrj(float*, float*, float*, float*, float*, float*, fl
 
 template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag)
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag)
 {
   T rsq, r, x, y, z, z0, theta0, cs, sn, rcutij, rscale0;
   T dz0dr;
@@ -952,9 +952,9 @@ template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_
     rsq = x * x + y * y + z * z;
     r = sqrt(rsq);
 
-    int ii = ai[j];
-    int jj = aj[j];
-    rcutij = (radelem[type[ii]]+radelem[type[jj]])*rcutfac;
+//     int ii = ai[j];
+//     int jj = alist[aj[j]];
+    rcutij = (radelem[ti[j]]+radelem[tj[j]])*rcutfac;
     rscale0 = rfac0 * M_PI / (rcutij - rmin0);
     theta0 = (r - rmin0) * rscale0;
     z0 = r / tan(theta0);    
@@ -964,17 +964,17 @@ template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_
     dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
     
     cpuComputeDuarray(&dulist_r[3*idxu_max*j], &dulist_i[3*idxu_max*j], &ulist_r[idxu_max*j], 
-            &ulist_i[idxu_max*j], rootpqarray, x, y, z, z0, r, dz0dr, wjelem[type[jj]], rcutij, rmin0,
+            &ulist_i[idxu_max*j], rootpqarray, x, y, z, z0, r, dz0dr, wjelem[tj[j]], rcutij, rmin0,
             idxu_block, twojmax, switch_flag);    
   }  
 }
 template void cpuComputeDuijdrj(double*, double*, double*, double*, double*, double*, 
-        double*, double*, double, double, double, int*, int*, int*, int*, int, int, int, int);
+        double*, double*, double, double, double, int*, int*, int*, int*, int*, int, int, int, int);
 template void cpuComputeDuijdrj(float*, float*, float*, float*, float*, float*, float*, 
-        float*, float, float, float, int*, int*, int*, int*, int, int, int, int);
+        float*, float, float, float, int*, int*, int*, int*, int*, int, int, int, int);
 
 template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
-        int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
+        int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj, int nelements, int twojmax, int idxu_max, 
         int chemflag, int ijnum) 
 {
 
@@ -983,7 +983,7 @@ template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *
         dedr[k + 3*ij] = 0.0;
 
   for(int ij = 0; ij < ijnum; ij++) {
-  int jelem = (chemflag) ? map[type[aj[ij]]] : 0;
+  int jelem = (chemflag) ? map[tj[ij]] : 0;
   int i = ai[ij]; // atom i  
   for(int j = 0; j <= twojmax; j++) {
     int jju = idxu_block[j];
@@ -1042,12 +1042,12 @@ template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *
   
 }
 template void cpuComputeDeidrj(double*, double*, double*, double*, double*, 
-        int*, int*, int*, int*, int*, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int, int, int, int, int);
 template void cpuComputeDeidrj(float*, float*, float*, float*, float*, 
-        int*, int*, int*, int*, int*, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*,  int, int, int, int, int);
 
 template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
-        int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
+        int *idxb, int *idxu_block, int *idxz_block, int *map, int *ai, int *aj, int *ti, int *tj, int twojmax, 
         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum)
 {  
   int jdim = twojmax + 1;  
@@ -1081,7 +1081,7 @@ template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T
   }
 
   for(int ij = 0; ij < ijnum; ij++) {
-  int elem3 = (chemflag) ? map[type[aj[ij]]] : 0;
+  int elem3 = (chemflag) ? map[tj[ij]] : 0;
   int i = ai[ij]; // atom i
   for(int jjb = 0; jjb < idxb_max; jjb++) {
     const int j1 = idxb[jjb*3 + 0];
@@ -1264,9 +1264,9 @@ template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T
   }
 }
 template void cpuComputeDbidrj(double*, double*, double*, double*, double*, 
-        int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
 template void cpuComputeDbidrj(float*, float*, float*, float*, float*, 
-        int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
 
 template <typename T> void cpuComputeSna(T *sna, T *blist, int *ilist, int *mask, 
         int ncoeff, int nrows, int inum, int quadraticflag)
@@ -1766,7 +1766,7 @@ template <typename T> void cpuSnapTallyEnergyFull(T *eatom, T *bispectrum, T *co
                 }
             }
         }                
-        eatom[ii] = evdwl;
+        eatom[ii] += evdwl;
     }
 }
 template void cpuSnapTallyEnergyFull(double*, double*, double*, int*, int*, int*,
@@ -1774,7 +1774,7 @@ template void cpuSnapTallyEnergyFull(double*, double*, double*, int*, int*, int*
 template void cpuSnapTallyEnergyFull(float*, float*, float*, int*, int*, int*,
         int, int, int, int);
 
-template <typename T> void cpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int ijnum)
+template <typename T> void cpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int *alist, int ijnum)
 { 
     for(int k = 0; k < ijnum; k++) {
         int i = ai[k];        
@@ -1790,42 +1790,44 @@ template <typename T> void cpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int 
         fatom[2+3*j] -= fz;
     }
 };
-template void cpuSnapTallyForceFull(double*, double*, int*, int*, int);
-template void cpuSnapTallyForceFull(float*, float*, int*, int*, int);
+template void cpuSnapTallyForceFull(double*, double*, int*, int*, int*, int);
+template void cpuSnapTallyForceFull(float*, float*, int*, int*, int*, int);
 
-template <typename T> void cpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum)
+template <typename T> void cpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj,
+        int inum, int ijnum)
 { 
     for(int k = 0; k < ijnum; k++) {
         int i = ai[k];        
         int j = aj[k];        
+        T factor = 0.5;
         T dx = -rij[0+3*k];
         T dy = -rij[1+3*k];
         T dz = -rij[2+3*k];    
         T fx = fij[0+3*k];
         T fy = fij[1+3*k];
         T fz = fij[2+3*k];    
-        T v0 = dx*fx;
-        T v1 = dy*fy;
-        T v2 = dz*fz;
-        T v3 = dx*fy;
-        T v4 = dx*fz;
-        T v5 = dy*fz;        
-        vatom[0+6*i] += v0;
-        vatom[1+6*i] += v1;
-        vatom[2+6*i] += v2;
-        vatom[3+6*i] += v3;
-        vatom[4+6*i] += v4;
-        vatom[5+6*i] += v5;        
-        vatom[0+6*j] += v0;
-        vatom[1+6*j] += v1;
-        vatom[2+6*j] += v2;
-        vatom[3+6*j] += v3;
-        vatom[4+6*j] += v4;
-        vatom[5+6*j] += v5;        
+        T v0 = factor*dx*fx;
+        T v1 = factor*dy*fy;
+        T v2 = factor*dz*fz;
+        T v3 = factor*dx*fy;
+        T v4 = factor*dx*fz;
+        T v5 = factor*dy*fz;        
+        vatom[0*inum+i] += v0;
+        vatom[1*inum+i] += v1;
+        vatom[2*inum+i] += v2;
+        vatom[3*inum+i] += v3;
+        vatom[4*inum+i] += v4;
+        vatom[5*inum+i] += v5;        
+        vatom[0*inum+j] += v0;
+        vatom[1*inum+j] += v1;
+        vatom[2*inum+j] += v2;
+        vatom[3*inum+j] += v3;
+        vatom[4*inum+j] += v4;
+        vatom[5*inum+j] += v5;        
     }
 };
-template void cpuSnapTallyVirialFull(double*, double*, double*, int*, int*, int);
-template void cpuSnapTallyVirialFull(float*, float*, float*, int*, int*, int);
+template void cpuSnapTallyVirialFull(double*, double*, double*, int*, int*, int, int);
+template void cpuSnapTallyVirialFull(float*, float*, float*, int*, int*, int, int);
 
 template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim)
@@ -1878,7 +1880,7 @@ template void cpuNeighPairList(int*, int*, double*, double*, int*, int*, int*, i
 template void cpuNeighPairList(int*, int*, float*, float*, int*, int*, int*, int, int, int);
 
 template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
-        int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes)
+        int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes)
 {    
     for (int ii=0; ii<inum; ii++) {
         int i = ilist[ii];       // atom i
@@ -1887,7 +1889,7 @@ template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T
         int count = 0;              
         for (int l=0; l<m ; l++) {   // loop over each atom around atom i {
             int j = neighlist[l + jnum*i];         
-            int jtype  = atomtype[j];        
+            int jtype  = atomtype[alist[j]];        
             // distance between atom i and atom j                                    
             T xij0 = x[j*dim] - x[i*dim];  // xj - xi
             T xij1 = x[j*dim+1] - x[i*dim+1]; // xj - xi               
@@ -1901,17 +1903,17 @@ template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T
         pairnum[ii] = count;       
     }    
 };
-template void cpuNeighPairList(int*, int*, double*, double*, int*, int*, int*, int*, 
+template void cpuNeighPairList(int*, int*, double*, double*, int*, int*, int*, int*, int*, 
         int, int, int, int);
-template void cpuNeighPairList(int*, int*, float*, float*, int*, int*, int*, int*, 
+template void cpuNeighPairList(int*, int*, float*, float*, int*, int*, int*, int*, int*, 
         int, int, int, int);
 
 template <typename T> void cpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
-      int *atomtype, int inum, int jnum, int dim)
+      int *atomtype, int *alist, int inum, int jnum, int dim)
 {        
     for (int ii=0; ii<inum; ii++) {  // for each atom i in the simulation box     
-        int i = ilist[ii];       // atom i
+        int i = alist[ii];       // atom i
         int itype = atomtype[i];
         int m = pairnum[ii];        // number of neighbors around i             
         int start = pairnumsum[ii];   
@@ -1920,17 +1922,17 @@ template <typename T> void cpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *a
             int k = start + l;                                     
             aii[k]       = ii;
             ai[k]        = i;
-            aj[k]        = j;          
+            aj[k]        = alist[j];          
             ti[k]        = itype;       
-            tj[k]        = atomtype[j];        
+            tj[k]        = atomtype[alist[j]];        
             for (int d=0; d<dim; d++) 
                 xij[k*dim+d]   = x[j*dim+d] -  x[i*dim+d];  // xj - xi            
         }
     }    
 };
-template void cpuNeighPairs(double*, double*, int*, int*, int*, int*, int*, int*, int*, int*, 
+template void cpuNeighPairs(double*, double*, int*, int*, int*, int*, int*, int*, int*, int*, int*, 
         int*, int*, int, int, int);
-template void cpuNeighPairs(float*, float*, int*, int*, int*, int*, int*, int*, int*, int*, 
+template void cpuNeighPairs(float*, float*, int*, int*, int*, int*, int*, int*, int*, int*, int*, 
         int*, int*, int, int, int);
 
 #endif

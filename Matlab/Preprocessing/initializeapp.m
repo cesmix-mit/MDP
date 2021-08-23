@@ -5,16 +5,23 @@
 % Contributing authors: Ngoc-Cuong Nguyen (cuongng@mit.edu, exapde@gmail.com)
 %***************************************************************************
 
-function app = initializeapp(sourcepath,version)
+function app = initializeapp()
 
+cdir = pwd(); ii = strfind(cdir, "Applications");
+sourcepath = cdir(1:(ii-1));
+run(sourcepath + "Installation/setpath.m");
+app.currentdir = cdir; 
 app.sourcepath = sourcepath;
+
 app.codename = "MDP";
-app.version = version;
+%app.version = version;
 app.appname = "app";
 app.platform = "cpu";
-app.cpucompiler = "g++";
+app.cpucompiler = "clang++";
 app.mpicompiler = "mpicxx";
-app.gpucompiler = "";
+app.gpucompiler = "clang++";
+app.cuda_arch = "sm_60";
+app.enzyme = "";
 app.mpirun = "mpirun";
 app.buildcorelib = 0;
 app.cpuflags = "-O2 -ldl -lm -lblas -llapack";
@@ -53,8 +60,8 @@ app.dt = 0.0;         % time step
 app.rcutsqmax = 0.0;  % square of maximum cutoff radius
 app.boxoffset = [0.0 0.0 0.0]; % offset for simulation box to account for periodic boundary conditions
 
-app.globalfreq = 10;       % frequency to print and save default global outputs (pe, ke, ce, te, temp, press)
-app.peratomfreq = 100;     % frequency to save default peratom outputs (id, t, x, f)
+app.globalfreq = 1;       % frequency to print and save default global outputs (pe, ke, ce, te, temp, press)
+app.peratomfreq = 1;     % frequency to save default peratom outputs (id, t, x, f)
 app.globaloutputs = "";    % additional global outputs (stresses, com, vcm)
 app.peratomoutputs = "";   % additional peratom outputs (velocity, mass, virial, image)
 

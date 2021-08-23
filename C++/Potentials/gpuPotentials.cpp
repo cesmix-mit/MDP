@@ -309,7 +309,7 @@ void gpuBO2EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         dstype *gi = &tmp.tmpmem[2*na]; // na
         dstype *du2 = &tmp.tmpmem[3*na]; // na
         gpuElectronDensity(rhoi, eij, pairnum, pairnumsum, na); 
-        gpuPaircDensityGradient(ei, du2, gi, rhoi, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, na, potnum);
+        gpuPairDensityGradient(ei, du2, gi, rhoi, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, na, potnum);
         gpuEmbedingForce(fij, gi, pairnum, pairnumsum, na);        
                 
         gpuPutArrayAtIndex(e, ei, ilist, na);        
@@ -579,7 +579,7 @@ void gpuBO3EnergyForce(dstype *e, dstype *f, neighborstruct &nb, commonstruct &c
         
         gpuElectronDensity(h3ij, e3ijk, tripletnum, tripletnumsum, npairs);
         gpuElectronDensity(g3ij, f3ij, tripletnum, tripletnumsum, npairs);
-        gpuPaircDensityGradient(c3ij, du, d3ij, h3ij, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, npairs, potnum);
+        gpuTripletDensityGradient(c3ij, du, d3ij, h3ij, param, app.eta, app.kappa, 1, nparam, common.neta, common.nkappa, npairs, potnum);
         gpuArrayABPXYZ(fij, c3ij, eij, d3ij, g3ij, dim, npairs);
         gpuArrayAXY(eij, eij, c3ij, 1.0, npairs);
                             
@@ -1551,50 +1551,305 @@ void gpuEmpiricalPotentialDescriptors(dstype *ei, neighborstruct &nb, commonstru
 //     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                            
 }
 
-dstype gpuEmpiricalPotentialEnergy(dstype *ei, neighborstruct &nb, commonstruct &common, 
+void gpuFullNeighPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int decomp, Int potnum)
+{        
+    for (Int b=0; b<common.nba; b++) {
+        Int e1 = common.ablks[b];
+        Int e2 = common.ablks[b+1];            
+        Int na = e2 - e1; // number of atoms in this block
+        Int neighmax = common.neighmax;
+        Int ncq = common.ncq;
+        Int dim = common.dim;
+        Int backend = common.backend;
+                
+        Int *ilist = &tmp.intmem[0]; //na     
+        if (typei>0) {               
+            Int *olist = &tmp.intmem[na]; //na        
+            gpuArrayFill(olist, e1, na);        
+
+            Int *t0 = &tmp.intmem[2*na]; //na        
+            Int *t1 = &tmp.intmem[3*na]; //na        
+            na = gpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+        }
+        else {
+            gpuArrayFill(ilist, e1, na);        
+        }                
+                        
+        Int *pairnum = &tmp.intmem[na]; // na
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        if (typej>0)
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);
+        else
+            gpuFullNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.neighlist, nb.neighnum, na, neighmax, dim);        
+                        
+        //a list contains the starting positions of the first neighbor              
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
+        int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
+        
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
+        dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
+        dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
+        dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
+        gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, neighmax, ncq, dim);                       
+        
+        dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
+        dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
+        
+        gpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+                nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
+        if (decomp==0)
+            gpuFullNeighPairDecomposition(e, f, eij, fij, ai, ntuples, dim);
+        else
+            gpuCenterAtomPairDecomposition(e, f, eij, fij, ilist, pairnumsum, na, dim);    
+        
+        // virial tally
+        gpuVirialPairTally(v, fij, xij, -0.5, ai, dim, common.inum, ntuples);                
+        
+#ifdef HAVE_DEBUG                      
+        writearray2file("xijgpu.bin", xij, ntuples*dim, common.backend); 
+        writearray2file("eijgpu.bin", eij, ntuples, common.backend); 
+        writearray2file("fijgpu.bin", fij, ntuples*dim, common.backend); 
+        writearray2file("egpu.bin", e, common.inum, common.backend); 
+        writearray2file("fgpu.bin", f, common.inum*dim, common.backend); 
+    //error("here");    
+#endif                                        
+    }        
+}
+
+void gpuHalfNeighPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, dstype *rcutsq, Int *atomtype, Int nparam, Int typei, Int typej, Int decomp, Int potnum)
+{        
+    for (Int b=0; b<common.nba; b++) {
+        Int e1 = common.ablks[b];
+        Int e2 = common.ablks[b+1];            
+        Int na = e2 - e1; // number of atoms in this block
+        Int neighmax = common.neighmax;
+        Int ncq = common.ncq;
+        Int dim = common.dim;
+        Int backend = common.backend;
+                
+        Int *ilist = &tmp.intmem[0]; //na     
+        if (typei>0) {               
+            Int *olist = &tmp.intmem[na]; //na        
+            gpuArrayFill(olist, e1, na);        
+
+            Int *t0 = &tmp.intmem[2*na]; //na        
+            Int *t1 = &tmp.intmem[3*na]; //na        
+            na = gpuFindAtomType(ilist, olist, atomtype, t0, t1, typei, na);
+        }
+        else {
+            gpuArrayFill(ilist, e1, na);        
+        }                
+                        
+        Int *pairnum = &tmp.intmem[na]; // na
+        Int *pairlist = &tmp.intmem[2*na]; // na*neighmax
+        if (typej>0)
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, atomtype, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, typej, dim);            
+        else
+            gpuHalfNeighPairList(pairnum, pairlist, x, rcutsq, ilist, nb.alist, nb.neighlist, nb.neighnum, na, neighmax, dim);
+                                
+        //a list contains the starting positions of the first neighbor 
+        Int *pairnumsum = &tmp.intmem[2*na+na*neighmax]; // na+1                                 
+        Cumsum(pairnumsum, pairnum, &tmp.intmem[3*na+na*neighmax+1], &tmp.intmem[4*na+na*neighmax+2], na+1, backend);                                         
+        int ntuples = IntArrayGetValueAtIndex(pairnumsum, na, backend);                             
+                
+        Int *ai = &tmp.intmem[1+3*na+na*neighmax]; // ntuples        
+        Int *aj = &tmp.intmem[1+3*na+ntuples+na*neighmax]; // ntuples        
+        Int *ti = &tmp.intmem[1+3*na+2*ntuples+na*neighmax]; // ntuples        
+        Int *tj = &tmp.intmem[1+3*na+3*ntuples+na*neighmax]; // ntuples        
+        dstype *xij = &tmp.tmpmem[0]; // ntuples*dim
+        dstype *qi = &tmp.tmpmem[ntuples*dim]; // ntuples*ncq
+        dstype *qj = &tmp.tmpmem[ntuples*(dim+ncq)]; // ntuples*ncq
+        gpuNeighPairs(xij, qi, qj, x, q, ai, aj, ti, tj, pairnum, pairlist, pairnumsum, ilist, nb.alist, 
+                atomtype, na, neighmax, ncq, dim);       
+                        
+        dstype *fij = &tmp.tmpmem[ntuples*(dim+2*ncq)]; // ntuples*dim
+        dstype *eij = &tmp.tmpmem[ntuples*(2*dim+2*ncq)]; // ntuples
+        dstype *du = &tmp.tmpmem[ntuples*(2*dim+2*ncq+1)]; // ntuples
+        gpuComputePairEnergyForce(eij, du, fij, xij, qi, qj, ti, tj, ai, aj, param, app.eta, app.kappa, dim, ncq, 
+                nparam, common.neta, common.nkappa, ntuples, potnum, common.bondtype);
+        if (decomp==0)
+            gpuHalfNeighPairDecomposition(e, f, eij, fij, ai, aj, ntuples, dim);
+        else {
+            gpuCenterAtomPairDecomposition(e, f, eij, fij, ilist, pairnumsum, na, dim);   
+            gpuArrayCopy(tmp.intmem, aj, ntuples);
+            Int *jlist = &tmp.intmem[ntuples];   
+            Int *bnumsum = &tmp.intmem[2*ntuples]; 
+            Int *index = &tmp.intmem[3*ntuples]; // ntuples       
+            Int *p0 = &tmp.intmem[4*ntuples]; // ntuples       
+            Int *p1 = &tmp.intmem[5*ntuples]; // ntuples       
+            Int *p2 = &tmp.intmem[6*ntuples]; // ntuples       
+            Int *p3 = &tmp.intmem[7*ntuples]; // ntuples       
+            Int naj = gpuUniqueSort(jlist, bnumsum, index, p0, tmp.intmem, p1, p2, p3, ntuples);            
+            gpuNeighborAtomPairDecomposition(e, f, eij, fij, jlist, bnumsum, index, naj, dim);        
+        }                        
+        // virial tally
+        gpuVirialPairTally(v, fij, xij, -0.5, ai, aj, dim, common.inum, ntuples);                
+    }        
+}
+
+void gpuNonbondedPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, Int nparam)
+{    
+    common.bondtype = 0; // non-bonded interaction
+    if (common.neighpair == 0) {
+        for (int i = 0; i < common.npot2a; i++)
+            gpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2a[i], 
+                nb.atomtype, nparam, 0, 0, common.decomposition, common.pot2a[i]);            
+    }
+    else {
+        for (int i = 0; i < common.npot2a; i++)
+            gpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2a[i], 
+                nb.atomtype, nparam, 0, 0, common.decomposition, common.pot2a[i]);                    
+    }        
+}
+
+void gpuBondedPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, appstruct &app, tempstruct &tmp, 
+        dstype* x, dstype *q, dstype* param, Int nparam)
+{    
+    //error("here");
+    common.bondtype = 1; // bonded interaction
+    if (common.neighpair == 0) {
+        for (int i = 0; i < common.npot2b; i++) {
+            if (common.atom2b[2*i] == common.atom2b[1+2*i]) {
+                gpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);            
+            }
+            else {
+                gpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);            
+                gpuFullNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[1+2*i], common.atom2b[2*i], common.decomposition, common.pot2b[i]);            
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < common.npot2b; i++)
+            if (common.atom2b[2*i] == common.atom2b[1+2*i]) {
+                gpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);                    
+            }
+            else {
+                gpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[2*i], common.atom2b[1+2*i], common.decomposition, common.pot2b[i]);                    
+                gpuHalfNeighPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, param, &app.rcutsq2b[i], 
+                    nb.atomtype, nparam, common.atom2b[1+2*i], common.atom2b[2*i], common.decomposition, common.pot2b[i]);                    
+            }
+    }            
+}
+
+void gpuEmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, 
+        appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
+{    
+    //error("here");
+    if (common.npot1a > 0)
+        gpuNonbondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+
+    if (common.npot1b > 0)
+        gpuBondedSingleEnergyForce(e, f, nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+
+    if (common.npot2a > 0)
+        gpuNonbondedPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+
+    if (common.npot2b > 0)
+        gpuBondedPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+
+//     if (common.npot2c > 0)    
+//         gpuBoPairEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+// 
+//     if (common.npot3a > 0)    
+//         gpuNonbondedTripletEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+//     
+//     if (common.npot3b > 0)
+//         gpuBondedTripletEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+// 
+//     if (common.npot3c > 0)    
+//         gpuBoTripletEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+// 
+//     if (common.npot4a > 0)
+//         gpuNonbondedQuadrupletEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+// 
+//     if (common.npot4b > 0)
+//         gpuBondedQuadrupletEnergyForceVirial(e, f, v, nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);              
+    
+    ArrayMinus(f, f, common.dim*common.inum, common.backend);
+}
+
+void gpuEmpiricalPotentialDescriptors(dstype *ei, dstype *f, dstype *v, neighborstruct &nb, commonstruct &common, 
         appstruct &app, tempstruct &tmp, dstype* x, dstype *q, dstype *param, Int *nparam) 
 {    
     int inum = common.inum;
-    int dim = common.dim;        
-                
+    int dim = common.dim;
+    
+    int m = 0;
+    int n = 0;
+    int k = 0;
     if (common.npot1a > 0)
-        gpuNonbondedSingleEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
+        gpuNonbondedSingleEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[0]], nparam[1]-nparam[0]);              
 
+    m += common.npot1a*inum;
+    n += common.npot1a*dim*inum;
     if (common.npot1b > 0)
-        gpuBondedSingleEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
+        gpuBondedSingleEnergyForce(&ei[m], &f[n], nb, common, app, tmp, x, q, &param[nparam[1]], nparam[2]-nparam[1]);              
 
+    m += common.npot1b*inum;
+    n += common.npot1b*dim*inum;    
     if (common.npot2a > 0)
-        gpuNonbondedPairEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
+        gpuNonbondedPairEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[2]], nparam[3]-nparam[2]);              
 
+    m += common.npot2a*inum;
+    n += common.npot2a*dim*inum;
+    k += common.npot2a*6*inum;
     if (common.npot2b > 0)
-        gpuBondedPairEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
+        gpuBondedPairEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[3]], nparam[4]-nparam[3]);              
 
-    if (common.npot2c > 0)    
-        gpuBoPairEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
- 
-    if (common.npot3a > 0)    
-        gpuNonbondedTripletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
-    
-    if (common.npot3b > 0)
-        gpuBondedTripletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
-
-    if (common.npot3c > 0)    
-        gpuBoTripletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
-
-    if (common.npot4a > 0)
-        gpuNonbondedQuadrupletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
-
-    if (common.npot4b > 0)
-        gpuBondedQuadrupletEnergy(ei, nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
-    
-    dstype *onevec =  &tmp.tmpmem[0];  
-    ArraySetValue(onevec, 1.0, inum, common.backend);
-    PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                            
-    
-    return e;
+//     m += common.npot2b*inum;
+//     n += common.npot2b*dim*inum;
+//     k += common.npot2b*6*inum;
+//     if (common.npot2c > 0)    
+//         gpuBoPairEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[4]], nparam[5]-nparam[4]);             
+// 
+//     m += common.npot2c*inum;
+//     n += common.npot2c*dim*inum;
+//     k += common.npot2c*6*inum;
+//     if (common.npot3a > 0)    
+//         gpuNonbondedTripletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[5]], nparam[6]-nparam[5]);              
+//     
+//     m += common.npot3a*inum;
+//     n += common.npot3a*dim*inum;
+//     k += common.npot3a*6*inum;
+//     if (common.npot3b > 0)
+//         gpuBondedTripletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[6]], nparam[7]-nparam[6]);              
+// 
+//     m += common.npot3b*inum;
+//     n += common.npot3b*dim*inum;
+//     k += common.npot3b*6*inum;
+//     if (common.npot3c > 0)    
+//         gpuBoTripletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[7]], nparam[8]-nparam[7]);              
+// 
+//     m += common.npot3c*inum;
+//     n += common.npot3c*dim*inum;
+//     k += common.npot3c*6*inum;
+//     if (common.npot4a > 0)
+//         gpuNonbondedQuadrupletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[8]], nparam[9]-nparam[8]);              
+// 
+//     m += common.npot4a*inum;
+//     n += common.npot4a*dim*inum;
+//     k+= common.npot4a*6*inum;
+//     if (common.npot4b > 0)
+//         gpuBondedQuadrupletEnergyForceVirial(&ei[m], &f[n], &v[k], nb, common, app, tmp, x, q, &param[nparam[9]], nparam[10]-nparam[9]);                  
+//     
+//     dstype *onevec =  &tmp.tmpmem[0];  
+//     ArraySetValue(onevec, 1.0, inum, common.backend);
+//     PGEMTV(common.cublasHandle, inum, common.Nempot, &one, ei, inum, onevec, inc1, &one, e, inc1, common.backend);                                
 }
-
-
 
 #endif
 

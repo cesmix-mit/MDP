@@ -24,7 +24,8 @@ compilerstr{1} = cpucompiler + " " + cpumacros + " -std=c++11 main.cpp -o cpuMDP
 eval(char("!" + compilerstr{1}));
     
 if ~isempty(char(gpucompiler))
-    compilerstr{2} = gpucompiler + " " + gpumacros + " -D_FORCE_INLINES -O3 -c -fPIC -w ../Potentials/gpuEmpiricalPotentials.cu -o ../Potentials/gpuEmpiricalPotentials.o " + gpuflags; 
+    compilerstr{2} = gpucompiler + " " + gpumacros + " -O2 -c -w ../Potentials/gpuEmpiricalPotentials.cu -o ../Potentials/gpuEmpiricalPotentials.o " + gpuflags; 
+    %compilerstr{2} = "nvcc -arch=sm_60 -std=c++11 -D _ENZYME -D_FORCE_INLINES -O3 -c -w ../Potentials/gpuEmpiricalPotentials.cu -o ../Potentials/gpuEmpiricalPotentials.o " + gpuflags; 
     compilerstr{3} = cpucompiler + " " + gpumacros + " -D _CUDA main.cpp -o gpuMDP ../Core/cpuCore.a ../Core/gpuCore.a ../Potentials/gpuEmpiricalPotentials.o -ffast-math -O3 -fno-vectorize -fno-unroll-loops -fPIC -lcudart -lcublas -lblas -llapack " + gpuflags;
     for i = 2:3
         eval(char("!" + compilerstr{i}));
@@ -32,7 +33,48 @@ if ~isempty(char(gpucompiler))
 end
 
 
-
+% 
+% disp("Compiling C++ source code"); pause(0.1);
+% 
+% cpucompiler = app.cpucompiler;
+% gpucompiler = app.gpucompiler;
+% cpuflags = app.cpuflags;
+% gpuflags = app.gpuflags;
+% cpumacros = app.cpumacros;
+% gpumacros = app.gpumacros;
+% 
+% compilerstr = cell(5,1);
+% for i = 1:5
+%     compilerstr{i} = "";
+% end
+% 
+% cpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
+% cpumacros = "-std=c++11 -D _ENZYME -D _DEBUG";
+% cpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so"
+% compilerstr{1} = cpucompiler + " " + cpumacros + " main.cpp -o cpuMDP  -lblas -llapack " + cpuflags;
+% eval(char("!" + compilerstr{1}));
+% 
+% compilerstr{1} = cpucompiler + " -fPIC -std=c++11 -ffast-math -O3 -c ../Core/cpuCore.cpp -o ../Core/cpuCore.o";
+% compilerstr{2} = cpucompiler + " " + cpumacros + " -std=c++11 main.cpp -o cpuMDP ../Core/cpuCore.o -ffast-math -O3 -lblas -llapack " + cpuflags;
+% for i = 1:2
+%     eval(char("!" + compilerstr{i}));
+% end
+%     
+% if ~isempty(char(gpucompiler))
+%     disp("Compiling GPU source code"); pause(0.1);
+% 
+%     gpucompiler = "/home/linuxbrew/.linuxbrew/bin/clang++";
+%     gpumacros = "--cuda-gpu-arch=sm_60 -std=c++11 -D _ENZYME -D _DEBUG";
+%     gpuflags = "-Xclang -load -Xclang /home/cuongng/enzyme/Enzyme/ClangEnzyme-11.so"
+%     compilerstr{3} = gpucompiler + " " + gpumacros + " -D_FORCE_INLINES -O3 -c -fPIC -w ../Core/gpuCore.cu -o ../Core/gpuCore.o";
+%     compilerstr{4} = gpucompiler + " " + gpumacros + " -D_FORCE_INLINES -O3 -c -fPIC -w ../Potentials/gpuEmpiricalPotentials.cu -o ../Potentials/gpuEmpiricalPotentials.o " + gpuflags; 
+%     compilerstr{5} = cpucompiler + " " + gpumacros + " -D _CUDA main.cpp -o gpuMDP ../Core/cpuCore.o ../Core/gpuCore.o ../Potentials/gpuEmpiricalPotentials.o -ffast-math -O3 -fno-vectorize -fno-unroll-loops -fPIC -lcudart -lcublas -lblas -llapack " + gpuflags;
+%     for i = 3:5
+%         disp("Compiling GPU source code");
+%         eval(char("!" + compilerstr{i}));
+%     end
+% end
+% 
 
 
 

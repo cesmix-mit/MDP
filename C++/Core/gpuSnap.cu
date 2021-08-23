@@ -238,8 +238,8 @@ template <typename T> __device__ T gpuComputeDsfac(T r, T rcut, T rmin0, int swi
 // template __device__ double gpuComputeDsfac(double, double, double, int);
 // template __device__ float gpuComputeDsfac(float, float, float, int);
 
-template <typename T> __global__ void gpuKernelZeroUarraytot(T *ulisttot_r, T *ulisttot_i, T wself, int *idxu_block, int *type,
-        int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements,
+template <typename T> __global__ void gpuKernelZeroUarraytot(T *ulisttot_r, T *ulisttot_i, T wself, int *idxu_block, 
+        int *type, int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements,
         int N1, int N2, int N3)
 {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -266,7 +266,8 @@ template <typename T> __global__ void gpuKernelZeroUarraytot(T *ulisttot_r, T *u
 };
 
 template <typename T> void gpuZeroUarraytot(T *ulisttot_r, T *ulisttot_i, T wself, int *idxu_block, int *type,
-        int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, int twojmax, int inum)
+        int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, 
+                int twojmax, int inum)
 {
     int N1 = twojmax+1;
     int N2 = N1*nelements;
@@ -277,13 +278,13 @@ template <typename T> void gpuZeroUarraytot(T *ulisttot_r, T *ulisttot_i, T wsel
     gpuKernelZeroUarraytot<<<gridDim, blockDim>>>(ulisttot_r, ulisttot_i, wself, idxu_block, 
             type, map, ai, wselfall_flag, chemflag, idxu_max, nelements, N1, N2, N3);            
 }
-template void gpuZeroUarraytot(double*, double*, double, int*, int*,
+template void gpuZeroUarraytot(double*, double*, double, int*, int*, 
         int*, int*, int, int, int, int, int, int);
-template void gpuZeroUarraytot(float*, float*, float, int*, int*,
+template void gpuZeroUarraytot(float*, float*, float, int*, int*, 
         int*, int*, int, int, int, int, int, int);
 
-template <typename T> __global__ void gpuKernelAddUarraytot(T *ulisttot_r, T *ulisttot_i, T *ulist_r, T *ulist_i, T *rij, 
-        T *wjelem, T *radelem, T rmin0, T rcutfac, int *idxu_block, int *ilist, 
+template <typename T> __global__ void gpuKernelAddUarraytot(T *ulisttot_r, T *ulisttot_i, T *ulist_r, T *ulist_i, 
+        T *rij, T *wjelem, T *radelem, T rmin0, T rcutfac, int *idxu_block, int *ilist, 
         int *type, int *pairnum, int *pairnumsum, int *map, int *tj, int twojmax, int idxu_max, 
         int nelements, int inum, int switch_flag, int chemflag)
 {
@@ -431,7 +432,7 @@ template void gpuComputeUarray(float*, float*, float*, float, float, float, floa
         
 template <typename T> __global__ void gpuKernelComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, 
         T *rij, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum)
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum)
 { 
   int ij = threadIdx.x + blockIdx.x * blockDim.x;     
   while (ij < ijnum) {        
@@ -442,10 +443,10 @@ template <typename T> __global__ void gpuKernelComputeUij(T *ulist_r, T *ulist_i
     T rsq = x * x + y * y + z * z;
     T r = sqrt(rsq);
 
-    int ii = ai[ij];
-    int jj = aj[ij];
+    //int ii = ai[ij];
+    //int jj = alist[aj[ij]];
     int nij = idxu_max*ij;    
-    T rcutij = (radelem[type[ii]]+radelem[type[jj]])*rcutfac;
+    T rcutij = (radelem[ti[ij]]+radelem[tj[ij]])*rcutfac; //(radelem[type[ii]]+radelem[type[jj]])*rcutfac;
     T theta0 = (r - rmin0) * rfac0 * M_PI / (rcutij - rmin0);
     //    theta0 = (r - rmin0) * rscale0;
     T z0 = r / tan(theta0);    
@@ -518,18 +519,18 @@ template <typename T> __global__ void gpuKernelComputeUij(T *ulist_r, T *ulist_i
 };
 template <typename T> void gpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum)
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum)
 {
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;
     gpuKernelComputeUij<<<gridDim, blockDim>>>(ulist_r, ulist_i, rootpqarray, rij, radelem, 
-            rmin0, rfac0, rcutfac, idxu_block, type, ai, aj, twojmax, idxu_max, ijnum);
+            rmin0, rfac0, rcutfac, idxu_block, ai, aj, ti, tj, twojmax, idxu_max, ijnum);
 }
 template void gpuComputeUij(double*, double*, double*, double*, double*, double, 
-        double, double, int*, int*, int*, int*, int, int, int);
+        double, double, int*, int*, int*, int*, int*, int, int, int);
 template void gpuComputeUij(float*, float*, float*, float*, float*, float,  float,
-        float, int*, int*, int*, int*, int, int, int);
+        float, int*, int*, int*, int*, int*, int, int, int);
 
 template <typename T> __global__ void gpuKernelComputeZi(T *zlist_r, T *zlist_i, T *ulisttot_r, 
         T *ulisttot_i, T *cglist, int *idxz, int *idxu_block, int *idxcg_block, int jdim, 
@@ -1171,7 +1172,7 @@ template <typename T> __device__ void gpuComputeDuarray(T *dulist_r, T *dulist_i
 
 template <typename T> __global__ void gpuKernelComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, 
      T *ulist_i, T *rootpqarray, T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, 
-     int *idxu_block, int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag)
+     int *idxu_block, int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag)
 {
   int j = threadIdx.x + blockIdx.x * blockDim.x;
   while (j < ijnum) {              
@@ -1181,9 +1182,9 @@ template <typename T> __global__ void gpuKernelComputeDuijdrj(T *dulist_r, T *du
     T rsq = x * x + y * y + z * z;
     T r = sqrt(rsq);
 
-    int ii = ai[j];
-    int jj = aj[j];
-    T rcutij = (radelem[type[ii]]+radelem[type[jj]])*rcutfac;
+    //int ii = ai[j];
+    //int jj = alist[aj[j]];
+    T rcutij = (radelem[ti[j]]+radelem[tj[j]])*rcutfac; //(radelem[type[ii]]+radelem[type[jj]])*rcutfac;
     T rscale0 = rfac0 * M_PI / (rcutij - rmin0);
     T theta0 = (r - rmin0) * rscale0;
     T z0 = r / tan(theta0);    
@@ -1193,7 +1194,7 @@ template <typename T> __global__ void gpuKernelComputeDuijdrj(T *dulist_r, T *du
     T dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
     
     gpuComputeDuarray(&dulist_r[3*idxu_max*j], &dulist_i[3*idxu_max*j], &ulist_r[idxu_max*j], 
-            &ulist_i[idxu_max*j], rootpqarray, x, y, z, z0, r, dz0dr, wjelem[type[jj]], rcutij, rmin0,
+            &ulist_i[idxu_max*j], rootpqarray, x, y, z, z0, r, dz0dr, wjelem[tj[j]], rcutij, rmin0,
             idxu_block, twojmax, switch_flag);    
 
     j += blockDim.x * gridDim.x;
@@ -1201,22 +1202,22 @@ template <typename T> __global__ void gpuKernelComputeDuijdrj(T *dulist_r, T *du
 }
 template <typename T> void gpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, 
     T *rootpqarray, T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block,
-    int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag)
+    int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag)
 {                
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;    
     gpuKernelComputeDuijdrj<<<gridDim, blockDim>>>(dulist_r, dulist_i, ulist_r, ulist_i, 
-          rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, type, 
-          ai, aj, twojmax, idxu_max, ijnum, switch_flag);
+          rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, 
+          ai, aj, ti, tj, twojmax, idxu_max, ijnum, switch_flag);
 }
 template void gpuComputeDuijdrj(double*, double*, double*, double*, double*, double*, 
-        double*, double*, double, double, double, int*, int*, int*, int*, int, int, int, int);
+        double*, double*, double, double, double, int*, int*, int*, int*, int*, int, int, int, int);
 template void gpuComputeDuijdrj(float*, float*, float*, float*, float*, float*, float*, 
-        float*, float, float, float, int*, int*, int*, int*, int, int, int, int);
+        float*, float, float, float, int*, int*, int*, int*, int*, int, int, int, int);
 
 template <typename T> __global__ void gpuKernelComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, 
-        T *dulist_r, T *dulist_i, int *idxu_block, int *type, int *map, int *ai, int *aj, 
+        T *dulist_r, T *dulist_i, int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj,
         int nelements, int twojmax, int idxu_max, int chemflag, int ijnum) 
 {
 
@@ -1227,7 +1228,7 @@ template <typename T> __global__ void gpuKernelComputeDeidrj(T *dedr, T *ylist_r
   //for(int ij = 0; ij < ijnum; ij++) {
   int ij = threadIdx.x + blockIdx.x * blockDim.x;
   while (ij < ijnum) {                        
-      int jelem = (chemflag) ? map[type[aj[ij]]] : 0;
+      int jelem = (chemflag) ? map[tj[ij]] : 0; //(chemflag) ? map[type[alist[aj[ij]]]] : 0;
       int i = ai[ij]; // atom i  
       for(int j = 0; j <= twojmax; j++) {
         int jju = idxu_block[j];
@@ -1287,7 +1288,7 @@ template <typename T> __global__ void gpuKernelComputeDeidrj(T *dedr, T *ylist_r
   }  
 }
 template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, 
-        T *dulist_r, T *dulist_i, int *idxu_block, int *type, int *map, int *ai, int *aj, 
+        T *dulist_r, T *dulist_i, int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj,
         int nelements, int twojmax, int idxu_max, int chemflag, int ijnum) 
 {                
     gpuArraySetValue(dedr, (T) 0.0, ijnum*3);
@@ -1296,16 +1297,16 @@ template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i,
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;    
     gpuKernelComputeDeidrj<<<gridDim, blockDim>>>(dedr, ylist_r, ylist_i, dulist_r, dulist_i, 
-            idxu_block, type, map, ai, aj, nelements, twojmax, idxu_max, chemflag, ijnum); 
+            idxu_block, map, ai, aj, ti, tj, nelements, twojmax, idxu_max, chemflag, ijnum); 
 }
 template void gpuComputeDeidrj(double*, double*, double*, double*, double*, 
-        int*, int*, int*, int*, int*, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int, int, int, int, int);
 template void gpuComputeDeidrj(float*, float*, float*, float*, float*, 
-        int*, int*, int*, int*, int*, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int, int, int, int, int);
 
 template <typename T> __global__ void gpuKernelComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, 
-        T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, int *type, 
-        int *map, int *ai, int *aj, int jdim, int idxb_max, int idxu_max, int idxz_max, 
+        T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, 
+        int *map, int *ai, int *aj, int *ti, int *tj, int jdim, int idxb_max, int idxu_max, int idxz_max, 
         int nelements, int bnorm_flag, int chemflag, int nb_max, int nz_max, int N1, int N2)
 {  
   // set all the derivatives to zero once
@@ -1328,7 +1329,7 @@ template <typename T> __global__ void gpuKernelComputeDbidrj(T *dblist, T *zlist
     while (idx < N2) {
         int jjb = idx%N1;              
         int ij = (idx-jjb)/N1;                      
-        int elem3 = (chemflag) ? map[type[aj[ij]]] : 0;
+        int elem3 = (chemflag) ? map[tj[ij]] : 0;//(chemflag) ? map[type[alist[aj[ij]]]] : 0;
         int i = ai[ij]; // atom i
         const int j1 = idxb[jjb*3 + 0];
         const int j2 = idxb[jjb*3 + 1];
@@ -1510,8 +1511,8 @@ template <typename T> __global__ void gpuKernelComputeDbidrj(T *dblist, T *zlist
     }
 }
 template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, 
-        T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, int *type, 
-        int *map, int *ai, int *aj, int twojmax, int idxb_max, int idxu_max, int idxz_max, 
+        T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, 
+        int *map, int *ai, int *aj, int *ti, int *tj, int twojmax, int idxb_max, int idxu_max, int idxz_max, 
         int nelements, int bnorm_flag, int chemflag, int ijnum)
 {                
     
@@ -1528,13 +1529,13 @@ template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i,
     int gridDim = (N2 + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;        
     gpuKernelComputeDbidrj<<<gridDim, blockDim>>>(dblist, zlist_r, zlist_i, dulist_r, dulist_i, 
-            idxb, idxu_block, idxz_block, type, map, ai, aj, jdim, idxb_max, idxu_max, 
+            idxb, idxu_block, idxz_block, map, ai, aj, ti, tj, jdim, idxb_max, idxu_max, 
             idxz_max, nelements, bnorm_flag, chemflag, nb_max, nz_max, N1, N2);
 }
 template void gpuComputeDbidrj(double*, double*, double*, double*, double*, 
-        int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
 template void gpuComputeDbidrj(float*, float*, float*, float*, float*, 
-        int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
+        int*, int*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int);
 
 template <typename T> __global__ void gpuKernelComputeSna1(T *sna, T *blist, int *ilist, 
         int *mask, int ncoeff, int nrows, int N1, int N2)
@@ -2217,7 +2218,7 @@ template <typename T> __global__ void gpuKernelSnapTallyEnergyFull(T *eatom, T *
                 }
             }
         }                
-        eatom[ii] = evdwl;
+        eatom[ii] += evdwl;
         ii += blockDim.x * gridDim.x;
     }
 }
@@ -2255,61 +2256,85 @@ template <typename T> __global__ void gpuKernelSnapTallyForceFull(T *fatom, T *f
         k += blockDim.x * gridDim.x;
     }
 };
+template <typename T> __global__ void gpuKernelSnapTallyForceI(T *fatom, T *fij, int *ai, int ijnum)
+{ 
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
+    while (k < ijnum) {            
+        int i = ai[k];                    
+        atomicAdd(&fatom[0+3*i], fij[0+3*k]);
+        atomicAdd(&fatom[1+3*i], fij[1+3*k]);
+        atomicAdd(&fatom[2+3*i], fij[2+3*k]);
+        k += blockDim.x * gridDim.x;
+    }
+};
+template <typename T> __global__ void gpuKernelSnapTallyForceJ(T *fatom, T *fij, int *aj, int ijnum)
+{ 
+    int k = threadIdx.x + blockIdx.x * blockDim.x;
+    while (k < ijnum) {            
+        int j = aj[k];        
+        atomicAdd(&fatom[0+3*j], -fij[0+3*k]);
+        atomicAdd(&fatom[1+3*j], -fij[1+3*k]);
+        atomicAdd(&fatom[2+3*j], -fij[2+3*k]);
+        k += blockDim.x * gridDim.x;
+    }
+};
 template <typename T> void gpuSnapTallyForceFull(T *fatom, T *fij, int *ai, 
-        int *aj, int ijnum)
+        int *aj, int *alist, int ijnum)
 {
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;        
     gpuKernelSnapTallyForceFull<<<gridDim, blockDim>>>(fatom, fij, ai, aj, ijnum);
-    
+    //gpuKernelSnapTallyForceI<<<gridDim, blockDim>>>(fatom, fij, ai, ijnum);
+    //gpuKernelSnapTallyForceJ<<<gridDim, blockDim>>>(fatom, fij, aj, ijnum);
 }
-template void gpuSnapTallyForceFull(double*, double*, int*, int*, int);
-template void gpuSnapTallyForceFull(float*, float*, int*, int*, int);
+template void gpuSnapTallyForceFull(double*, double*, int*, int*, int*, int);
+template void gpuSnapTallyForceFull(float*, float*, int*, int*, int*, int);
 
 template <typename T> __global__ void gpuKernelSnapTallyVirialFull(T *vatom, T *fij, T *rij, 
-        int *ai, int *aj, int ijnum)
+        int *ai, int *aj, int inum, int ijnum)
 { 
     int k = threadIdx.x + blockIdx.x * blockDim.x;
     while (k < ijnum) {                
         int i = ai[k];        
         int j = aj[k];        
+        T factor = 0.5;
         T dx = -rij[0+3*k];
         T dy = -rij[1+3*k];
         T dz = -rij[2+3*k];    
         T fx = fij[0+3*k];
         T fy = fij[1+3*k];
         T fz = fij[2+3*k];    
-        T v0 = dx*fx;
-        T v1 = dy*fy;
-        T v2 = dz*fz;
-        T v3 = dx*fy;
-        T v4 = dx*fz;
-        T v5 = dy*fz;        
-        atomicAdd(&vatom[0+6*i], v0);
-        atomicAdd(&vatom[1+6*i], v1);
-        atomicAdd(&vatom[2+6*i], v2);
-        atomicAdd(&vatom[3+6*i], v3);
-        atomicAdd(&vatom[4+6*i], v4);
-        atomicAdd(&vatom[5+6*i], v5);
-        atomicAdd(&vatom[0+6*j], v0);
-        atomicAdd(&vatom[1+6*j], v1);
-        atomicAdd(&vatom[2+6*j], v2);
-        atomicAdd(&vatom[3+6*j], v3);
-        atomicAdd(&vatom[4+6*j], v4);
-        atomicAdd(&vatom[5+6*j], v5);
+        T v0 = factor*dx*fx;
+        T v1 = factor*dy*fy;
+        T v2 = factor*dz*fz;
+        T v3 = factor*dx*fy;
+        T v4 = factor*dx*fz;
+        T v5 = factor*dy*fz;        
+        atomicAdd(&vatom[0*inum+i], v0);
+        atomicAdd(&vatom[1*inum+i], v1);
+        atomicAdd(&vatom[2*inum+i], v2);
+        atomicAdd(&vatom[3*inum+i], v3);
+        atomicAdd(&vatom[4*inum+i], v4);
+        atomicAdd(&vatom[5*inum+i], v5);
+        atomicAdd(&vatom[0*inum+j], v0);
+        atomicAdd(&vatom[1*inum+j], v1);
+        atomicAdd(&vatom[2*inum+j], v2);
+        atomicAdd(&vatom[3*inum+j], v3);
+        atomicAdd(&vatom[4*inum+j], v4);
+        atomicAdd(&vatom[5*inum+j], v5);
         k += blockDim.x * gridDim.x;
     }
 };
-template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum)
+template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int inum, int ijnum)
 { 
     int blockDim = 256;
     int gridDim = (ijnum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;        
-    gpuKernelSnapTallyVirialFull<<<gridDim, blockDim>>>(vatom, fij, rij, ai, aj, ijnum);
+    gpuKernelSnapTallyVirialFull<<<gridDim, blockDim>>>(vatom, fij, rij, ai, aj, inum, ijnum);
 }
-template void gpuSnapTallyVirialFull(double*, double*, double*, int*, int*, int);
-template void gpuSnapTallyVirialFull(float*, float*, float*, int*, int*, int);
+template void gpuSnapTallyVirialFull(double*, double*, double*, int*, int*, int, int);
+template void gpuSnapTallyVirialFull(float*, float*, float*, int*, int*, int, int);
 
 template <typename T> __global__ void gpuKernelNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim)
@@ -2384,7 +2409,7 @@ template void gpuNeighPairList(int*, int*, double*, double*, int*, int*, int*, i
 template void gpuNeighPairList(int*, int*, float*, float*, int*, int*, int*, int, int, int);
 
 template <typename T> __global__ void gpuKernelNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
-        int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes)
+        int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes)
 {    
     int ii = threadIdx.x + blockIdx.x * blockDim.x;
     while (ii < inum) {        
@@ -2394,7 +2419,7 @@ template <typename T> __global__ void gpuKernelNeighPairList(int *pairnum, int *
         int count = 0;              
         for (int l=0; l<m ; l++) {   // loop over each atom around atom i {
             int j = neighlist[l + jnum*i];         
-            int jtype  = atomtype[j];        
+            int jtype  = atomtype[alist[j]];        
             // distance between atom i and atom j                                    
             T xij0 = x[j*dim] - x[i*dim];  // xj - xi
             T xij1 = x[j*dim+1] - x[i*dim+1]; // xj - xi               
@@ -2410,22 +2435,22 @@ template <typename T> __global__ void gpuKernelNeighPairList(int *pairnum, int *
     }    
 };
 template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, 
-        int *neighlist, int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes)
+        int *neighlist, int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes)
 { 
     int blockDim = 256;
     int gridDim = (inum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;        
     gpuKernelNeighPairList<<<gridDim, blockDim>>>(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
-                            neighnum, atomtype, inum, jnum, dim, ntypes);
+                            neighnum, atomtype, alist, inum, jnum, dim, ntypes);
 }
-template void gpuNeighPairList(int*, int*, double*, double*, int*, int*, int*, int*, 
+template void gpuNeighPairList(int*, int*, double*, double*, int*, int*, int*, int*, int*, 
         int, int, int, int);
-template void gpuNeighPairList(int*, int*, float*, float*, int*, int*, int*, int*, 
+template void gpuNeighPairList(int*, int*, float*, float*, int*, int*, int*, int*, int*, 
         int, int, int, int);
 
 template <typename T> __global__ void gpuKernelNeighPairs(T *xij, T *x, int *aii, int *ai, 
       int *aj, int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
-      int *atomtype, int inum, int jnum, int dim)
+      int *atomtype, int *alist, int inum, int jnum, int dim)
 {        
     int ii = threadIdx.x + blockIdx.x * blockDim.x;
     while (ii < inum) {        
@@ -2438,9 +2463,9 @@ template <typename T> __global__ void gpuKernelNeighPairs(T *xij, T *x, int *aii
             int k = start + l;                                     
             aii[k]       = ii;
             ai[k]        = i;
-            aj[k]        = j;          
+            aj[k]        = alist[j];          
             ti[k]        = itype;       
-            tj[k]        = atomtype[j];        
+            tj[k]        = atomtype[alist[j]];        
             for (int d=0; d<dim; d++) 
                 xij[k*dim+d]   = x[j*dim+d] -  x[i*dim+d];  // xj - xi            
         }
@@ -2449,17 +2474,17 @@ template <typename T> __global__ void gpuKernelNeighPairs(T *xij, T *x, int *aii
 };
 template <typename T> void gpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
-      int *atomtype, int inum, int jnum, int dim)
+      int *atomtype, int *alist, int inum, int jnum, int dim)
 { 
     int blockDim = 256;
     int gridDim = (inum + blockDim - 1) / blockDim;
     gridDim = (gridDim>1024)? 1024 : gridDim;        
     gpuKernelNeighPairs<<<gridDim, blockDim>>>(xij, x, aii, ai, aj,  ti, tj, pairnum, pairlist, pairnumsum, ilist, 
-                        atomtype, inum, jnum, dim);
+                        atomtype, alist, inum, jnum, dim);
 }
-template void gpuNeighPairs(double*, double*, int*, int*, int*, int*, int*, int*, int*, int*, 
+template void gpuNeighPairs(double*, double*, int*, int*, int*, int*, int*, int*, int*, int*, int*, 
         int*, int*, int, int, int);
-template void gpuNeighPairs(float*, float*, int*, int*, int*, int*, int*, int*, int*, int*, 
+template void gpuNeighPairs(float*, float*, int*, int*, int*, int*, int*, int*, int*, int*, int*, 
         int*, int*, int, int, int);
 
 #endif
