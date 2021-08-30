@@ -55,6 +55,23 @@ typedef double dstype; //  double is default precision
 #define MDPMIN(a,b) ((a) < (b) ? (a) : (b))
 #define MDPMAX(a,b) ((a) > (b) ? (a) : (b))
 
+//#define _TIMING
+#ifdef _TIMING
+#define INIT_TIMING auto begin = std::chrono::high_resolution_clock::now(); auto end = std::chrono::high_resolution_clock::now();
+#define TIMING_START  begin = std::chrono::high_resolution_clock::now();   
+#define TIMING_END    end = std::chrono::high_resolution_clock::now();   
+#define TIMING_GET(num) common.timing[num] += std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count()/1e6;        
+#define START_TIMING {CUDA_SYNC; TIMING_START;}       
+#define END_TIMING(num) {CUDA_SYNC; TIMING_END; TIMING_GET(num)}   
+#define TIMING_GET1(num) CCal.common.timing[num] += std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count()/1e6;        
+#define END_TIMING_CCAL(num) {CUDA_SYNC; TIMING_END; TIMING_GET1(num)}   
+#else
+#define INIT_TIMING
+#define START_TIMING
+#define END_TIMING(num)
+#define END_TIMING_CCAL(num)
+#endif
+
 #define CPUFREE(x)                                                           \
 {                                                                         \
     if (x != NULL) {                                                      \
@@ -102,54 +119,54 @@ int inc1 = 1;
 dstype cublasOne[1] = {one};
 dstype cublasMinusone[1] = {minusone};
 dstype cublasZero[1] = {zero};
-
-#ifdef TIMING    
-    #define INIT_TIMING auto begin = chrono::high_resolution_clock::now(); auto end = chrono::high_resolution_clock::now();
-#else
-    #define INIT_TIMING
-#endif
-
-#ifdef TIMING
-   #define TIMING_START  begin = chrono::high_resolution_clock::now();   
-#else 
-   #define TIMING_START     
-#endif       
-
-#ifdef TIMING
-   #define TIMING_END    end = chrono::high_resolution_clock::now();   
-#else 
-   #define TIMING_END     
-#endif       
-
-#ifdef TIMING       
-   #define TIMING_GET(num) common.timing[num] += chrono::duration_cast<chrono::nanoseconds>(end-begin).count()/1e6;        
-#else 
-   #define TIMING_GET(num)  
-#endif                      
-
-#ifdef TIMING
-   #define START_TIMING {CUDA_SYNC; TIMING_START;}       
-#else 
-   #define START_TIMING
-#endif       
-
-#ifdef TIMING
-   #define END_TIMING(num) {CUDA_SYNC; TIMING_END; TIMING_GET(num)}   
-#else 
-   #define END_TIMING(num)
-#endif       
-
-#ifdef TIMING       
-   #define TIMING_GET1(num) disc.common.timing[num] += chrono::duration_cast<chrono::nanoseconds>(end-begin).count()/1e6;        
-#else 
-   #define TIMING_GET1(num)  
-#endif                      
-
-#ifdef TIMING
-   #define END_TIMING_DISC(num) {CUDA_SYNC; TIMING_END; TIMING_GET1(num)}   
-#else 
-   #define END_TIMING_DISC(num)
-#endif       
+// 
+// #ifdef TIMING    
+//     #define INIT_TIMING auto begin = chrono::high_resolution_clock::now(); auto end = chrono::high_resolution_clock::now();
+// #else
+//     #define INIT_TIMING
+// #endif
+// 
+// #ifdef TIMING
+//    #define TIMING_START  begin = chrono::high_resolution_clock::now();   
+// #else 
+//    #define TIMING_START     
+// #endif       
+// 
+// #ifdef TIMING
+//    #define TIMING_END    end = chrono::high_resolution_clock::now();   
+// #else 
+//    #define TIMING_END     
+// #endif       
+// 
+// #ifdef TIMING       
+//    #define TIMING_GET(num) common.timing[num] += chrono::duration_cast<chrono::nanoseconds>(end-begin).count()/1e6;        
+// #else 
+//    #define TIMING_GET(num)  
+// #endif                      
+// 
+// #ifdef TIMING
+//    #define START_TIMING {CUDA_SYNC; TIMING_START;}       
+// #else 
+//    #define START_TIMING
+// #endif       
+// 
+// #ifdef TIMING
+//    #define END_TIMING(num) {CUDA_SYNC; TIMING_END; TIMING_GET(num)}   
+// #else 
+//    #define END_TIMING(num)
+// #endif       
+// 
+// #ifdef TIMING       
+//    #define TIMING_GET1(num) disc.common.timing[num] += chrono::duration_cast<chrono::nanoseconds>(end-begin).count()/1e6;        
+// #else 
+//    #define TIMING_GET1(num)  
+// #endif                      
+// 
+// #ifdef TIMING
+//    #define END_TIMING_DISC(num) {CUDA_SYNC; TIMING_END; TIMING_GET1(num)}   
+// #else 
+//    #define END_TIMING_DISC(num)
+// #endif       
                 
 template <typename T> static void TemplateMalloc(T **data, int n, int backend)
 {
@@ -1096,6 +1113,7 @@ struct commonstruct {
     int save[1];
     int vrtmode=-1;    
             
+    dstype timing[100];
     dstype boxoffset[3];
     dstype scalars[32];
     dstype virial[6];

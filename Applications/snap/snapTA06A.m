@@ -1,11 +1,14 @@
 app = initializeapp();
 app.unitstyle = "metal"; % unit system
 app.pbc = [1 1 1];       % periodic boundary conditions
+app.platform = "cpu";
+nlattice = 8;  % note that # of atoms = 2 * nlattice^3 
+app.appname = "snapTA06A" + num2str(nlattice);
 
 %  neighbor list
 app.neighskin = 1.0;
 app.neighcell = 0;       % 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
-app.neighmax = 200;      % maximum number of neighbors allowed
+app.neighmax = 100;      % maximum number of neighbors allowed
 app.neighevery = 1;      % perform neighbor rebuild list for "every" iterations
 app.neighdelay = 0;      % delay neighbor rebuild
 app.neighcheck = 1;      % 0 -> neighbor rebuild by delay and every settings, 
@@ -17,7 +20,6 @@ app.atommasses = [180.88];
 app.atomcharges = [0];
 
 % lattice, region, domain
-nlattice = 4;  % note that # of atoms = 2 * nlattice^3 
 app.lattice = setlattice("bcc", 3.316);
 app.region = setregion([0 0 0], [nlattice nlattice nlattice]);
 
@@ -54,6 +56,7 @@ app.ensemblemode = "nve";
 app.time = 0.0;             % initial time
 app.dt = 0.5e-3;            % time step size
 app.ntimesteps = 100;       % # time steps
+app.globalfreq = 10;
 
 temp = 300;  seed0 = 4928459; distflag = 0; sumflag = 0; loopflag = 2; momflag = 1; rotflag = 0;
 app.createvelocity = [temp, seed0, distflag, sumflag, loopflag, momflag, rotflag];

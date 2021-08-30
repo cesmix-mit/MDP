@@ -378,13 +378,18 @@ void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, d
 //         this->RadialSphericalHarmonicEnergyForce(e, f, v, x, &coeff[common.Nempot], q, param, 0);  
 //     }   
     
-    this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, sys.q, param, nparam);              
+    INIT_TIMING;
     
+    START_TIMING;
+    this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, sys.q, param, nparam);              
+    END_TIMING(10);
+    
+    START_TIMING;
     if (common.descriptor == 1) // snap
-        ComputePairSnap(e, f, v, sna, common, sys, nb, tmp);  
+        ComputePairSnap2(e, f, v, sna, common, sys, nb, tmp);  
     else if (common.descriptor == 0) // spherical harmonic
-        this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x, sys.c, sys.q, param, 0);            
-                    
+        this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x, sys.c, sys.q, param, 0);                               
+    END_TIMING(11);
 }
 
 void CCalculation::ThermoOutput(int flag)

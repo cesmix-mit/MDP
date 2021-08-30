@@ -228,8 +228,8 @@ static void PDOT(cublasHandle_t handle, Int m, dstype* x, Int incx, dstype* y, I
         dstype *global_dot, Int backend) 
 {           
     dstype local_dot=zero;
-    INIT_TIMING;
-    START_TIMING;
+    //INIT_TIMING;
+    //START_TIMING;
 
 #ifdef USE_FLOAT    
     if (backend <= 1) 
@@ -249,9 +249,9 @@ static void PDOT(cublasHandle_t handle, Int m, dstype* x, Int incx, dstype* y, I
 #endif
     //cudaDeviceSynchronize();        
 #endif             
-    END_TIMING_DISC(94);
+    //END_TIMING_DISC(94);
     
-    START_TIMING;
+    //START_TIMING;
 #ifdef HAVE_MPI        
 #ifdef USE_FLOAT        
     MPI_Allreduce(&local_dot, global_dot, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
@@ -262,7 +262,7 @@ static void PDOT(cublasHandle_t handle, Int m, dstype* x, Int incx, dstype* y, I
     //ArrayCopy(global_dot, local_dot, 1, backend);
     *global_dot = local_dot;
 #endif    
-    END_TIMING_DISC(95);
+    //END_TIMING_DISC(95);
 }
 
 static dstype PNORM(cublasHandle_t handle, Int m, dstype* x, Int backend) 

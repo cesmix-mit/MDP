@@ -412,6 +412,9 @@ template <typename T> void gpuRadialSphericalHarmonicsSpectrum(T *c, T *ar, T *a
 template <typename T> void gpuRadialSphericalHarmonicsSpectrumDeriv(T *cd, T *ar, T *ai, 
         T *srx, T *six, T *sry, T *siy, T *srz, T *siz, T *cg, int *indk, int *indl, int *indm, 
         int *rowm, int *Nnb, int Nub, int Ncg, int Na, int L, int K, int spectrum);
+template <typename T> void gpuRadialSphericalHarmonicsSpectrumDeriv(T *cd, T *ar, T *ai, 
+        T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *cg, int *indk, int *indl, int *indm, 
+        int *rowm, int *idxi, int *Nnb, int Nub, int Ncg, int Na, int Nij, int L, int K, int spectrum);
 
 template <typename T> void gpuForceDecomposition(T *f, T *fij, int *ai, int *aj, 
         int inum, int ijnum, int Nbf);
@@ -445,10 +448,6 @@ template <typename T> void gpuAddUarraytot(T *ulisttot_r, T *ulisttot_i, T *ulis
 template <typename T> void gpuComputeBeta2(T *beta, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
-// template <typename T> void gpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
-//         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-//         int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum);
-
 template <typename T> void gpuComputeUij(T *ulist_r, T *ulist_i, T *rootpqarray, T *rij, 
         T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
         int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum);
@@ -466,34 +465,22 @@ template <typename T> void gpuComputeBi(T *blist, T *zlist_r, T *zlist_i, T *uli
         int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements, int bzero_flag, 
         int wselfall_flag, int chemflag, int inum);
 
-// template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
-//         int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
-//         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
-
 template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, 
         T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, 
         int *map, int *ai, int *aj, int *ti, int *tj, int twojmax, int idxb_max, int idxu_max, int idxz_max, 
         int nelements, int bnorm_flag, int chemflag, int ijnum);
 
-// template <typename T> void gpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
-//         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-//         int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag);
-
 template <typename T> void gpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, 
     T *rootpqarray, T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block,
     int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag);
-
-// template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
-//         int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
-//         int chemflag, int ijnum); 
 
 template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, 
         T *dulist_r, T *dulist_i, int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj,
         int nelements, int twojmax, int idxu_max, int chemflag, int ijnum); 
 
-template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
-        int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
-        int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
+// template <typename T> void gpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T *dulist_r, T *dulist_i, 
+//         int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, int *ai, int *aj, int twojmax, 
+//         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
 
 template <typename T> void gpuComputeSna(T *sna, T *blist, int *ilist, int *mask, 
         int ncoeff, int nrows, int inum, int quadraticflag);
@@ -516,12 +503,8 @@ template <typename T> void gpuComputeSnav2(T *snav, T *dblist, T *blist, T *x, i
 template <typename T> void gpuSnapTallyEnergyFull(T *eatom, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
-//template <typename T> void gpuSnapTallyForceFull(T *fatom, T *fij, int *ai, int *aj, int ijnum);
-
 template <typename T> void gpuSnapTallyForceFull(T *fatom, T *fij, int *ai, 
         int *aj, int *alist, int ijnum);
-
-//template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int ijnum);
 
 template <typename T> void gpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int *ai, int *aj, int inum, int ijnum);
 
@@ -538,6 +521,49 @@ template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T
 template <typename T> void gpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
       int *atomtype, int *alist, int inum, int jnum, int dim);
+
+// GPU-optimized snap implementation
+template <typename T> void gpuComputeSij(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, 
+        T *rootpqarray, T *rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block,  
+        int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag);                
+
+template <typename T> void gpuZeroUarraytot2(T *Stotr, T *Stoti, T wself, int *idxu_block, 
+        int *type, int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, 
+         int twojmax, int inum);
+
+template <typename T> void gpuAddUarraytot(T *Stotr, T *Stoti, T *Sr, 
+        T *Si, int *pairnum, int *pairnumsum, int *map, int *tj, 
+        int idxu_max, int nelements, int inum, int ijnum, int chemflag);
+
+template <typename T> void gpuAddUarraytot(T *Stotr, T *Stoti, T *Sr, 
+        T *Si, int *map, int *ai, int *tj, int idxu_max, int inum, int ijnum, int chemflag);
+
+template <typename T> void gpuComputeZi2(T *zlist_r, T *zlist_i, T *Stotr, T *Stoti, 
+        T *cglist, int *idxz, int *idxu_block, int *idxcg_block, int twojmax, int idxu_max, 
+        int idxz_max, int nelements, int bnorm_flag, int inum);
+
+template <typename T> void gpuComputeBi2(T *blist, T *zlist_r, T *zlist_i, T *Stotr, T *Stoti, 
+        T *bzero, int *ilist, int *type, int *map, int *idxb, int *idxu_block, int *idxz_block, 
+        int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements, int bzero_flag, 
+        int wselfall_flag, int chemflag, int inum);
+
+template <typename T> void gpuComputeBeta(T *beta, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
+        int inum, int ncoeff, int ncoeffall, int quadraticflag);
+
+template <typename T> void gpuComputeYi(T *ylist_r, T *ylist_i, T *Stotr, T *Stoti, T *cglist, 
+        T* beta, int *idxz, int *idxb_block, int *idxu_block, int *idxcg_block, int twojmax, 
+        int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int inum);
+
+template <typename T> void gpuComputeYi(T *ylist_r, T *ylist_i, T *zlist_r, T *zlist_i, 
+        T* beta, int *idxz, int *idxb_block, int twojmax, int idxb_max, int idxu_max, int idxz_max,
+        int nelements, int bnorm_flag, int inum);
+
+template <typename T> void gpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, 
+        T *dulist_r, T *dulist_i, int *idxu_block, int *map, int *ai, int *tj,
+        int twojmax, int idxu_max, int chemflag, int inum, int ijnum); 
+
+template <typename T> void gpuSnapTallyEnergyFull2(T *eatom, T *bispectrum, T *coeffelem, int *ilist, 
+        int *map, int *type, int inum, int ncoeff, int ncoeffall, int quadraticflag);
 
 #endif  
 

@@ -148,6 +148,24 @@ inline void ArraySetValue(dstype *y, dstype a, int n, int backend)
 #endif                  
 }
 
+inline void ArraySetValue(int *y, int a, int n, int backend)
+{
+    if (backend == 1)
+        cpuArraySetValue(y, a, n);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompArraySetValue(y, a, n);
+#endif                             
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipArraySetValue(y, a, n);
+#endif                                     
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuArraySetValue(y, a, n);
+#endif                  
+}
+
 inline void ArraySetValueAtIndex(dstype *y, dstype a, int n, int backend)
 {
     if (backend == 1)
@@ -201,6 +219,42 @@ inline void ArrayTranspose(dstype *A, dstype *B, int m, int n, int backend)
 #ifdef USE_CUDA
 	if (backend == 2)
 		gpuArrayTranspose(A, B, m, n);
+#endif
+}
+
+inline void ArrayPlusAtColumnIndex(dstype *A, dstype *B, int *colind, int m, int n, int backend)
+{
+	if (backend == 1)
+		cpuArrayPlusAtColumnIndex(A, B, colind, m, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompArrayPlusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipArrayPlusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuArrayPlusAtColumnIndex(A, B, colind, m, n);
+#endif
+}
+
+inline void ArrayMinusAtColumnIndex(dstype *A, dstype *B, int *colind, int m, int n, int backend)
+{
+	if (backend == 1)
+		cpuArrayMinusAtColumnIndex(A, B, colind, m, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompArrayMinusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipArrayMinusAtColumnIndex(A, B, colind, m, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuArrayMinusAtColumnIndex(A, B, colind, m, n);
 #endif
 }
 
@@ -1153,6 +1207,60 @@ inline void Box2Lamda(dstype *lambda, dstype *x, dstype *h_inv, dstype *boxlo, i
 #ifdef USE_CUDA
 	if (backend == 2)
 		gpuBox2Lamda(lambda, x, h_inv, boxlo, dim, n);
+#endif
+}
+
+inline void InsideBox(dstype *inside, dstype *x, dstype *boxlo, dstype *boxhi, dstype *lo_lamda, dstype *hi_lamda, dstype *h_inv, int triclinic, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuInsideBox(inside, x, boxlo, boxhi, lo_lamda, hi_lamda, h_inv, triclinic, dim, n);
+#endif
+}
+
+inline void MinimumImage(dstype *dp, dstype *h, int *pbc, int triclinic, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuMinimumImage(dp, h, pbc, triclinic, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompMinimumImage(dp, h, pbc, triclinic, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipMinimumImage(dp, h, pbc, triclinic, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuMinimumImage(dp, h, pbc, triclinic, dim, n);
+#endif
+}
+
+inline void Unmap(dstype *y, dstype *x, dstype *h, int *image, int triclinic, int dim, int n, int backend)
+{
+	if (backend == 1)
+		cpuUnmap(y, x, h, image, triclinic, dim, n);
+#ifdef USE_OMP
+	if (backend == 4)
+		ompUnmap(y, x, h, image, triclinic, dim, n);
+#endif
+#ifdef USE_HIP
+	if (backend == 3)
+		hipUnmap(y, x, h, image, triclinic, dim, n);
+#endif
+#ifdef USE_CUDA
+	if (backend == 2)
+		gpuUnmap(y, x, h, image, triclinic, dim, n);
 #endif
 }
 
@@ -2142,22 +2250,22 @@ inline void SetVelocityFinalIntegrate(dstype *x, dstype *v, dstype *f, dstype *m
 
 inline void InitialIntegrate(dstype *x, dstype *v, dstype *f, dstype *mass, dstype *dtarray, 
         dstype *tarray, dstype *eta_mass, dstype *eta, dstype *eta_dot, dstype *eta_dotdot, 
-        dstype *ke, dstype *tmp, dstype vlimitsq, int *type, int *ilist, int eta_mass_flag, 
+        dstype vlimitsq, int *type, int *ilist, int eta_mass_flag, 
         int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum, int backend)
 {
 	if (backend == 1)
 		cpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #ifdef USE_OMP
 	if (backend == 4)
-		ompInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		ompInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 #ifdef USE_HIP
 	if (backend == 3)
-		hipInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		hipInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 #ifdef USE_CUDA
 	if (backend == 2)
-		gpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		gpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 }
 
@@ -2519,6 +2627,31 @@ inline void RadialSphericalHarmonicsSpectrumDeriv(dstype *cd, dstype *ar, dstype
 #endif                  
 }
 
+inline void RadialSphericalHarmonicsSpectrumDeriv(dstype *cd, dstype *ar, dstype *ai, 
+        dstype *srx, dstype *six, dstype *sry, dstype *siy, dstype *srz, dstype *siz, dstype *cg, int *indk, int *indl, int *indm, 
+        int *rowm, int *idxi, int *Nnb, int Nub, int Ncg, int Na, int Nij, int L, int K, int spectrum, Int backend)
+{
+    if (backend == 1)  
+        cpuRadialSphericalHarmonicsSpectrumDeriv(cd, ar, ai, srx, six, sry, siy, srz, siz, cg, indk, 
+                indl, indm, rowm, Nnb, Nub, Ncg, Na, L, K, spectrum);                        
+#ifdef USE_OMP             
+    if (backend == 4) 
+        ompRadialSphericalHarmonicsSpectrumDeriv(cd, ar, ai, srx, six, sry, siy, srz, siz, cg, indk, 
+                indl, indm, rowm, Nnb, Nub, Ncg, Na, L, K, spectrum);                        
+#endif               
+#ifdef USE_HIP            
+    if (backend == 3) 
+        hipRadialSphericalHarmonicsSpectrumDeriv(cd, ar, ai, srx, six, sry, siy, srz, siz, cg, indk, 
+                indl, indm, rowm, idxi, Nnb, Nub, Ncg, Na, Nij, L, K, spectrum);                        
+#endif                                                                                          
+#ifdef USE_CUDA            
+    if (backend == 2)  {
+        gpuRadialSphericalHarmonicsSpectrumDeriv(cd, ar, ai, srx, six, sry, siy, srz, siz, cg, indk, 
+                indl, indm, rowm, idxi, Nnb, Nub, Ncg, Na, Nij, L, K, spectrum);                        
+    }
+#endif                  
+}
+
 inline void ForceDecomposition(dstype *f, dstype *fij, int *ai, int *aj, int inum, int ijnum, int Nbf, Int backend)
 {
     if (backend == 1)  
@@ -2677,27 +2810,55 @@ inline void InitSna(dstype *rootpqarray, dstype *cglist, dstype *factorial,
 
 inline void ComputeUij(dstype *ulist_r, dstype *ulist_i, dstype *rootpqarray, dstype *rij, 
         dstype *radelem, dstype rmin0, dstype rfac0, dstype rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int backend)
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int backend)
 {
     if (backend == 1)
         cpuComputeUij(ulist_r, ulist_i, rootpqarray, rij, radelem, rmin0, rfac0, rcutfac, idxu_block, 
-                        type, ai, aj, twojmax, idxu_max, ijnum);
+                        ai, aj, ti, tj, twojmax, idxu_max, ijnum);
 #ifdef USE_OMP  
     if (backend == 4)
         ompComputeUij(ulist_r, ulist_i, rootpqarray, rij, radelem, rmin0, rfac0, rcutfac, idxu_block, 
-                        type, ai, aj, twojmax, idxu_max, ijnum);
+                        ai, aj, ti, tj, twojmax, idxu_max, ijnum);
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
         hipComputeUij(ulist_r, ulist_i, rootpqarray, rij, radelem, rmin0, rfac0, rcutfac, idxu_block, 
-                        type, ai, aj, twojmax, idxu_max, ijnum);
+                        ai, aj, ti, tj, twojmax, idxu_max, ijnum);
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
         gpuComputeUij(ulist_r, ulist_i, rootpqarray, rij, radelem, rmin0, rfac0, rcutfac, idxu_block, 
-                        type, ai, aj, twojmax, idxu_max, ijnum);
+                        ai, aj, ti, tj, twojmax, idxu_max, ijnum);
 #endif                          
 }
+
+inline void ComputeSij(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, 
+        T *rootpqarray, T *rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block,  
+        int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switchflag, int backend)
+{
+    if (backend == 1)
+        cpuComputeSij(Sr, Si, Srx, Six, Sry, Siy, Srx, Six, rootpqarray, rij, wjelem, radelem, rmin0, 
+                rfac0, rcutfac, idxu_block, ti, tj, twojmax, idxu_max, ijnum, switchflag);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompComputeSij(Sr, Si, Srx, Six, Sry, Siy, Srx, Six, rootpqarray, rij, wjelem, radelem, rmin0, 
+                rfac0, rcutfac, idxu_block, ti, tj, twojmax, idxu_max, ijnum, switchflag);
+#endif                                
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipComputeSij(Sr, Si, Srx, Six, Sry, Siy, Srx, Six, rootpqarray, rij, wjelem, radelem, rmin0, 
+                rfac0, rcutfac, idxu_block, ti, tj, twojmax, idxu_max, ijnum, switchflag);
+#endif                                        
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuComputeSij(Sr, Si, Srx, Six, Sry, Siy, Srx, Six, rootpqarray, rij, wjelem, radelem, rmin0, 
+                rfac0, rcutfac, idxu_block, ti, tj, twojmax, idxu_max, ijnum, switchflag);
+#endif                          
+}
+
+template <typename T> void cpuZeroUarraytot2(T *Stotr, T *Stoti, T wself, int *idxu_block, 
+        int *type, int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, 
+         int twojmax, int inum);
 
 inline void ZeroUarraytot(dstype *ulisttot_r, dstype *ulisttot_i, dstype wself, int *idxu_block, int *type,
         int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, 
@@ -2722,6 +2883,30 @@ inline void ZeroUarraytot(dstype *ulisttot_r, dstype *ulisttot_i, dstype wself, 
                     map, ai, wselfall_flag, chemflag, idxu_max, nelements, twojmax, inum);
 #endif                          
 }
+
+// inline void ZeroUarraytot2(dstype *ulisttot_r, dstype *ulisttot_i, dstype wself, int *idxu_block, int *type,
+//         int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, 
+//         int twojmax, int inum, int backend)
+// {
+//     if (backend == 1)
+//         cpuZeroUarraytot(ulisttot_r, ulisttot_i, wself, idxu_block, type,
+//                     map, ai, wselfall_flag, chemflag, idxu_max, nelements, twojmax, inum);
+// #ifdef USE_OMP  
+//     if (backend == 4)
+//         ompZeroUarraytot(ulisttot_r, ulisttot_i, wself, idxu_block, type,
+//                     map, ai, wselfall_flag, chemflag, idxu_max, nelements, twojmax, inum);
+// #endif                                
+// #ifdef USE_HIP  
+//     if (backend == 3)
+//         hipZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, type,
+//                     map, ai, wselfall_flag, chemflag, idxu_max, nelements, twojmax, inum);
+// #endif                                        
+// #ifdef USE_CUDA   
+//     if (backend == 2)
+//         gpuZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, type,
+//                     map, ai, wselfall_flag, chemflag, idxu_max, nelements, twojmax, inum);
+// #endif                          
+// }
 
 inline void AddUarraytot(dstype *ulisttot_r, dstype *ulisttot_i, dstype *ulist_r, dstype *ulist_i, dstype *rij, 
         dstype *wjelem, dstype *radelem, dstype rmin0, dstype rcutfac, int *idxu_block, int *ilist, 
@@ -2749,6 +2934,33 @@ inline void AddUarraytot(dstype *ulisttot_r, dstype *ulisttot_i, dstype *ulist_r
         gpuAddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, rij, wjelem, radelem, rmin0, 
                 rcutfac, idxu_block, ilist, type, pairnum, pairnumsum, map, tj, twojmax, 
                 idxu_max, nelements, inum, switch_flag, chemflag);
+#endif                          
+}
+
+inline void AddUarraytot2(dstype *ulisttot_r, dstype *ulisttot_i, dstype *ulist_r, dstype *ulist_i, dstype *rij, 
+        dstype *wjelem, dstype *radelem, dstype rmin0, dstype rcutfac, int *idxu_block, int *ilist, 
+        int *type, int *pairnum, int *pairnumsum, int *map, int *tj, int twojmax, int idxu_max, 
+        int nelements, int inum, int ijnum, int switch_flag, int chemflag, int backend)
+{
+    if (backend == 1)
+        cpuAddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, rij, wjelem, radelem, rmin0, 
+                rcutfac, idxu_block, ilist, type, pairnum, pairnumsum, map, tj, twojmax, 
+                idxu_max, nelements, inum, switch_flag, chemflag);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompAddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, rij, wjelem, radelem, rmin0, 
+                rcutfac, idxu_block, ilist, type, pairnum, pairnumsum, map, tj, twojmax, 
+                idxu_max, nelements, inum, switch_flag, chemflag);
+#endif                                
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipAddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, pairnum, pairnumsum, map, tj,                 
+                idxu_max, nelements, inum, ijnum, chemflag);
+#endif                                        
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuAddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, pairnum, pairnumsum, map, tj,                 
+                idxu_max, nelements, inum, ijnum, chemflag);        
 #endif                          
 }
 
@@ -2854,83 +3066,83 @@ inline void ComputeBi(dstype *blist, dstype *zlist_r, dstype *zlist_i, dstype *u
 }
 
 inline void ComputeDbidrj(dstype *dblist, dstype *zlist_r, dstype *zlist_i, dstype *dulist_r,
-        dstype *dulist_i, int *idxb, int *idxu_block, int *idxz_block, int *type, int *map, 
-        int *ai, int *aj, int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements,
+        dstype *dulist_i, int *idxb, int *idxu_block, int *idxz_block, int *map, 
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements,
         int bnorm_flag, int chemflag, int ijnum, int backend)
 {
     if (backend == 1)
         cpuComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
-                idxz_block, type, map, ai, aj, twojmax, idxb_max, idxu_max, idxz_max, 
+                idxz_block, map, ai, aj, ti, tj, twojmax, idxb_max, idxu_max, idxz_max, 
                 nelements, bnorm_flag, chemflag, ijnum);
 #ifdef USE_OMP  
     if (backend == 4)
         ompComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
-                idxz_block, type, map, ai, aj, twojmax, idxb_max, idxu_max, idxz_max, 
+                idxz_block, map, ai, aj, ti, tj, twojmax, idxb_max, idxu_max, idxz_max, 
                 nelements, bnorm_flag, chemflag, ijnum);
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
         hipComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
-                idxz_block, type, map, ai, aj, twojmax, idxb_max, idxu_max, idxz_max, 
+                idxz_block, map, ai, aj, ti, tj, twojmax, idxb_max, idxu_max, idxz_max, 
                 nelements, bnorm_flag, chemflag, ijnum);
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
         gpuComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
-                idxz_block, type, map, ai, aj, twojmax, idxb_max, idxu_max, idxz_max, 
+                idxz_block, map, ai, aj, ti, tj, twojmax, idxb_max, idxu_max, idxz_max, 
                 nelements, bnorm_flag, chemflag, ijnum);
 #endif                          
 }
 
 inline void ComputeDuijdrj(dstype *dulist_r, dstype *dulist_i, dstype *ulist_r, dstype *ulist_i, dstype *rootpqarray, 
         dstype* rij, dstype *wjelem, dstype *radelem, dstype rmin0, dstype rfac0, dstype rcutfac, int *idxu_block, 
-        int *type, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag, int backend)
+        int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag, int backend)
 {
     if (backend == 1)
         cpuComputeDuijdrj(dulist_r, dulist_i, ulist_r, ulist_i, rootpqarray, 
-          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, type, 
-          ai, aj, twojmax, idxu_max, ijnum, switch_flag); 
+          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, 
+          ai, aj, ti, tj, twojmax, idxu_max, ijnum, switch_flag); 
 #ifdef USE_OMP  
     if (backend == 4)
         ompComputeDuijdrj(dulist_r, dulist_i, ulist_r, ulist_i, rootpqarray, 
-          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, type, 
-          ai, aj, twojmax, idxu_max, ijnum, switch_flag); 
+          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, 
+          ai, aj, ti, tj, twojmax, idxu_max, ijnum, switch_flag); 
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
         hipComputeDuijdrj(dulist_r, dulist_i, ulist_r, ulist_i, rootpqarray, 
-          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, type, 
-          ai, aj, twojmax, idxu_max, ijnum, switch_flag); 
+          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, 
+          ai, aj, ti, tj, twojmax, idxu_max, ijnum, switch_flag); 
 #endif                                        
 #ifdef USE_CUDA                
     if (backend == 2)
         gpuComputeDuijdrj(dulist_r, dulist_i, ulist_r, ulist_i, rootpqarray, 
-          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, type, 
-          ai, aj, twojmax, idxu_max, ijnum, switch_flag); 
+          rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, 
+          ai, aj, ti, tj, twojmax, idxu_max, ijnum, switch_flag); 
 #endif                          
 }
 
 inline void ComputeDeidrj(dstype *dedr, dstype *ylist_r, dstype *ylist_i, dstype *dulist_r, dstype *dulist_i,         
-        int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
+        int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj, int nelements, int twojmax, int idxu_max, 
         int chemflag, int ijnum, int backend)
 {
     if (backend == 1)
-        cpuComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, type, map, 
-                ai, aj, nelements, twojmax, idxu_max, chemflag, ijnum); 
+        cpuComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, map,
+                ai, aj, ti, tj, nelements, twojmax, idxu_max, chemflag, ijnum); 
 #ifdef USE_OMP  
     if (backend == 4)
-        ompComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, type, map, 
-                ai, aj, nelements, twojmax, idxu_max, chemflag, ijnum); 
+        ompComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, map,
+                ai, aj, ti, tj, nelements, twojmax, idxu_max, chemflag, ijnum); 
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
-        hipComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, type, map, 
-                ai, aj, nelements, twojmax, idxu_max, chemflag, ijnum); 
+        hipComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, map, 
+                ai, aj, ti, tj, nelements, twojmax, idxu_max, chemflag, ijnum); 
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
-        gpuComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, type, map, 
-                ai, aj, nelements, twojmax, idxu_max, chemflag, ijnum); 
+        gpuComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, map, 
+                ai, aj, ti, tj, nelements, twojmax, idxu_max, chemflag, ijnum); 
 #endif                          
 }
 
@@ -3087,40 +3299,40 @@ inline void SnapTallyEnergyFull(dstype *eatom, dstype *bispectrum, dstype *coeff
 #endif                          
 }
 
-inline void SnapTallyForceFull(dstype *fatom, dstype *fij, int *ai, int *aj, int ijnum, int backend)
+inline void SnapTallyForceFull(dstype *fatom, dstype *fij, int *ai, int *aj,  int *alist, int ijnum, int backend)
 {
     if (backend == 1)
-        cpuSnapTallyForceFull(fatom, fij, ai, aj, ijnum);
+        cpuSnapTallyForceFull(fatom, fij, ai, aj, alist, ijnum);
 #ifdef USE_OMP  
     if (backend == 4)
-        ompSnapTallyForceFull(fatom, fij, ai, aj, ijnum);
+        ompSnapTallyForceFull(fatom, fij, ai, aj, alist, ijnum);
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
-        hipSnapTallyForceFull(fatom, fij, ai, aj, ijnum);
+        hipSnapTallyForceFull(fatom, fij, ai, aj, alist, ijnum);
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
-        gpuSnapTallyForceFull(fatom, fij, ai, aj, ijnum);
+        gpuSnapTallyForceFull(fatom, fij, ai, aj, alist, ijnum);
 #endif                          
 }
 
 inline void SnapTallyVirialFull(dstype *vatom, dstype *fij, dstype *rij, 
-        int *ai, int *aj, int ijnum, int backend)
+        int *ai, int *aj, int inum, int ijnum, int backend)
 {
     if (backend == 1)
-        cpuSnapTallyVirialFull(vatom, fij, rij, ai, aj, ijnum);
+        cpuSnapTallyVirialFull(vatom, fij, rij, ai, aj, inum, ijnum);
 #ifdef USE_OMP  
     if (backend == 4)
-        ompSnapTallyVirialFull(vatom, fij, rij, ai, aj, ijnum);
+        ompSnapTallyVirialFull(vatom, fij, rij, ai, aj, inum, ijnum);
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
-        hipSnapTallyVirialFull(vatom, fij, rij, ai, aj, ijnum);
+        hipSnapTallyVirialFull(vatom, fij, rij, ai, aj, inum, ijnum);
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
-        gpuSnapTallyVirialFull(vatom, fij, rij, ai, aj, ijnum);
+        gpuSnapTallyVirialFull(vatom, fij, rij, ai, aj, inum, ijnum);
 #endif                          
 }
 
@@ -3172,25 +3384,25 @@ inline void NeighborPairList(int *pairnum, int *pairlist, dstype *x, dstype *rcu
         
 inline void NeighborPairs(dstype *xij, dstype *x, int *aii, int *ai, int *aj,  
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
-      int *atomtype, int inum, int jnum, int dim, int backend)
+      int *atomtype, int *alist, int inum, int jnum, int dim, int backend)
 {
     if (backend == 1)
         cpuNeighPairs(xij, x, aii, ai, aj,  ti, tj, pairnum, pairlist, pairnumsum, ilist, 
-                        atomtype, inum, jnum, dim);
+                        atomtype, alist, inum, jnum, dim);
 #ifdef USE_OMP  
     if (backend == 4)
         ompNeighPairs(xij, x, aii, ai, aj,  ti, tj, pairnum, pairlist, pairnumsum, ilist, 
-                        atomtype, inum, jnum, dim);
+                        atomtype, alist, inum, jnum, dim);
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
         hipNeighPairs(xij, x, aii, ai, aj,  ti, tj, pairnum, pairlist, pairnumsum, ilist, 
-                        atomtype, inum, jnum, dim);
+                        atomtype, alist, inum, jnum, dim);
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
         gpuNeighPairs(xij, x, aii, ai, aj,  ti, tj, pairnum, pairlist, pairnumsum, ilist, 
-                        atomtype, inum, jnum, dim);
+                        atomtype, alist, inum, jnum, dim);
 #endif                          
 }
 

@@ -45,10 +45,13 @@ void CRegression::LinearRegression(CCalculation &CCal)
     ArraySetValue(A, 0.0, M*M, backend);  
     ArraySetValue(b, 0.0, M, backend);  
             
+    INIT_TIMING;
     if (dftdata == 1) { // energies only
         for (int i=0; i<nc; i++) { // loop over each configuration     
             int ci = CCal.common.traininglist[i]; // configuration ci
             cout<<"Configuration (energies) # "<<ci+1<<": "<<endl;
+            
+            ArraySetValue(CCal.common.timing, 0.0, 10, 1);
             
             // get atom positions for configuration ci   
             CCal.GetPositions(x, ci); 
@@ -56,26 +59,33 @@ void CRegression::LinearRegression(CCalculation &CCal)
             // get atom types for configuration ci
             CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
 
+            START_TIMING;
             gettimeofday(&tv1, NULL); 
             // form neighbor list
             CCal.NeighborList(x);
 
             // spherical harmonic descriptors
             ArraySetValue(d, 0.0, M, backend);  
+            END_TIMING_CCAL(0);
             gettimeofday(&tv2, NULL);            
             printf("\nExecution time (in millisec) for constructing the neighbor list:  %g\n", 
                 (double)(tv2.tv_usec-tv1.tv_usec)/1000 + 
                 (double)(tv2.tv_sec -tv1.tv_sec )*1000);
-
+            printf("\nExecution time (in millisec) for constructing the neighbor list:  %g\n", CCal.common.timing[0]);
+                    
+            START_TIMING;
             gettimeofday(&tv1, NULL); 
             // compute descriptors 
             //CCal.RadialSphericalHarmonicDescriptors(d, x, q, param, 0);
             CCal.PotentialDescriptors(d, x, q, param, CCal.common.nmu);
+            END_TIMING_CCAL(1);
             gettimeofday(&tv2, NULL);          
             printf("\nExecution time (in millisec) for computing the potential descrtiptors:  %g\n", 
                 (double)(tv2.tv_usec-tv1.tv_usec)/1000 + 
                 (double)(tv2.tv_sec -tv1.tv_sec )*1000);
-                        
+            printf("\nExecution time (in millisec) for computing the potential descrtiptors:  %g\n", CCal.common.timing[1]);
+            
+            START_TIMING;
             gettimeofday(&tv1, NULL); 
             // apply a weight to the descriptor vector             
             cpuArrayMultiplyScalar(d, CCal.config.we[ci], M);                                
@@ -86,10 +96,12 @@ void CRegression::LinearRegression(CCalculation &CCal)
             // form the regression matrix A = A + d * d^T
             cpuKron(A, d, d, M, M);            
             
-            gettimeofday(&tv2, NULL);            
+            gettimeofday(&tv2, NULL);           
+            END_TIMING_CCAL(2);
             printf("\nExecution time (in millisec) for forming the linear system:  %g\n", 
                 (double)(tv2.tv_usec-tv1.tv_usec)/1000 + 
-                (double)(tv2.tv_sec -tv1.tv_sec )*1000);            
+                (double)(tv2.tv_sec -tv1.tv_sec )*1000);       
+            printf("\nExecution time (in millisec) for forming the linear system:  %g\n", CCal.common.timing[2]);
         }        
     }
     else if (dftdata == 2) { // forces only
@@ -149,6 +161,7 @@ void CRegression::LinearRegression(CCalculation &CCal)
             int ci = CCal.common.traininglist[i]; // configuration ci       
             cout<<"Configuration (energies + forces) # "<<ci+1<<": "<<endl;
             
+            ArraySetValue(CCal.common.timing, 0.0, 100, 1);            
             Int N = dim*CCal.common.inum;
             
             // get atom positions for configuration ci   
@@ -160,6 +173,7 @@ void CRegression::LinearRegression(CCalculation &CCal)
             // get atom types for configuration ci
             CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
  
+            START_TIMING;
             gettimeofday(&tv1, NULL); 
             // form neighbor list
             CCal.NeighborList(x);
@@ -167,26 +181,31 @@ void CRegression::LinearRegression(CCalculation &CCal)
             // spherical harmonic descriptors
             ArraySetValue(d, 0.0, M, backend);  
             ArraySetValue(dd, 0.0, N*M, backend);  
+            END_TIMING_CCAL(0);
             gettimeofday(&tv2, NULL);            
             printf("\nExecution time (in millisec) for constructing the neighbor list:  %g\n", 
                 (double)(tv2.tv_usec-tv1.tv_usec)/1000 + 
                 (double)(tv2.tv_sec -tv1.tv_sec )*1000);
+            printf("\nExecution time (in millisec) for constructing the neighbor list:  %g\n", CCal.common.timing[0]);
             
+            START_TIMING;
             gettimeofday(&tv1, NULL); 
             // compute descriptors             
             //CCal.RadialSphericalHarmonicDescriptors(d, dd, x, q, param, 0);
             CCal.PotentialDescriptors(d, dd, x, q, param, CCal.common.nmu);
+            END_TIMING_CCAL(1);
             gettimeofday(&tv2, NULL);            
             printf("\nExecution time (in millisec) for computing the potential descrtiptors:  %g\n", 
                 (double)(tv2.tv_usec-tv1.tv_usec)/1000 + 
                 (double)(tv2.tv_sec -tv1.tv_sec )*1000);
-                        
+            printf("\nExecution time (in millisec) for computing the potential descrtiptors:  %g\n", CCal.common.timing[1]);
 //             string fn = (backend == 2) ? "dgpu.bin" : "dcpu.bin";
 //             writearray2file(fn, d, M, backend); 
 //             fn = (backend == 2) ? "ddgpu.bin" : "ddcpu.bin";
 //             writearray2file(fn, dd, N*M, backend);
 //             error("here");
             
+            START_TIMING;
             gettimeofday(&tv1, NULL); 
             // apply a weight to the descriptor vectors      
             ArrayMultiplyScalar(d, CCal.config.we[ci], M, backend);
@@ -205,11 +224,14 @@ void CRegression::LinearRegression(CCalculation &CCal)
             
             // form the regression matrix A = A + dd^T * dd
             PGEMTM(CCal.common.cublasHandle, M, M, N, &one, dd, N, dd, N, &one, A, M, backend);                                     
+            END_TIMING_CCAL(2);
             gettimeofday(&tv2, NULL);            
             printf("\nExecution time (in millisec) for forming the linear system:  %g\n", 
                 (double)(tv2.tv_usec-tv1.tv_usec)/1000 + 
                 (double)(tv2.tv_sec -tv1.tv_sec )*1000);
+            printf("\nExecution time (in millisec) for forming the linear system:  %g\n", CCal.common.timing[2]);
            
+            printArray2D(&CCal.common.timing[50], 1, 7, 1);
 //             printArray2D(b, 1, M, backend);
 //             printArray2D(A, M, M, backend);
 //             error("here");            

@@ -21,6 +21,7 @@
 #include "gpuSphericalHarmonicsBessel.cu"
 #include "gpuRadialSphericalHarmonics.cu"              
 #include "gpuSnap.cu"  
+#include "gpuSnap2.cu"  
 #include "gpuDomain.cu"
 #include "gpuComputes.cu"
 #include "gpuVelocityIntegration.cu"

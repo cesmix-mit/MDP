@@ -43,9 +43,9 @@
 #include <mpi.h>
 #endif
 
-#ifdef TIMING
+//#ifdef _TIMING
 #include <chrono>
-#endif
+//#endif
 
 using std::cout;
 using std::endl;
@@ -134,21 +134,21 @@ int main(int argc, char** argv)
           
     if (backend==2) {
         if (mpirank==0) 
-            printf("Run MDP with %d MPI processes on GPU platform...\n", mpiprocs);
+            printf("MDP runs with %d MPI processes on GPU platform...\n", mpiprocs);
     }
     else {
         if (mpirank==0) 
-            printf("Run MDP with %d MPI processes on CPU platform...\n", mpiprocs);
+            printf("MDP runs with %d MPI processes on CPU platform...\n", mpiprocs);
     }
     
 #ifdef HAVE_CUDA            
     int device;    
-    //cudaSetDevice(shmrank); 
-    gpuDeviceInfo(shmrank);
+    cudaSetDevice(shmrank); 
+    //gpuDeviceInfo(shmrank);
     cudaGetDevice( &device );
     size_t available, total;
     cudaMemGetInfo(&available, &total);
-    cout<<"Available GPU Memory: "<<available<<" Total GPU Memory: "<<total<<endl;
+    //cout<<"Available GPU Memory: "<<available<<" Total GPU Memory: "<<total<<endl;
 #endif                           
     
     Int ngpus = 0;
@@ -159,10 +159,10 @@ int main(int argc, char** argv)
     // Read input files and set up Calculation class
     CCalculation CCal(filein, fileout, mpiprocs, mpirank, backend);       
     
+    // set up configuration and allocate memory
+    CCal.SetConfiguration(0);
+    
     if (CCal.common.runMD) { 
-        // set up configuration and allocate memory
-        CCal.SetConfiguration(0);
-
         // construct integration object
         CIntegration CInt(CCal);
 

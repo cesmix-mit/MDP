@@ -16,11 +16,16 @@ CIntegration::CIntegration(CCalculation &CCal)
 
 void CIntegration::VelocityVerlet(CCalculation &CCal)
 {    
+  INIT_TIMING;
+  
   // store atom positions at the beginning of the time loop  
   dstype *xstart = CCal.tmp.tmpmem;
   
   this->IntegrationSetup(CCal);
-                  
+  
+  
+  auto starttime = std::chrono::high_resolution_clock::now();   
+  
   int ntimesteps = CCal.common.ntimesteps; // # timesteps in this simulation 
   for (int istep = 0; istep < ntimesteps; istep++) {    
     CCal.common.currentstep += 1; // current time step    
@@ -35,39 +40,76 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     ArrayCopy(xstart, CCal.sys.x, dim*inum, backend);
     
     // initial integration of the velocity vertlet method: update velocity and position    
+    START_TIMING;
     this->InitialIntegration(CCal);
+    END_TIMING_CCAL(0);    
     
     // impose position/velocity constraints and periodic boundary conditions
+    START_TIMING;
     this->PostInitialIntegration(CCal);
+    END_TIMING_CCAL(1);    
     
     // redistribute atoms among processors to balance computation load
+    START_TIMING;
     this->DynamicLoadBalancing(CCal);
+    END_TIMING_CCAL(2);    
     
     // exchange data between processors 
+    START_TIMING;
     this->ProcessorsCommunication(CCal);
+    END_TIMING_CCAL(3);    
     
     // rebuild neighbor list if necessary
+    START_TIMING;
     this->NeighborListRebuild(CCal, xstart, istep);
-                    
+    END_TIMING_CCAL(4);    
+    
     // calculate atomic forces
+    START_TIMING;
     CCal.PotentialEnergyForceVirial(CCal.sys.e, CCal.sys.f, CCal.sys.vatom, CCal.sys.x, CCal.app.muep, CCal.common.nmu);                         
-        
+    END_TIMING_CCAL(5);    
+    
     // // impose force constraints if any
+    START_TIMING;
     this->PostForceComputation(CCal);
+    END_TIMING_CCAL(6);    
         
     // final integration of the velocity vertlet method: update velocity after computing force    
+    START_TIMING;
     this->FinalIntegration(CCal);    
+    END_TIMING_CCAL(7);    
                 
     // fix velocity and rescale velocity if necessary to control the temperature
+    START_TIMING;
     this->PostFinalIntegration(CCal);        
+    END_TIMING_CCAL(8);    
     
     // compute output, print on screen, and save it into binary files
+    START_TIMING;
     this->TimestepCompletion(CCal);                   
+    END_TIMING_CCAL(9);        
   }    
+  
+  CUDA_SYNC;
+  auto endtime = std::chrono::high_resolution_clock::now();
+  dstype time = std::chrono::duration_cast<std::chrono::nanoseconds>(endtime-starttime).count()/1e9;        
+  if (CCal.common.mpiRank==0) {
+    printf("\n\tTotal number of atoms = %i\n", CCal.common.natoms);
+    printf("\tTotal simulation time = %g seconds\n", time);
+    printf("\tSimulation time per timestep = %g seconds\n", time/ntimesteps);
+  }  
+  
+#ifdef _TIMING  
+  if (CCal.common.mpiRank==0) {
+	printf("Timing MDP for peformance improvement: \n");
+    printArray2D(CCal.common.timing, 10, 10, 1);    
+  }
+#endif        
 }
 
 void CIntegration::IntegrationSetup(CCalculation &CCal)
 {
+    ArraySetValue(CCal.common.timing, 0.0, 100, 1);
     CCal.NeighborList(CCal.sys.x);
     //CCal.nb.printout(CCal.common.inum, CCal.common.gnum, CCal.common.neighmax, CCal.common.backend);    
     CCal.PotentialEnergyForceVirial(CCal.sys.e, CCal.sys.f, CCal.sys.vatom, CCal.sys.x, CCal.app.muep, CCal.common.nmu);                         
@@ -431,8 +473,11 @@ void CIntegration::PostFinalIntegration(CCalculation &CCal)
 
 void CIntegration::TimestepCompletion(CCalculation &CCal)
 {           
-    CCal.ThermoOutput(0);            
-    printf("\t%i  \t %g   \t\t  %g   \t     %g   \t  %g\n", CCal.common.currentstep, CCal.common.temp, CCal.common.pe, CCal.common.ke+CCal.common.pe, CCal.common.pres);                        
+    if (CCal.common.currentstep % CCal.common.globalfreq == 0) {
+        CCal.ThermoOutput(0);            
+        if (CCal.common.mpiRank==0)
+            printf("\t%i  \t %g   \t  %g   \t   %g   \t    %g\n", CCal.common.currentstep, CCal.common.temp, CCal.common.pe, CCal.common.ke+CCal.common.pe, CCal.common.pres);                        
+    }
 }
         
 #endif        

@@ -531,6 +531,48 @@ template <typename T> void cpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *a
       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
       int *atomtype, int *alist, int inum, int jnum, int dim);
 
+template <typename T> void cpuComputeSij(T *Sr, T *Si, T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, 
+        T *rootpqarray, T *rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block,  
+        int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag);                
+
+template <typename T> void cpuZeroUarraytot2(T *Stotr, T *Stoti, T wself, int *idxu_block, 
+        int *type, int *map, int *ai, int wselfall_flag, int chemflag, int idxu_max, int nelements, 
+         int twojmax, int inum);
+
+template <typename T> void cpuAddUarraytot(T *Stotr, T *Stoti, T *Sr, 
+        T *Si, int *pairnum, int *pairnumsum, int *map, int *tj, 
+        int idxu_max, int nelements, int inum, int ijnum, int chemflag);
+
+template <typename T> void cpuAddUarraytot(T *Stotr, T *Stoti, T *Sr, 
+        T *Si, int *map, int *ai, int *tj, int idxu_max, int inum, int ijnum, int chemflag);
+
+template <typename T> void cpuComputeZi2(T *zlist_r, T *zlist_i, T *Stotr, T *Stoti, 
+        T *cglist, int *idxz, int *idxu_block, int *idxcg_block, int twojmax, int idxu_max, 
+        int idxz_max, int nelements, int bnorm_flag, int inum);
+
+template <typename T> void cpuComputeBi2(T *blist, T *zlist_r, T *zlist_i, T *Stotr, T *Stoti, 
+        T *bzero, int *ilist, int *type, int *map, int *idxb, int *idxu_block, int *idxz_block, 
+        int twojmax, int idxb_max, int idxu_max, int idxz_max, int nelements, int bzero_flag, 
+        int wselfall_flag, int chemflag, int inum);
+
+template <typename T> void cpuComputeBeta(T *beta, T *bispectrum, T *coeffelem, int *ilist, int *map, int *type, 
+        int inum, int ncoeff, int ncoeffall, int quadraticflag);
+
+template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *Stotr, T *Stoti, T *cglist, 
+        T* beta, int *idxz, int *idxb_block, int *idxu_block, int *idxcg_block, int twojmax, 
+        int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int inum);
+
+template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *zlist_r, T *zlist_i, 
+        T* beta, int *idxz, int *idxb_block, int twojmax, int idxb_max, int idxu_max, int idxz_max,
+        int nelements, int bnorm_flag, int inum);
+
+template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, 
+        T *dulist_r, T *dulist_i, int *idxu_block, int *map, int *ai, int *tj,
+        int twojmax, int idxu_max, int chemflag, int inum, int ijnum); 
+
+template <typename T> void cpuSnapTallyEnergyFull2(T *eatom, T *bispectrum, T *coeffelem, int *ilist, 
+        int *map, int *type, int inum, int ncoeff, int ncoeffall, int quadraticflag);
+
 //*************************** Lattice, Region, Domain ***********************************************//
 template <typename T> int cpuLattice(T *basis, T *primitive, T *rotaterow, T *priminv, T *rotatecol, T *origin, 
         T *spacing, T *a1, T *a2, T *a3, T &scale, int *orientx, int *orienty, int *orientz, 

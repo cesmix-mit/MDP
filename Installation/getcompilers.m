@@ -43,7 +43,7 @@ if (nargin<2) || (isempty(char(gpucompiler))==1)
     end    
     [~,foundnvcc] = findexec("nvcc");
     if (foundgpu==0) || (foundnvcc==0)
-        warning("Because MDP could not find CUDA Toolkit on your system, you will not be able to run MDP on Nvidia GPUs.");
+        disp("CUDA Toolkit is not found on your system. MDP's CUDA code will not be compiled.");
         gpucompiler = ""; 
         gpumacros = "";
         gpuflags = "";
@@ -62,7 +62,7 @@ else
         end    
         [~,foundnvcc] = findexec("nvcc");
         if (foundgpu==0) || (foundnvcc==0)
-            warning("Because MDP could not find CUDA Toolkit on your system, you will not be able to run MDP on Nvidia GPUs.");
+            disp("CUDA Toolkit is not found on your system. MDP's CUDA code will not be compiled.");   
             gpucompiler = ""; 
             gpumacros = "";
             gpuflags = "";

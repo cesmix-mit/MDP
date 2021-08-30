@@ -60,8 +60,8 @@ app.dt = 0.0;         % time step
 app.rcutsqmax = 0.0;  % square of maximum cutoff radius
 app.boxoffset = [0.0 0.0 0.0]; % offset for simulation box to account for periodic boundary conditions
 
-app.globalfreq = 1;       % frequency to print and save default global outputs (pe, ke, ce, te, temp, press)
-app.peratomfreq = 1;     % frequency to save default peratom outputs (id, t, x, f)
+app.globalfreq = 1;       % frequency to print and save default global quantities (pe, ke, ce, te, temp, press)
+app.peratomfreq = 1;     % frequency to save default peratom quantities (id, t, x, f)
 app.globaloutputs = "";    % additional global outputs (stresses, com, vcm)
 app.peratomoutputs = "";   % additional peratom outputs (velocity, mass, virial, image)
 

@@ -11,12 +11,23 @@ if (nargin<1) || (isempty(char(cpucompiler))==1)
         end
     end    
     if found==0
-        error("MDP could not find C++ compiler. Please set app.cpucompiler to the path of a C++ compiler.");
+        error("MDP could not find C++ compiler. Please set cpucompiler to the path of a C++ compiler.");
     end
 else
     [cpucompiler,found] = findexec(cpucompiler);
     if found==0
-        error("MDP could not find C++ compiler. Please install it or set app.cpucompiler to the path of a C++ compiler.");
+        [clang,found] = findexec("clang++");
+        if found==1
+            cpucompiler = clang;
+        else
+            [gcc,found] = findexec("g++");
+            if found==1
+                cpucompiler = gcc;
+            end
+        end    
+        if found==0
+            error("MDP could not find a C++ compiler. Please install it and set cpucompiler to the path of a C++ compiler.");
+        end
     end
 end
 
@@ -32,7 +43,7 @@ if (nargin<2) || (isempty(char(gpucompiler))==1)
     end    
     [~,foundnvcc] = findexec("nvcc");
     if (foundgpu==0) || (foundnvcc==0)
-        warning("Because MDP could not find CUDA Toolkit on your system, you will not be able to run MDP on Nvidia GPUs.");
+        warning("CUDA Toolkit on your system, you will not be able to run MDP on Nvidia GPUs.");
         gpucompiler = ""; 
         gpumacros = "";
         gpuflags = "";
@@ -40,7 +51,22 @@ if (nargin<2) || (isempty(char(gpucompiler))==1)
 else
     [gpucompiler,found] = findexec(gpucompiler);
     if found==0
-        warning("MDP could not find CUDA compiler.");
+        [clang,foundgpu] = findexec("clang++");
+        if foundgpu==1
+            gpucompiler = clang;
+        else
+            [nvcc,foundgpu] = findexec("nvcc");
+            if foundgpu==1
+                gpucompiler = nvcc;
+            end
+        end    
+        [~,foundnvcc] = findexec("nvcc");
+        if (foundgpu==0) || (foundnvcc==0)
+            warning("Because MDP could not find CUDA Toolkit on your system, you will not be able to run MDP on Nvidia GPUs.");
+            gpucompiler = ""; 
+            gpumacros = "";
+            gpuflags = "";
+        end        
     end    
 end
 

@@ -98,6 +98,7 @@ template <typename T> void cross3(const T *v1, const T *v2, T *ans)
 #include "cpuSphericalHarmonicsBessel.cpp"
 #include "cpuRadialSphericalHarmonics.cpp"
 #include "cpuSnap.cpp"  
+#include "cpuSnap2.cpp"  
 #include "cpuRandom.cpp"
 #include "cpuDomain.cpp"
 #include "cpuLattice.cpp"

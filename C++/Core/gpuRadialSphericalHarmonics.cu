@@ -309,7 +309,7 @@ template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsPowerSpec
     // Compute partial derivatives of the power spectrum components
     int tid = threadIdx.x + blockIdx.x * blockDim.x;   
     int N = Nnb[Na]-Nnb[0]; // total number of neighbors    
-    while (tid < N3) { //N3 = K*(L+1)^2*Na,  N2 = K*(L+1)^2
+    while (tid < N3) { //N3 = K2*(L+1)*Na,  N2 = K2*(L+1), N1 = K2
         int n = tid%Na;     // [1,Na]           
         int q = (tid-n)/Na; // [1, K2*(L+1)] 
         int l = q%(L+1);    // [1, (L+1)] 
@@ -351,6 +351,52 @@ template void gpuRadialSphericalHarmonicsPowerSpectrumDeriv2(double*, double*, d
         double*, double*, double*, double*, double*, int*, int*, int, int, int);
 template void gpuRadialSphericalHarmonicsPowerSpectrumDeriv2(float*, float*, float*, float*,  
         float*, float*, float*, float*, float*, int*, int*, int, int, int);
+
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsPowerSpectrumDeriv3(T *pd, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *idxi, int Na, int Nij, int L, int K, int K2, int N3)
+{       
+    // Compute partial derivatives of the power spectrum components
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;   
+    while (tid < N3) { //N3 = K2*(L+1)*Nij,  N2 = K2*(L+1), N1 = K2
+        int ij = tid%Nij;     // [1,Nij]           
+        int q = (tid-ij)/Nij; // [1, K2*(L+1)] 
+        int l = q%(L+1);    // [1, (L+1)] 
+        int k = (q-l)/(L+1); // [1, K*(K+1)/2]                           
+        int k2 = indk[k];
+        int k1 = indk[K2+k];    
+        int n = idxi[ij];
+        int j = (k*(L+1) + l)*Nij + ij; // index of px, py, pz
+        pd[3*j+0] = (T) 0.0;
+        pd[3*j+1] = (T) 0.0;
+        pd[3*j+2] = (T) 0.0;
+        for (int m=0; m<(2*l+1); m++) {
+            int i1 = ((l*l + m)*K + k1)*Na + n; // index of ar and ai 
+            int j1 = ((l*l + m)*K + k2)*Na + n; // index of ar and ai                                         
+            int i2 = ((l*l + m)*K + k1)*Nij + ij;  // index of arx and aix     
+            int j2 = ((l*l + m)*K + k2)*Nij + ij;  // index of arx and aix                                                    
+            pd[3*j+0] += ar[i1]*arx[j2] + arx[i2]*ar[j1] + ai[i1]*aix[j2] + aix[i2]*ai[j1];
+            pd[3*j+1] += ar[i1]*ary[j2] + ary[i2]*ar[j1] + ai[i1]*aiy[j2] + aiy[i2]*ai[j1];
+            pd[3*j+2] += ar[i1]*arz[j2] + arz[i2]*ar[j1] + ai[i1]*aiz[j2] + aiz[i2]*ai[j1];                    
+        }                
+        tid += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuRadialSphericalHarmonicsPowerSpectrumDeriv3(T *pd, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, int *indk, int *idxi, int Na, int Nij, int L, int K)
+{
+    int K2 = K*(K+1)/2;
+    int N2 = K2*(L+1);
+    int N3 = N2*Nij;                        
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsPowerSpectrumDeriv3<<<gridDim, blockDim>>>(pd, ar, ai, 
+            arx, aix, ary, aiy, arz, aiz, indk, idxi, Na, Nij, L, K, K2, N3);            
+}
+template void gpuRadialSphericalHarmonicsPowerSpectrumDeriv3(double*, double*, double*, double*, 
+        double*, double*, double*, double*, double*, int*, int*, int, int, int, int);
+template void gpuRadialSphericalHarmonicsPowerSpectrumDeriv3(float*, float*, float*, float*,  
+        float*, float*, float*, float*, float*, int*, int*, int, int, int, int);
 
 template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBispectrum(T *b, T *ar, T *ai, T *cg, int *indk, 
         int *indl, int *indm, int *rowm, int Nub, int Ncg, int Na, int L, int K, int K2, int N3)
@@ -679,6 +725,110 @@ template void gpuRadialSphericalHarmonicsBispectrumDeriv2(double*, double*, doub
 template void gpuRadialSphericalHarmonicsBispectrumDeriv2(float*, float*, float*, float*,  
         float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, int*, int, int, int, int, int);
 
+template <typename T> __global__ void gpuKernelRadialSphericalHarmonicsBispectrumDeriv3(T *bd, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl, int *indm, int *rowm, 
+        int *idxi, int *Nnb, int Nub, int Ncg, int Na, int Nij, int K, int K2, int N3, int npower)
+{       
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;    
+    while (tid < N3) { //N3 = K*(L+1)^2*Na,  N2 = K*(L+1)^2
+        int ij = tid%Nij;     // [1,Na]           
+        int q = (tid-ij)/Nij; // [1, K2*Nub] 
+        int i = q%Nub;      // [1, Nub] 
+        int k = (q-i)/Nub;  // [1, K*(K+1)/2]               
+        int n = idxi[ij];                
+        int k2 = indk[k];
+        int k1 = indk[K2+k];    
+        int l2 = indl[i];
+        int l1 = indl[Nub+i];
+        int l = indl[2*Nub+i];           
+        int nm = rowm[i+1]-rowm[i];
+        int ii = (npower + k*Nub + i)*Nij + ij; // index of bx, by, bz     
+        bd[3*ii+0] = (T) 0.0;
+        bd[3*ii+1] = (T) 0.0;
+        bd[3*ii+2] = (T) 0.0;                                    
+        for (int j = 0; j<nm; j++) {
+            int m2 = indm[rowm[i]+j];
+            int m1 = indm[Ncg+rowm[i]+j];
+            int m = indm[2*Ncg + rowm[i]+j];                            
+            int n1 = (l*l + l + m)*K + k1;    
+            int n2 = (l1*l1 + l1 + m1)*K + k2;
+            int n3 = (l2*l2 + l2 + m2)*K + k2;                        
+            int lm1 = n1*Na + n; // index of ar and ai 
+            int lm2 = n2*Na + n; // index of ar and ai                                         
+            int lm3 = n3*Na + n; // index of ar and ai                                                                 
+            int mlk1 = n1*Nij + Nnb[n] + q; // index of arx and aix      
+            int mlk2 = n2*Nij + Nnb[n] + q; // index of arx and aix            
+            int mlk3 = n3*Nij + Nnb[n] + q; // index of arx and aix                                                  
+
+            T c = cg[rowm[i]+j];                    
+            T a1, b1, a2, b2, a3, b3;                                
+            T a1x, b1x, a2x, b2x, a3x, b3x;
+            T a1y, b1y, a2y, b2y, a3y, b3y;
+            T a1z, b1z, a2z, b2z, a3z, b3z;
+            a1 = ar[lm1];
+            b1 = ai[lm1];
+            a2 = ar[lm2];
+            b2 = ai[lm2];
+            a3 = ar[lm3];
+            b3 = ai[lm3];
+            a1x = arx[mlk1];
+            a1y = ary[mlk1];
+            a1z = arz[mlk1];
+            b1x = aix[mlk1];
+            b1y = aiy[mlk1];
+            b1z = aiz[mlk1];
+            a2x = arx[mlk2];
+            a2y = ary[mlk2];
+            a2z = arz[mlk2];
+            b2x = aix[mlk2];
+            b2y = aiy[mlk2];
+            b2z = aiz[mlk2];
+            a3x = arx[mlk3];
+            a3y = ary[mlk3];
+            a3z = arz[mlk3];
+            b3x = aix[mlk3];
+            b3y = aiy[mlk3];
+            b3z = aiz[mlk3];
+
+            T t1 = a1x*a2*a3 + a1*a2x*a3 + a1*a2*a3x;                
+            T t2 = a2x*b1*b3 + a2*b1x*b3 + a2*b1*b3x;
+            T t3 = a3x*b1*b2 + a3*b1x*b2 + a3*b1*b2x;
+            T t4 = a1x*b2*b3 + a1*b2x*b3 + a1*b2*b3x;
+            bd[3*ii+0] += c*(t1 + t2 + t3 - t4);
+
+            t1 = a1y*a2*a3 + a1*a2y*a3 + a1*a2*a3y;                
+            t2 = a2y*b1*b3 + a2*b1y*b3 + a2*b1*b3y;
+            t3 = a3y*b1*b2 + a3*b1y*b2 + a3*b1*b2y;
+            t4 = a1y*b2*b3 + a1*b2y*b3 + a1*b2*b3y;
+            bd[3*ii+1] += c*(t1 + t2 + t3 - t4);
+
+            t1 = a1z*a2*a3 + a1*a2z*a3 + a1*a2*a3z;                
+            t2 = a2z*b1*b3 + a2*b1z*b3 + a2*b1*b3z;
+            t3 = a3z*b1*b2 + a3*b1z*b2 + a3*b1*b2z;
+            t4 = a1z*b2*b3 + a1*b2z*b3 + a1*b2*b3z;
+            bd[3*ii+2] += c*(t1 + t2 + t3 - t4);                    
+        }        
+        tid += blockDim.x * gridDim.x;   
+    }
+}
+template <typename T> void gpuRadialSphericalHarmonicsBispectrumDeriv3(T *bd, T *ar, T *ai, 
+        T *arx, T *aix, T *ary, T *aiy, T *arz, T *aiz, T*cg, int *indk, int *indl,
+        int *indm, int *rowm, int *idxi, int *Nnb, int Nub, int Ncg, int Na, int Nij, int K, int npower)
+{    
+    int K2 = K*(K+1)/2;
+    int N2 = K2*Nub;
+    int N3 = N2*Nij;                        
+    int blockDim = 256;
+    int gridDim = (N3 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;
+    gpuKernelRadialSphericalHarmonicsBispectrumDeriv3<<<gridDim, blockDim>>>(bd, ar, ai, arx, aix, 
+           ary, aiy, arz, aiz, cg, indk, indl, indm, rowm, idxi, Nnb, Nub, Ncg, Na, Nij, K, K2, N3, npower);            
+}
+template void gpuRadialSphericalHarmonicsBispectrumDeriv3(double*, double*, double*, double*, 
+        double*, double*, double*, double*, double*, double*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int);
+template void gpuRadialSphericalHarmonicsBispectrumDeriv3(float*, float*, float*, float*,  
+        float*, float*, float*, float*, float*, float*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int);
+
 template <typename T> void gpuRadialSphericalHarmonicsSpectrum(T *c, T *ar, T *ai, T *sr, T *si, T *cg, int *indk, 
         int *indl, int *indm, int *rowm, int *Nnb, int Nub, int Ncg, int Na, int L, int K, int spectrum)
 {
@@ -757,6 +907,34 @@ template void gpuRadialSphericalHarmonicsSpectrumDeriv(double*, double*, double*
         double*, double*, double*, int*, int*, int*, int*, int*, int, int, int, int, int, int);
 template void gpuRadialSphericalHarmonicsSpectrumDeriv(float*, float*, float*, float*,  float*, float*, float*,
         float*, float*, float*, int*, int*, int*, int*, int*, int, int, int, int, int, int);
+
+template <typename T> void gpuRadialSphericalHarmonicsSpectrumDeriv(T *cd, T *ar, T *ai, 
+        T *Srx, T *Six, T *Sry, T *Siy, T *Srz, T *Siz, T *cg, int *indk, int *indl, int *indm, 
+        int *rowm, int *idxi, int *Nnb, int Nub, int Ncg, int Na, int Nij, int L, int K, int spectrum)
+{    
+//     gpuSphericalHarmonicsBesselWithDeriv(sr, si, Srx, Six, Sry, Siy, Srz, Siz, xij,
+//         x0, P, tmp, f, dP, dtmp, df, fac, M_PI, L, K, N)    
+    if (spectrum==0) {  // power spectrum          
+        gpuRadialSphericalHarmonicsPowerSpectrumDeriv3(cd, ar, ai, Srx, Six, Sry, Siy, Srz, Siz, 
+                indk, idxi, Na, Nij, L, K);        
+    }
+    else if (spectrum==1) { // bispectrum                    
+        gpuRadialSphericalHarmonicsBispectrumDeriv3(cd, ar, ai, Srx, Six, Sry, Siy, Srz, Siz, 
+               cg, indk, indl, indm, rowm, idxi, Nnb, Nub, Ncg, Na, Nij, K, (int) 0);                
+    }
+    else if (spectrum==2) { // power spectrum and bispectrum         
+        int npower = (L+1)*K*(K+1)/2;      // number of power components
+        gpuRadialSphericalHarmonicsPowerSpectrumDeriv3(cd, ar, ai, Srx, Six, Sry, Siy, Srz, Siz, 
+                indk, idxi, Na, Nij, L, K);        
+        gpuRadialSphericalHarmonicsBispectrumDeriv3(cd, ar, ai, Srx, Six, Sry, Siy, Srz, Siz, 
+               cg, indk, indl, indm, rowm, idxi, Nnb, Nub, Ncg, Na, Nij, K, npower);                        
+    }
+}
+template void gpuRadialSphericalHarmonicsSpectrumDeriv(double*, double*, double*, double*, double*, double*, double*, 
+        double*, double*, double*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int);
+template void gpuRadialSphericalHarmonicsSpectrumDeriv(float*, float*, float*, float*,  float*, float*, float*,
+        float*, float*, float*, int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int);
+
 
 template <typename T> __global__ void gpuKernelForceDecomposition(T *f, T *fij, int *ai, int *aj, 
         int inum, int ijnum, int Nbf, int N)
