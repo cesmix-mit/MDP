@@ -2,9 +2,12 @@
 
 # Installation
 
-mkdir exec
-cd exec
+mkdir exec 
+
+cd exec 
+
 cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON ../Installation 
+
 make --build .
 
 For CUDA support, please use 
