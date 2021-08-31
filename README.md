@@ -1,8 +1,15 @@
 # Molecular Dynamics Potentials (MDP)
 
 # Installation
- 
-Run install script in the Installation folder
+
+mkdir exec
+cd exec
+cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON ../Installation 
+make --build .
+
+For CUDA support, please use 
+
+cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON -D MDP_CUDA=ON  ../Installation  
 
 # Applications
 
