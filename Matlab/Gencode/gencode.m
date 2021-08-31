@@ -10,16 +10,6 @@ function gencode(app)
 disp("Generate C++ code ...");
 if ~exist(char("app"), 'dir')
     mkdir(char("app"));
-else
-   if exist("app/opuApp.a", 'file') == 2 
-       delete('app/opuApp.a');
-   end
-   if exist("app/cpuApp.a", 'file') == 2 
-       delete('app/cpuApp.a');       
-   end   
-   if exist("app/gpuApp.a", 'file') == 2 
-       delete('app/gpuApp.a');
-   end   
 end
 
 [xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al] = syminit(app);

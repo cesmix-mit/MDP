@@ -1307,56 +1307,97 @@ template void cpuSnapTallyEnergyFull2(double*, double*, double*, int*, int*, int
 template void cpuSnapTallyEnergyFull2(float*, float*, float*, int*, int*, int*,
         int, int, int, int);
 
-template <typename T> void cpuSnapTallyBispectrum(T *eatom, T *bispectrum, int *ilist, 
-        int *map, int *type, int inum, int ncoeff, int ncoeffall, int quadraticflag)
-{  
-      // linear contributions
-
-      int k = typeoffset_global;
-      for (int icoeff = 0; icoeff < ncoeff; icoeff++)
-        snap[0][k++] += snaptr->blist[icoeff];
-
-      // quadratic contributions
-
-      if (quadraticflag) {
-        for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-          double bveci = snaptr->blist[icoeff];
-          snap[0][k++] += 0.5*bveci*bveci;
-          for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
-            double bvecj = snaptr->blist[jcoeff];
-            snap[0][k++] += bveci*bvecj;
-          }
-        }
-      }
+template <typename T> void cpuSnapTallyBispectrum(T *bi, T *bispectrum, int *ilist, 
+        int *type, int inum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{      
+    cpuArraySetValue(bi, 0.0, nperdim*ntype);
     
-    for (int ii=0; ii<inum; ii++) {
+    int N2 = inum*ncoeff;
+    for (int idx=0; idx<N2; idx++) {
+        int ii = idx%inum;
+        int icoeff = (idx-ii)/inum;
         int i = ilist[ii]; // index of atom i
-        const int itype = type[i]; // element type of atom i
-        const int ielem = map[itype];  // index of that element type
-        T* coeffi = &coeffelem[ielem*ncoeffall]; // coefficient for that particular element
-        
-        T evdwl = coeffi[0];
-        for (int icoeff = 0; icoeff < ncoeff; icoeff++)
-            evdwl[] += coeffi[icoeff+1]*bispectrum[ii + inum*icoeff];
-                  
+        int itype = type[i]; // element type of atom i        
+        int n = nperdim*(itype-1);
+        bi[icoeff+n] += bispectrum[ii + inum*icoeff];                  
         if (quadraticflag) {
-            int k = ncoeff+1;
-            for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-                T bveci = bispectrum[ii + inum*icoeff];
-                evdwl += 0.5*coeffi[k++]*bveci*bveci;
-                for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
-                    T bvecj = bispectrum[ii + inum*jcoeff];
-                    evdwl += coeffi[k++]*bveci*bvecj;
-                }
+            int k = n+ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            T bveci = bispectrum[ii + inum*icoeff];
+            bi[k] += 0.5*bveci*bveci;
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                T bvecj = bispectrum[ii + inum*jcoeff];
+                bi[k++] += bveci*bvecj;
             }
         }                
-        eatom[ii] += evdwl;
     }
 }
-template void cpuSnapTallyBispectrum(double*, double*, double*, int*, int*, int*,
-        int, int, int, int);
-template void cpuSnapTallyBispectrum(float*, float*, float*, int*, int*, int*,
-        int, int, int, int);
+template void cpuSnapTallyBispectrum(double*, double*, int*, int*, int, int, int, int, int);
+template void cpuSnapTallyBispectrum(float*, float*, int*, int*, int, int, int, int, int);
+
+template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *ai, 
+        int *type, int inum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{      
+    cpuArraySetValue(db, 0.0, inum*3*nperdim*ntype);
+    
+    int N2 = ijnum*ncoeff;
+    for (int idx=0; idx<N2; idx++) {
+        int ij = idx%ijnum;
+        int icoeff = (idx-ij)/ijnum;        
+        int i = ai[ij]; // index of atom i
+        int j = aj[ij]; // index of atom i
+        int itype = ti[ij]; // element type of atom i       
+        int n = nperdim*(itype-1);        
+        int nii = inum*3*(icoeff + n);  
+        int nij = ijnum*3*icoeff;
+        
+        T bix = dbdx[ij + ijnum*0 + nij];
+        T biy = dbdx[ij + ijnum*1 + nij];
+        T biz = dbdx[ij + ijnum*2 + nij];        
+        db[i + inum*0 + nii] += bix;
+        db[i + inum*1 + nii] += biy;
+        db[i + inum*2 + nii] += biz;
+        db[j + inum*0 + nii] -= bix;
+        db[j + inum*1 + nii] -= biy;
+        db[j + inum*2 + nii] -= biz;
+        
+        if (quadraticflag) {
+            T bi = bispectrum[ii + inum*icoeff];
+            T dbxtmp = bi*bix;
+            T dbytmp = bi*biy;
+            T dbztmp = bi*biz;
+            int k = ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            nii = inum*3*(k + n);  
+            db[i + inum*0 + nii] += dbxtmp;
+            db[i + inum*1 + nii] += dbytmp;
+            db[i + inum*2 + nii] += dbztmp;
+            db[j + inum*0 + nii] -= dbxtmp;
+            db[j + inum*1 + nii] -= dbytmp;
+            db[j + inum*2 + nii] -= dbztmp;          
+         
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                int nj = ijnum*3*jcoeff;
+                T bjx = dbdx[ij + ijnum*0 + nj];
+                T bjy = dbdx[ij + ijnum*1 + nj];
+                T bjz = dbdx[ij + ijnum*2 + nj];        
+                T bj = bispectrum[ii + inum*jcoeff];                
+                dbxtmp = bi*bjx + bix*bj;
+                dbytmp = bi*bjy + biy*bj;
+                dbztmp = bi*bjz + biz*bj;
+
+                k += 1;
+                nii = inum*3*(k + n);  
+                db[i + inum*0 + nii] += dbxtmp;
+                db[i + inum*1 + nii] += dbytmp;
+                db[i + inum*2 + nii] += dbztmp;
+                db[j + inum*0 + nii] -= dbxtmp;
+                db[j + inum*1 + nii] -= dbytmp;
+                db[j + inum*2 + nii] -= dbztmp;                                          
+            }            
+        }        
+    }
+}
+template void cpuSnapTallyBispectrum(double*, double*, int*, int*, int, int, int, int, int);
+template void cpuSnapTallyBispectrum(float*, float*, int*, int*, int, int, int, int, int);
 
 template <typename T> void cpuSnapTallyForceFull2(T *fatom, T *fij, int *ai, int *aj, int *alist, int ijnum)
 { 

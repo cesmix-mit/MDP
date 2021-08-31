@@ -1308,30 +1308,99 @@ template void cpuSnapTallyEnergyFull2(float*, float*, float*, int*, int*, int*,
         int, int, int, int);
 
 template <typename T> void cpuSnapTallyBispectrum(T *bi, T *bispectrum, int *ilist, 
-        int *type, int inum, int ncoeff, int nperdim, int quadraticflag)
+        int *type, int inum, int ncoeff, int nperdim, int ntype, int quadraticflag)
 {      
+    cpuArraySetValue(bi, (T) 0.0, nperdim*ntype);
     
-    for (int ii=0; ii<inum; ii++) {
+    int N2 = inum*ncoeff;
+    for (int idx=0; idx<N2; idx++) {
+        int ii = idx%inum;
+        int icoeff = (idx-ii)/inum;
         int i = ilist[ii]; // index of atom i
         int itype = type[i]; // element type of atom i        
-        int k = nperdim*(itype-1);;
-        for (int icoeff = 0; icoeff < ncoeff; icoeff++)
-            bi[k++] += bispectrum[ii + inum*icoeff];
-                  
+        int n = nperdim*(itype-1);
+        bi[icoeff+n] += bispectrum[ii + inum*icoeff];                  
         if (quadraticflag) {
-            for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-                T bveci = bispectrum[ii + inum*icoeff];
-                bi[k++] += 0.5*bveci*bveci;
-                for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
-                    T bvecj = bispectrum[ii + inum*jcoeff];
-                    bi[k++] += bveci*bvecj;
-                }
+            int k = n+ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            T bveci = bispectrum[ii + inum*icoeff];
+            bi[k] += 0.5*bveci*bveci;
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                T bvecj = bispectrum[ii + inum*jcoeff];
+                bi[k++] += bveci*bvecj;
             }
         }                
     }
 }
-template void cpuSnapTallyBispectrum(double*, double*, int*, int*, int, int, int, int);
-template void cpuSnapTallyBispectrum(float*, float*, int*, int*, int, int, int, int);
+template void cpuSnapTallyBispectrum(double*, double*, int*, int*, int, int, int, int, int);
+template void cpuSnapTallyBispectrum(float*, float*, int*, int*, int, int, int, int, int);
+
+template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *ai, 
+        int *aii, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{      
+    cpuArraySetValue(db, (T) 0.0, inum*3*nperdim*ntype);
+    
+    int N2 = ijnum*ncoeff;
+    for (int idx=0; idx<N2; idx++) {
+        int ij = idx%ijnum;
+        int icoeff = (idx-ij)/ijnum;        
+        int ii = aii[ij]; // index of atom i
+        int i = ai[ij]; // index of atom i
+        int j = aj[ij]; // index of atom i
+        int itype = ti[ij]; // element type of atom i       
+        int n = nperdim*(itype-1);        
+        int nii = inum*3*(icoeff + n);  
+        int nij = ijnum*3*icoeff;
+        
+        T bix = dbdr[ij + ijnum*0 + nij];
+        T biy = dbdr[ij + ijnum*1 + nij];
+        T biz = dbdr[ij + ijnum*2 + nij];        
+        db[i + inum*0 + nii] += bix;
+        db[i + inum*1 + nii] += biy;
+        db[i + inum*2 + nii] += biz;
+        db[j + inum*0 + nii] -= bix;
+        db[j + inum*1 + nii] -= biy;
+        db[j + inum*2 + nii] -= biz;
+        
+        if (quadraticflag) {
+            T bi = bispectrum[ii + inum*icoeff];
+            T dbxtmp = bi*bix;
+            T dbytmp = bi*biy;
+            T dbztmp = bi*biz;
+            int k = ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            nii = inum*3*(k + n);  
+            db[i + inum*0 + nii] += dbxtmp;
+            db[i + inum*1 + nii] += dbytmp;
+            db[i + inum*2 + nii] += dbztmp;
+            db[j + inum*0 + nii] -= dbxtmp;
+            db[j + inum*1 + nii] -= dbytmp;
+            db[j + inum*2 + nii] -= dbztmp;          
+         
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                int nj = ijnum*3*jcoeff;
+                T bjx = dbdr[ij + ijnum*0 + nj];
+                T bjy = dbdr[ij + ijnum*1 + nj];
+                T bjz = dbdr[ij + ijnum*2 + nj];        
+                T bj = bispectrum[ii + inum*jcoeff];                
+                dbxtmp = bi*bjx + bix*bj;
+                dbytmp = bi*bjy + biy*bj;
+                dbztmp = bi*bjz + biz*bj;
+
+                k += 1;
+                nii = inum*3*(k + n);  
+                db[i + inum*0 + nii] += dbxtmp;
+                db[i + inum*1 + nii] += dbytmp;
+                db[i + inum*2 + nii] += dbztmp;
+                db[j + inum*0 + nii] -= dbxtmp;
+                db[j + inum*1 + nii] -= dbytmp;
+                db[j + inum*2 + nii] -= dbztmp;                                          
+            }            
+        }        
+    }
+}
+template void cpuSnapTallyBispectrumDeriv(double*, double*, double*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
+template void cpuSnapTallyBispectrumDeriv(float*, float*, float*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
 
 
 template <typename T> void cpuSnapTallyForceFull2(T *fatom, T *fij, int *ai, int *aj, int *alist, int ijnum)

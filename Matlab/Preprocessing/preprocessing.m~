@@ -168,7 +168,7 @@ for i = 1:app.nconfigs
 end
 
 %bindir = "C++/Main";
-bindir = "exec";
+bindir = "C++/Main";
 if ~isempty(app.lattice)
     writelattice(app.lattice, app.appname + "lattice.bin");
     movefile(char(app.appname + "lattice.bin"), char(app.sourcepath + bindir));

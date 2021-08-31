@@ -1,5 +1,13 @@
 function [cpustr, gpustr] = buildexecutable(cpucompiler, gpucompiler, cuda_arch, enzyme)
 
+% g++  -fPIC -ffast-math -O3 -c ../Potentials/cpuEmpiricalPotentials.cpp -o ../Potentials/cpuEmpiricalPotentials.o
+% g++ --shared ../Potentials/cpuEmpiricalPotentials.o -o ../Potentials/cpuEmpiricalPotentials.so
+% g++ -std=c++11 main.cpp -o cpuMDP ../Core/cpuCore.a -ffast-math -O3 -lblas -llapack  ../Potentials/cpuEmpiricalPotentials.so  
+% nvcc -std=c++11  --compiler-options '-fPIC'  -arch=sm_70  -O3 -D_FORCE_INLINES -c -w ../Potentials/gpuEmpiricalPotentials.cu -o ../Potentials/gpuEmpiricalPotentials.o 
+% nvcc --shared ../Potentials/gpuEmpiricalPotentials.o -o ../Potentials/gpuEmpiricalPotentials.so
+% g++ -std=c++11  -D _CUDA main.cpp -o gpuMDP ../Core/cpuCore.a ../Core/gpuCore.a -ffast-math -O3 -fno-unroll-loops -fPIC -lcudart -lcublas -lblas -llapack  ../Potentials/cpuEmpiricalPotentials.so   ../Potentials/gpuEmpiricalPotentials.so 
+% g++ -std=c++11  -D _CUDA -I/usr/tce/packages/cuda/cuda-10.1.243/include main.cpp -o gpuMDP ../Core/cpuCore.a ../Core/gpuCore.a -ffast-math -O3 -fno-unroll-loops -fPIC -lblas -llapack /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcudart.so /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcublas.so ../Potentials/cpuEmpiricalPotentials.so   ../Potentials/gpuEmpiricalPotentials.so
+
 if nargin<1
     cpucompiler = "";
 end

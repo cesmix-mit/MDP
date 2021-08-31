@@ -1,5 +1,10 @@
 function [cpucompiler, gpucompiler, gpumacros, gpuflags] = buildcorelibraries(cpucompiler, gpucompiler, cuda_arch)
 
+% g++ -fPIC -ffast-math -O3 -c cpuCore.cpp -o cpuCore.o
+% ar rvs cpuCore.a cpuCore.o
+% nvcc -std=c++11  --compiler-options '-fPIC'  -arch=sm_60  -D_FORCE_INLINES -O3 -c -w gpuCore.cu -o gpuCore.o
+% ar rvs gpuCore.a gpuCore.o
+
 if nargin<1
     cpucompiler = "";
 end

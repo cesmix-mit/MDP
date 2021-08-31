@@ -1215,8 +1215,8 @@ struct commonstruct {
         CPUFREE(traininglist); 
         CPUFREE(validatelist);         
         
-        lat.freememory(0);
-        reg.freememory(0);
+        //lat.freememory(0);
+        //reg.freememory(0);
         //dom.freememory(0);        
     }                         
 };

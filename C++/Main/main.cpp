@@ -20,11 +20,15 @@
 #define HAVE_DEBUG
 #endif
 
+#ifdef USE_CUDA
+#define HAVE_CUDA
+#endif
+
 #ifdef _CUDA
 #define HAVE_CUDA
 #define USE_CUDA
 #endif
-      
+
 #ifdef _ENZYME
 #define HAVE_ENZYME
 #endif

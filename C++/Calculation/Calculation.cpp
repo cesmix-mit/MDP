@@ -41,8 +41,8 @@ CCalculation::~CCalculation()
     app.freememory(common.backend);       
     sh.freememory(common.backend);       
     sna.freememory(common.backend);       
-    config.freememory(); // always in cpu memory    
-    common.freememory(); // always in cpu memory
+    //config.freememory(); // always in cpu memory    
+    //common.freememory(); // always in cpu memory
 }
 
 void CCalculation::SetConfiguration(Int ci)

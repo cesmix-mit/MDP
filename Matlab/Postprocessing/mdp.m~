@@ -15,19 +15,12 @@ gencode(app);
 
 % compile code
 % bindir = "C++/Main";
-bindir = "exec";
+bindir = "Installation";
 cd(char(app.sourcepath + bindir));
 %compile(app);
 %buildpotlib2(app);
-if exist("CMakeCache.txt", "file")
-    delete(char("CMakeCache.txt"));
-end
-[~,foundnvcc] = findexec("nvcc");
-if foundnvcc==1   
-    eval("!cmake -D MDP_POTENTIALS=ON -D MDP_CUDA=ON ../Installation");
-else
-    eval("!cmake -D MDP_POTENTIALS=ON ../Installation");
-end
+delete(char("CMakeCache.txt");
+eval("!cmake -D MDP_POTENTIALS=ON ../Installation");
 eval("!cmake --build .");
 
 % run code
