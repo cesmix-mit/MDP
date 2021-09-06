@@ -21,7 +21,7 @@ for i = 1:n
         potnum = potnum+1;
         fn = filename + num2str(potnum);        
         if pot==1
-            [tmpopu, tmpcpu, tmpgpu] = gensingle(fn, ui, xi, qi, ti, ai, mu, eta, kappa, gen, ifile);
+            [tmpopu, tmpcpu, tmpgpu] = gensinglegrad(fn, ui, xi, qi, ti, ai, mu, eta, kappa, gen, ifile);
         elseif pot==2
             [tmpopu, tmpcpu, tmpgpu] = genpairgrad(fn, ui, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, gen, ifile);                        
         elseif pot==3

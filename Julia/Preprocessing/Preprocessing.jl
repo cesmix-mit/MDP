@@ -11,7 +11,7 @@ module Preprocessing
 
 using Revise
 
-export initializeapp, initializeconfig, initializemdp, preprocessing, readconfig
+export initializeapp, initializeconfig, initializemdp, preprocessing, readconfig, setlattice, setregion, setdomain
 
 include("initializeapp.jl");
 include("initializeconfig.jl");
@@ -24,14 +24,29 @@ include("checkconfig.jl");
 include("readLAMMPS.jl");
 include("cubemapping.jl");
 include("boxperiodicimages.jl");
+include("setlattice.jl");
+include("setregion.jl");
+include("setdomain.jl");
+include("writelattice.jl");
+include("writeregion.jl");
+include("writedomain.jl");
 
 function preprocessing(app)
 
-# read configurations from data file
-config = readconfig(app, app.configmode);     
+if app.configmode>0
+    # read configurations from data file
+    config = readconfig(app, app.configmode);     
 
-# number of configurations
-app.nconfigs = config.nconfigs;          
+    # number of configurations
+    app.nconfigs = config.nconfigs;          
+else
+    app.nconfigs = 0;          
+    config = 0;
+end
+
+if app.snapcoefffile != ""   
+    app.snapcoeff = Main.DelimitedFiles.readdlm(app.snapcoefffile);
+end
 
 # nonbonded single potentials
 if  length(app.pot1a[:]) > 0
@@ -123,13 +138,117 @@ else
     app.ncmu4b = 0;
 end
 
-app.flag = [app.descriptor app.spectrum app.training app.runMD app.potentialform app.neighpair app.energycal app.forcecal app.stresscal app.neighcell app.decomposition app.chemtype app.dftdata app.unitstyle app.ensemblemode];
+style = app.unitstyle;
+if lowercase(style) == "lj" 
+    app.unitstylenum = 0;
+elseif lowercase(style) == "real"
+    app.unitstylenum = 1;    
+elseif lowercase(style) == "metal"
+    app.unitstylenum = 2;
+elseif lowercase(style) == "si"
+    app.unitstylenum = 3;
+elseif lowercase(style) == "cgs"
+    app.unitstylenum = 4;
+elseif lowercase(style) == "electron"
+    app.unitstylenum = 5;
+elseif lowercase(style) == "micro"
+    app.unitstylenum = 6;
+elseif lowercase(style) == "nano"
+    app.unitstylenum = 7;
+else
+    error("Invalid unit style");
+end
 
-rcut = [reshape([app.rcutml],1,1) app.rcut2a app.rcut2b app.rcut2c app.rcut3a app.rcut3b app.rcut3c app.rcut4a app.rcut4b];
-rcutmax = maximum(rcut);     
+# descriptor flag: 0 -> Spherical Harmonics Bessel, 1-> snap
+if (lowercase(app.descriptor) == "shp")
+    app.descriptornum = 0;
+elseif (lowercase(app.descriptor) == "snap") 
+    app.descriptornum = 1;    
+else
+    app.descriptornum = -1; 
+end
+
+ensemblemode = app.ensemblemode;
+if (lowercase(ensemblemode) == "nve") 
+    app.ensemblemodenum = 0;
+    app.runMD = 1;  
+elseif (lowercase(ensemblemode) == "nvelimit") 
+    app.ensemblemodenum = 1;    
+    app.runMD = 1;  
+elseif (lowercase(ensemblemode) == "nvt") 
+    app.ensemblemodenum = 2;        
+    app.runMD = 1;  
+else
+    app.ensemblemodenum = -1;
+    app.runMD = 0;  
+end
+
+app.natomtype = length(app.atommasses);
+if length(app.atomnumbers)>0
+    app.atomnumbers = [0 app.atomnumbers];
+else
+    app.atomnumbers = reshape([0],1,1);
+end
+if length(app.atommasses)>0
+    app.atommasses = [0.0 app.atommasses];
+else
+    app.atommasses = reshape([0.0],1,1);
+end
+if length(app.atomcharges)>0
+    app.atomcharges = [0.0 app.atomcharges];
+else
+    app.atomcharges = reshape([0.0],1,1);
+end
+
+app.flag = [app.descriptornum app.spectrum app.training app.runMD app.potentialform app.neighpair app.energycal app.forcecal app.stresscal app.neighcell app.decomposition app.chemtype app.dftdata app.unitstylenum app.ensemblemodenum app.neighcheck];
+
+if length(app.rcut2a) > 0
+    rcut2a = app.rcut2a;
+else
+    rcut2a = reshape([0.0],1,1);
+end
+if length(app.rcut2b) > 0
+    rcut2b = app.rcut2b;
+else
+    rcut2b = reshape([0.0],1,1);
+end
+if length(app.rcut2c) > 0
+    rcut2c = app.rcut2c;
+else
+    rcut2c = reshape([0.0],1,1);
+end
+if length(app.rcut3a) > 0
+    rcut3a = app.rcut3a;
+else
+    rcut3a = reshape([0.0],1,1);
+end
+if length(app.rcut3b) > 0
+    rcut3b = app.rcut3b;
+else
+    rcut3b = reshape([0.0],1,1);
+end
+if length(app.rcut3c) > 0
+    rcut3c = app.rcut3c;
+else
+    rcut3c = reshape([0.0],1,1);
+end
+if length(app.rcut4a) > 0
+    rcut4a = app.rcut4a;
+else
+    rcut4a = reshape([0.0],1,1);
+end
+if length(app.rcut4b) > 0
+    rcut4b = app.rcut4b;
+else
+    rcut4b = reshape([0.0],1,1);
+end
+rcut = [reshape([app.rcutml],1,1) rcut2a rcut2b rcut2c rcut3a rcut3b rcut3c rcut4a rcut4b];
+rcutmax = maximum(rcut) + app.neighskin;     
 app.rcutsqmax = rcutmax^2;        
 app.boxoffset = [rcutmax rcutmax rcutmax];
 app.simparam = [app.time app.dt];        
+app.solparam = [rcutmax app.neighskin];
+app.snaparam = [app.snapnelem app.snapncoeff app.snaptwojmax app.snaprcutfac app.snaprfac0 app.snaprmin0 app.snapbzeroflag app.snapswitchflag app.snapquadraticflag app.snapchemflag  app.snapbnormflag app.snapwselfallflag];
 
 app.ndims = zeros(20,1);
 app.ndims[1] = app.dim;
@@ -142,29 +261,50 @@ app.ndims[7] = app.backend;
 app.ndims[8] = app.nconfigs;
 app.ndims[9] = app.natomtype;
 app.ndims[10] = app.nmoletype; 
-app.ndims[11] = app.maxnumneighbors;
+app.ndims[11] = app.neighmax;
+app.ndims[12] = app.neighevery;
+app.ndims[13] = app.neighdelay;
+app.ndims[14] = app.globalfreq;
+app.ndims[15] = app.peratomfreq;
 
-m = 1;
-for i = 1:config.nconfigs
-    B2C, C2B = cubemapping(config.a[:,i], config.b[:,i], config.c[:,i]);
-    ximages = boxperiodicimages(app.pbc, config.a[:,i], config.b[:,i], config.c[:,i]);    
-    n = config.natom[i];
-    config.x[:,m:(m+n-1)] = checkconfig(config.x[:,m:(m+n-1)], ximages, B2C, C2B);    
-    m = m + n;
+if app.configmode>0
+    m = 1;
+    for i = 1:config.nconfigs
+        B2C, C2B = cubemapping(config.a[:,i], config.b[:,i], config.c[:,i]);
+        ximages = boxperiodicimages(app.pbc, config.a[:,i], config.b[:,i], config.c[:,i]);    
+        n = config.natom[i];
+        config.x[:,m:(m+n-1)] = checkconfig(config.x[:,m:(m+n-1)], ximages, B2C, C2B);    
+        m = m + n;
+    end
 end
 
-if app.training == 0
-    config.we = reshape([],0,2);
-    config.wf = reshape([],0,2);
-else
-    config = readweight(app, config);
+bindir = "exec";
+if app.lattice != []
+    writelattice(app.lattice, app.appname * "lattice.bin");
+    mv(app.appname * "lattice.bin", app.sourcepath * bindir * "/" * app.appname * "lattice.bin", force = true);
+end
+if app.region != []
+    writeregion(app.region, app.appname * "region.bin");
+    mv(app.appname * "region.bin", app.sourcepath * bindir * "/" * app.appname * "region.bin", force = true);    
+end
+if app.domain != []
+    writedomain(app.domain, app.appname * "domain.bin");
+    mv(app.appname * "domain.bin", app.sourcepath * bindir * "/" * app.appname * "domain.bin", force = true);
 end
 
-writeapp(app, app.appname * "app.bin");
-writeconfig(config, app.appname * "config.bin");
-               
-mv(app.appname * "app.bin", app.sourcepath * "C++/Main/" * app.appname * "app.bin", force = true);
-mv(app.appname * "config.bin", app.sourcepath * "C++/Main/" * app.appname * "config.bin", force = true);
+if app.nconfigs>0
+    if app.training == 0
+        config.we = reshape([],0,2);
+        config.wf = reshape([],0,2);
+    else
+        config = readweight(app, config);    
+    end    
+    writeconfig(config, app.appname * "config.bin");
+    mv(app.appname * "config.bin", app.sourcepath * bindir * "/" * app.appname * "config.bin", force = true);
+end   
+
+writeapp(app, app.appname * "app.bin");               
+mv(app.appname * "app.bin", app.sourcepath * bindir * "/"  * app.appname * "app.bin", force = true);
 
 return app, config
 

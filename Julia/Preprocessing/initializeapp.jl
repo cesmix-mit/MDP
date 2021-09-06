@@ -21,6 +21,13 @@ mutable struct APPStruct
     gpuflags::String;    # options for GGU compiler
     cpumacros::String;    # options for CPU compiler
     gpumacros::String;    # options for GGU compiler
+    cuda_arch::String; 
+    enzyme::String; 
+    unitstyle::String; 
+    ensemblemode::String; 
+    descriptor::String; 
+    globaloutputs::String; 
+    peratomoutputs::String; 
     potentialfile::String;# APP model file name
     configfile::String;# APP model file name
     weightfile::String;# APP model file name
@@ -31,7 +38,11 @@ mutable struct APPStruct
     configmode::Int64;
     weightmode::Int64;
     mpiprocs::Int64; # number of MPI ranks
-
+    globalfreq::Int64;
+    peratomfreq::Int64;
+    unitstylenum::Int64; 
+    ensemblemodenum::Int64; 
+        
     traininglist::Array{Int64,2}; # a list of configurations for training the potential
     validatelist::Array{Int64,2}; # a list of configurations for validating the potential
 
@@ -45,17 +56,24 @@ mutable struct APPStruct
     dftdata::Int64;   # 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
     runMD::Int64;        # 0 no MD simulation, 1 -> run MD simulation
     potentialform::Int64;# 0 -> empirical potential, 1 -> ML potential, 2 -> combined potential    
-    neighpair::Int64;    # 0 -> full neighbor list, 1 -> half neighbor list for pair potentials
-    neighcell::Int64;    # 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
+    #neighpair::Int64;    # 0 -> full neighbor list, 1 -> half neighbor list for pair potentials
+    #neighcell::Int64;    # 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
     decomposition::Int64;# 0 -> force decomposition, 1 -> atom decomposition
     energycal::Int64;    # turns energy calculation on or off
     forcecal::Int64;     # turns force calculation on or off
     stresscal::Int64;    # turns stress calculation on or off
-    unitstyle::Int64;    # system unit 
-    ensemblemode::Int64; # NVE, NVT
 
-    time::Int64;       # initial time
-    dt::Int64;         # time step
+    neighskin::Float64;
+    neighcell::Int64;       # 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
+    neighmax::Int64;      # maximum number of neighbors allowed
+    neighevery::Int64;      # perform neighbor rebuild list for "every" iterations
+    neighdelay::Int64;      # delay neighbor rebuild
+    neighcheck::Int64;      # 0 -> neighbor rebuild by delay and every settings, 
+                             # 1 -> neighbor rebuild occurs if some atom has moved more than half the skin distance
+    neighpair::Int64;       # 0 -> full neighbor list, 1 -> half neighbor list for pair potentials
+
+    time::Float64;       # initial time
+    dt::Float64;         # time step
     
     coeff::Array{Float64,2};   # coefficients for the potential
     rcutsqmax::Float64;  # square of maximum cutoff radius
@@ -83,13 +101,32 @@ mutable struct APPStruct
     solparam::Array{Float64,2}; # solver parameters
     nveparam::Array{Float64,2}; # NVE parameters
     nvtparam::Array{Float64,2}; # NVT parameters
+    createvelocity::Array{Float64,2}; # NVT parameters
 
+    snaprcutfac::Float64;  
+    snaprfac0::Float64;  
+    snaprmin0::Float64;  
+    snaptwojmax::Int64;  
+    snapbzeroflag::Int64;  
+    snapquadraticflag::Int64;  
+    snapswitchflag::Int64;  
+    snapchemflag::Int64;  
+    snapbnormflag::Int64;  
+    snapwselfallflag::Int64;  
+    snapnelem::Int64;  
+    snapncoeff::Int64;  
+    snaparam::Array{Float64,2}; 
+    snapelemradius::Array{Float64,2}; 
+    snapelemweight::Array{Float64,2}; 
+    snapcoeff::Array{Float64,2}; 
+    snapcoefffile::String;  
+    
     # machine learning potentials
     muml::Array{Float64,2};   # coefficients of ML potential
     K::Int64;          # degree of radial basis functions
     L::Int64;          # degree of spherical harmonics     
     rcutml::Float64;    # cut-off radius for machine learning potential
-    descriptor::Int64; # descriptor flag: 0 -> Spherical Harmonics Bessel
+    descriptornum::Int64; # descriptor flag: 0 -> Spherical Harmonics Bessel
     spectrum::Int64;   # spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     chemtype::Int64;   # 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
     ncmuml::Int64;     # length of mu0
@@ -181,37 +218,46 @@ mutable struct APPStruct
     nceta::Int64; # number of compoments of eta
     nckappa::Int64; # number of compoments of kappa
             
+    lattice;
+    domain;
+    region;
+
     APPStruct() = new();
 end
 
-function initializeapp(sourcepath,version)
+function initializeapp(cdir,sourcepath,version="version0")
     app = APPStruct();
 
     app.sourcepath = sourcepath;
-    app.currentdir = pwd();
-    app.codename = "MDP";
+    app.currentdir = cdir;
+    app.codename = "MDP";    
     app.version = version;
     app.appname = "app";
     app.platform = "cpu";
-    app.cpucompiler = "g++";
+    app.cpucompiler = "clang++";
     app.mpicompiler = "mpicxx";
-    app.gpucompiler = "nvcc";
+    app.gpucompiler = "clang++";
+    app.cuda_arch = "sm_60";
+    app.enzyme = "";
     app.mpirun = "mpirun";
     app.cpuflags = "-O2 -ldl -lm -lblas -llapack";
     app.gpuflags = "-lcudart -lcublas";
     app.cpumacros = "";
     app.gpumacros = "";
+    app.unitstyle = "";    
+    app.descriptor = ""; 
+    app.ensemblemode = ""; 
     app.potentialfile = "";
     app.configfile = "";
-    app.configmode = 4;
     app.weightfile = "";    
+    app.configmode = 0;    
     app.weightmode = 0;
     app.preprocessmode = 1;
     app.mpiprocs = 1;        
 
     app.traininglist = reshape([], 0, 2);
     app.validatelist = reshape([], 0, 2);
-
+    
     app.dim = 3;         # physical dimension
     app.nconfigs = 1;    # number of configurations    
     app.maxnumneighbors = 10; # maximum number of neighbors allowed
@@ -222,18 +268,28 @@ function initializeapp(sourcepath,version)
     app.dftdata = 0;      # 0 -> no data, 1 -> energies only, 2 -> forces only, 3 -> energies and forces
     app.runMD = 0;        # 0 no MD simulation, 1 -> run MD simulation
     app.potentialform = 0;# 0 -> empirical potential, 1 -> ML potential, 2 -> combined potential    
-    app.neighpair = 0;    # 0 -> full neighbor list, 1 -> half neighbor list for pair potentials
-    app.neighcell = 0;    # 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
     app.decomposition = 0;# 0 -> force decomposition, 1 -> atom decomposition
     app.energycal = 0;    # turns energy calculation on or off
     app.forcecal = 0;     # turns force calculation on or off
     app.stresscal = 0;    # turns stress calculation on or off
-    app.unitstyle = 0;    # Default LJ unit style
-    app.ensemblemode = 0; # Default NVE
     app.time = 0.0;       # initial time
     app.dt = 0.0;         # time step
     app.rcutsqmax = 0.0;  # square of maximum cutoff radius
     app.boxoffset = [0.0 0.0 0.0]; # offset for simulation box to account for periodic boundary conditions
+    
+    app.globalfreq = 1;       # frequency to print and save default global quantities (pe, ke, ce, te, temp, press)
+    app.peratomfreq = 1;     # frequency to save default peratom quantities (id, t, x, f)
+    app.globaloutputs = "";    # additional global outputs (stresses, com, vcm)
+    app.peratomoutputs = "";   # additional peratom outputs (velocity, mass, virial, image)
+    
+    app.neighskin = 0.0;
+    app.neighcell = 0;       # 0 -> O(N^2) algorithm, 1 -> Cell-linked list algorithm to form neighbor list
+    app.neighmax = 100;      # maximum number of neighbors allowed
+    app.neighevery = 1;      # perform neighbor rebuild list for "every" iterations
+    app.neighdelay = 0;      # delay neighbor rebuild
+    app.neighcheck = 1;      # 0 -> neighbor rebuild by delay and every settings, 
+                             # 1 -> neighbor rebuild occurs if some atom has moved more than half the skin distance
+    app.neighpair = 0;       # 0 -> full neighbor list, 1 -> half neighbor list for pair potentials
     
     app.coeff = reshape([], 0, 2);
     app.bcs = [0 0 0 0 0 0]; # boundary conditions
@@ -259,17 +315,35 @@ function initializeapp(sourcepath,version)
     app.solparam = reshape([], 0, 2); # solver parameters
     app.nveparam = reshape([], 0, 2); # NVE parameters
     app.nvtparam = reshape([], 0, 2); # NVT parameters
+    app.createvelocity = reshape([], 0, 2); # NVT parameters
 
     # machine learning potentials
     app.muml = reshape([], 0, 2);   # coefficients of ML potential
     app.K = 0;          # degree of radial basis functions
     app.L = 0;          # degree of spherical harmonics     
     app.rcutml = 0.0;    # cut-off radius for machine learning potential
-    app.descriptor = 0; # descriptor flag: 0 -> Spherical Harmonics Bessel
     app.spectrum = 2;   # spectrum flag: 0-> power spectrum, 1-> bispectrum, 2-> both power and bispectrum 
     app.chemtype = 0;   # 0 -> single atom-type basis functions, 1 -> double atom-type basis functions 
     app.ncmuml = 0;     # length of mu0
     
+    app.snaprcutfac = 0;  
+    app.snaptwojmax = 0;
+    app.snaprfac0 = 0;
+    app.snaprmin0 = 0;
+    app.snapbzeroflag = 1;
+    app.snapquadraticflag = 0;
+    app.snapswitchflag = 1;
+    app.snapchemflag = 0;
+    app.snapbnormflag = 0;
+    app.snapwselfallflag = 0;
+    app.snapnelem = 0;    # # of elements
+    app.snapncoeff = 0;  # # of coeffients per element
+    app.snaparam = reshape([], 0, 2); # snap parameters
+    app.snapelemradius = reshape([], 0, 2); # radius per element
+    app.snapelemweight = reshape([], 0, 2);   # weight per element
+    app.snapcoeff = reshape([], 0, 2);
+    app.snapcoefffile = "";    
+
     # empirical potential parameters
     app.eta = reshape([], 0, 2);   # hyperparameters for emprical potentials
     app.kappa = reshape([], 0, 2); # flag parameters for emprical potentials
@@ -292,14 +366,14 @@ function initializeapp(sourcepath,version)
     app.pot2a = reshape([], 0, 2);     # list of nonbonded pair potentials 
     app.mu2a = reshape([], 0, 2);  # parameters for all nonbonded pair potentials 
     app.ncmu2a = 0;         # length of mu2a
-    app.rcut2a = reshape([0.0],1,1); # cut-off radius for each nonbonded pair potential
+    app.rcut2a = reshape([],0,2); # cut-off radius for each nonbonded pair potential
     
     # bonded pair potentials
     app.np2b = 0;               # number of bonded pair potentials 
     app.pot2b = reshape([], 0, 2);       # list of bonded pair potentials 
     app.mu2b = reshape([], 0, 2);  # parameters for all bonded pair potentials 
     app.ncmu2b = 0;             # length of mu2b
-    app.rcut2b = reshape([0.0],1,1);   # cut-off radius for each nonbonded pair potential
+    app.rcut2b = reshape([],0,2);   # cut-off radius for each nonbonded pair potential
     app.atom2b = reshape([], 0, 2); # list of bonded atom pair types
     
     # two-body bond order potentials
@@ -307,7 +381,7 @@ function initializeapp(sourcepath,version)
     app.pot2c = reshape([], 0, 2);         # list of two-body bond order potentials
     app.mu2c = reshape([], 0, 2);  # parameters for all two-body bond order potentials
     app.ncmu2c = 0;             # length of mu2c
-    app.rcut2c = reshape([0.0],1,1);    # cut-off radius for each two-body bond order potential
+    app.rcut2c = reshape([],0,2);    # cut-off radius for each two-body bond order potential
     app.atom2c = reshape([], 0, 2);        # list of bond porder atom types
     
     # nonbonded triplet potentials
@@ -315,14 +389,14 @@ function initializeapp(sourcepath,version)
     app.pot3a = reshape([], 0, 2);     # list of nonbonded triplet potentials
     app.mu3a = reshape([], 0, 2);  # parameters for all nonbonded triplet potentials
     app.ncmu3a = 0;         # length of mu3a
-    app.rcut3a = reshape([0.0],1,1); # cut-off radius for each nonbonded triplet potential
+    app.rcut3a = reshape([],0,2); # cut-off radius for each nonbonded triplet potential
     
     # bonded triplet potentials
     app.np3b = 0;               # number of bonded triplet potentials 
     app.pot3b = reshape([], 0, 2);         # list of bonded triplet potentials 
     app.mu3b = reshape([], 0, 2);  # parameters for all bonded triplet potentials 
     app.ncmu3b = 0;             # length of mu3b
-    app.rcut3b = reshape([0.0],1,1);    # cut-off radius for each nonbonded triplet potential
+    app.rcut3b = reshape([],0,2);    # cut-off radius for each nonbonded triplet potential
     app.atom3b = reshape([], 0, 2); # list of bonded atom triplet types
     
     # three-body bond order potentials
@@ -330,7 +404,7 @@ function initializeapp(sourcepath,version)
     app.pot3c = reshape([], 0, 2);         # list of three-body bond order potentials
     app.mu3c = reshape([], 0, 2);  # parameters for all three-body bond order potentials
     app.ncmu3c = 0;             # length of mu3c
-    app.rcut3c = reshape([0.0],1,1);    # cut-off radius for each three-body bond order potential
+    app.rcut3c = reshape([],0,2);    # cut-off radius for each three-body bond order potential
     app.atom3c = reshape([], 0, 2);   # list of three-body bond order atom types
     
     # nonbonded quadruplet potentials
@@ -338,14 +412,14 @@ function initializeapp(sourcepath,version)
     app.pot4a = reshape([], 0, 2);     # list of nonbonded quadruplet potentials
     app.mu4a = reshape([], 0, 2);  # parameters for all nonbonded quadruplet potentials
     app.ncmu4a = 0;          # length of mu4a
-    app.rcut4a = reshape([0.0],1,1); # cut-off radius for each nonbonded quadruplet potential
+    app.rcut4a = reshape([],0,2); # cut-off radius for each nonbonded quadruplet potential
     
     # bonded quadruplet potentials
     app.np4b = 0;               # number of bonded quadruplet potentials 
     app.pot4b = reshape([], 0, 2);         # list of bonded quadruplet potentials 
     app.mu4b = reshape([], 0, 2);  # parameters for all bonded quadruplet potentials 
     app.ncmu4b = 0;             # length of mu3b
-    app.rcut4b = reshape([0.0],1,1);    # cut-off radius for each nonbonded quadruplet potential
+    app.rcut4b = reshape([],0,2);    # cut-off radius for each nonbonded quadruplet potential
     app.atom4b = reshape([], 0, 2); # list of bonded atom quadruplet types
     
     app.ncx = 0; # number of compoments of x
@@ -356,6 +430,10 @@ function initializeapp(sourcepath,version)
     app.ncmu = 0; # number of compoments of mu
     app.nceta = 0; # number of compoments of eta
     app.nckappa = 0; # number of compoments of kappa
+    
+    app.lattice = [];
+    app.region = [];
+    app.domain = [];
     
     return app;
 

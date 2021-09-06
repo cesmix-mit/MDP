@@ -7,19 +7,25 @@
 
 function genbo2(foldername, filename, u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, natomtype)
 
-if (u[1]==0)
-    m = 0;
-else    
-    n,m = size(u);
-    if (n==0) || (n == 1)
-        m = 0;    
-    elseif (n == natomtype+1)
-        if u[n,1] == 0
-            m = 0;
-        end    
+if length(u)>0
+    if (u[1]==0)
+        m = 0;
+        n = 0;
     else
-        error("Number of functions for the two-body bond order potential must be equal to 1 plus the number of atom types");
+        n,m = size(u);
+        # if (n==0) || (n == 1)
+        #     m = 0;    
+        # elseif (n == natomtype+1)
+        #     if u[end,1] == 0
+        #         m = 0;
+        #     end    
+        # else
+        #     error("Number of functions for the two-body bond order potential must be equal to 1 plus the number of atom types");
+        # end
     end
+else
+    n = 0;
+    m = 0;
 end
 
 gen = 1;

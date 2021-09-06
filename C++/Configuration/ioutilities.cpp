@@ -238,18 +238,16 @@ template <typename T> void writearray2file(string filename, T *a, Int N)
 template <typename T> void writearray(ofstream &out, T *a, Int N, Int backend)
 {
     if (N>0) {        
-        if (backend==2) { //GPU
-#ifdef  HAVE_CUDA                        
+        if (backend>1) { //GPU            
             T *a_host;            
             a_host = (T*) malloc (sizeof (T)*N);            
             
-            // transfer data from GPU to CPU to save in a file
-            cudaMemcpy(&a_host[0], &a[0], N*sizeof(T), cudaMemcpyDeviceToHost);    
+            // transfer data from GPU to CPU to save in a file            
+            TemplateCopytoHost(a_host, a, N, backend);        
             
             out.write( reinterpret_cast<char*>( &a_host[0] ), sizeof(T) * N );
             
             free(a_host);
-#endif            
         }
         else 
             out.write( reinterpret_cast<char*>( &a[0] ), sizeof(T) * N );                            

@@ -18,7 +18,6 @@ if gen==0
     stropu = "template <typename T> void " + opufile;
 
     tmp = sp0;
-
     stropu = stropu + tmp + "{\n";
     stropu = stropu + "}\n";
     stropu = strrep(stropu, "(T *u, T *xi,", "(T *u, T *u_xi, T *xi,");            

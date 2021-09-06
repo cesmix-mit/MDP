@@ -5,12 +5,22 @@ version = "Version0.1"
 cdir = pwd();
 push!(LOAD_PATH, cdir);
 
-using Gencode
+# Add Exasim to Julia search path
+cdir = pwd(); ii = findlast("Julia", cdir);
+sourcepath = cdir[1:(ii[1]-1)];
+include(sourcepath * "/Installation/setpath.jl");
 
+# MDP packages
+using Preprocessing, Gencode, Postprocessing
+
+app = Preprocessing.initializeapp(sourcepath,version);
+
+
+#using Gencode
 # create pde structure and mesh structure
-app = Gencode.initializeapp(version);
+#app = Gencode.initializeapp(version);
 
-app.nd = 3;
+app.dim = 3;
 app.ncq = 1;
 app.nceta = 10;
 app.nckappa = 2;

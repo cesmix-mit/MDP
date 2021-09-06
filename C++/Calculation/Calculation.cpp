@@ -308,7 +308,8 @@ void CCalculation::EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dst
 #endif                
 }
 
-void CCalculation::EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype* x, dstype *coeff, dstype *q, dstype *param, Int *nparam) 
+void CCalculation::EmpiricalPotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype* x, 
+        dstype *coeff, dstype *q, dstype *param, Int *nparam) 
 {        
     Int dim = common.dim;
     Int inum = common.inum;
@@ -347,7 +348,7 @@ void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, d
     this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, coeff, sys.q, param, nparam);              
     
     if (common.descriptor == 1) // snap
-        ComputePairSnap(e, f, v, sna, common, sys, nb, tmp);  
+        ComputePairSnap(e, f, v, x, sna, common, sys, nb, tmp);  
     else if (common.descriptor == 0) // spherical harmonic
         this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x,  &coeff[common.Nempot], sys.q, param, 0);            
 
@@ -386,7 +387,7 @@ void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, d
     
     START_TIMING;
     if (common.descriptor == 1) // snap
-        ComputePairSnap2(e, f, v, sna, common, sys, nb, tmp);  
+        ComputePairSnap2(e, f, v, x, sna, common, sys, nb, tmp);  
     else if (common.descriptor == 0) // spherical harmonic
         this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x, sys.c, sys.q, param, 0);                               
     END_TIMING(11);
@@ -423,6 +424,23 @@ void CCalculation::ThermoOutput(int flag)
         common.ke = 0.5 * tdof * boltz * common.temp/inum;                          
         common.pres = (tdof * boltz * common.temp + scalars[1] + scalars[2] + scalars[3]) / 3.0 * inv_volume * nktv2p;
     }
+}
+
+void CCalculation::ReferencePotentialDescriptors(dstype *ev, dstype *e, dstype *f, dstype *v, 
+        dstype *bi, dstype *bd, dstype *bv, dstype *x, dstype *param, Int *nparam) 
+{         
+    ArraySetValue(e, 0.0, common.inum, common.backend);  
+    ArraySetValue(f, 0.0, common.inum*common.dim, common.backend);  
+    ArraySetValue(v, 0.0, common.inum*6, common.backend);  
+             
+    this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, sys.q, param, nparam);                         
+    ArraySumEveryColumn(ev, e, 1, common.inum, common.backend);    
+    ArraySumEveryColumn(&ev[1], v, 6, common.inum, common.backend);              
+    
+    if (common.descriptor == 1) // snap
+        ComputeSnap(bi, bd, bv, x, sna, common, sys, nb, tmp);  
+    //else if (common.descriptor == 0) // spherical harmonic
+        //this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x, sys.c, sys.q, param, 0);                    
 }
 
 #endif        

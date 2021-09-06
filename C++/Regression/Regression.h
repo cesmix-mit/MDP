@@ -20,7 +20,8 @@ public:
     void LinearRegression(CCalculation &CCal);
     void GaussianRegression(CCalculation &CCal);
     void NeuralNetRegression(CCalculation &CCal);    
-    void ValidateLinearRegression(CCalculation &CCal);
+    void ValidateLinearRegression(CCalculation &CCal);    
+    void ReferencePotentialDescriptors(CCalculation &CCal);    
 };
 
 

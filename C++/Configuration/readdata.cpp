@@ -261,7 +261,7 @@ int implReadDomainStruct(domainstruct &dom, string filein)
     ifstream in(filename.c_str(), ios::in | ios::binary);
     
     dom.allocatememory(1);    
-    for (int i = 0; i<= 3; i++) {
+    for (int i = 0; i<3; i++) {
         dom.boxlo_lamda[i] = 0.0;
         dom.boxhi_lamda[i] = 1.0;                   
         dom.sublo_lamda[i] = 0.0;
@@ -488,7 +488,7 @@ void implSetDomainStruct(domainstruct &dom, commonstruct &common, regionstruct &
     
     if (common.readlattice==0) {
         common.dom.triclinic = common.reg.triclinic;
-        for (int i = 0; i<= 3; i++) {
+        for (int i = 0; i< 3; i++) {
             common.dom.boxhi[i] = common.reg.boxhi[i]; 
             common.dom.boxlo[i] = common.reg.boxlo[i]; 
             common.dom.boxtilt[i] = common.reg.boxtilt[i]; 
@@ -518,7 +518,7 @@ void implSetDomainStruct(domainstruct &dom, commonstruct &common, regionstruct &
         common.dom.boxtilt[0] = common.lat.spacing[0]*common.reg.boxtilt[0];                     
         common.dom.boxtilt[1] = common.lat.spacing[0]*common.reg.boxtilt[1];                     
         common.dom.boxtilt[2] = common.lat.spacing[1]*common.reg.boxtilt[2];                                     
-        for (int i = 0; i<= 3; i++) {
+        for (int i = 0; i< 3; i++) {
             common.dom.boxhi[i] = common.lat.spacing[i]*common.reg.boxhi[i]; 
             common.dom.boxlo[i] = common.lat.spacing[i]*common.reg.boxlo[i];        
             common.dom.boxlo_lamda[i] = 0.0;
@@ -616,18 +616,17 @@ void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &comm
         string filein, string fileout, Int mpiprocs, Int mpirank, Int backend)
 {        
     implReadAppStruct(app, common, filein, mpiprocs, mpirank, backend);        
-    common.readconfig = implReadConfigStruct(config, filein, mpiprocs, mpirank, backend);          
+    common.readconfig = implReadConfigStruct(config, filein, mpiprocs, mpirank, backend);    
     common.readlattice = implReadLatticeStruct(common.lat, filein);    
     common.readregion = implReadRegionStruct(common.reg, filein);    
-    common.readdomain = implReadDomainStruct(common.dom, filein);        
-    implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);             
+    common.readdomain = implReadDomainStruct(common.dom, filein);   
+    implSetCommonStruct(common, app, config, filein,  fileout, mpiprocs, mpirank, backend);      
     if (common.readdomain==0) {
         implSetDomainStruct(common.dom, common, common.reg, common.lat);        
     }    
     if (common.readconfig==0) {
         implSetConfigStruct(config, common.dom, app, common, common.reg, common.lat);            
     }
-        
     common.triclinic = common.dom.triclinic;
     app.dom.allocatememory(backend);
     copydomain(app.dom, common.dom, backend);       

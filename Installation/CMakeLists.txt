@@ -55,11 +55,6 @@ if(MDP_CORES)
 endif()
 
 if(MDP_EXECUTABLES)
-    #add_library(cpuCore STATIC ${CPUCORE_SOURCES})
-    #target_compile_options(cpuCore PRIVATE -ffast-math -O3 -DNDEBUG) 
-
-    #add_library(cpuEmpiricalPotentials SHARED ${CPUPOTENTIAL_SOURCES})
-    #target_compile_options(cpuEmpiricalPotentials PRIVATE -ffast-math -O3 -DNDEBUG) 
 
     find_package(BLAS)
     find_package(LAPACK)
@@ -67,26 +62,17 @@ if(MDP_EXECUTABLES)
        set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
     endif()
 
-    add_executable(cpuMDP ${MAIN_SOURCES})
-    target_link_libraries(cpuMDP PRIVATE cpuCore cpuEmpiricalPotentials ${lapackblas_libraries})
-    target_compile_options(cpuMDP PRIVATE -std=c++11 -ffast-math -O3 -DNDEBUG) 
-
     if(MDP_CUDA)
         enable_language(CUDA)
         find_package(CUDA REQUIRED)
-        #file(GLOB GPUCORE_SOURCES ${MDP_CORE_DIR}/gpuCore.cu)
-        #file(GLOB GPUPOTENTIAL_SOURCES ${MDP_POTENTIALS_DIR}/gpuEmpiricalPotentials.cu)    
-
-        #cuda_add_library(gpuCore STATIC ${GPUCORE_SOURCES} OPTIONS -arch sm_70 -std c++11 -O3 -w -D_FORCE_INLINES -DNDEBUG --use_fast_math)
-        #target_compile_options(gpuCore PRIVATE -std=c++11 --use_fast_math -arch=sm_70 -D_FORCE_INLINES -O3 -w -DNDEBUG)     
-        #target_compile_options(gpuCore PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-std=c++11 --use_fast_math -arch=sm_70 -D_FORCE_INLINES -O3 -w -DNDEBUG>) 
-
-        #cuda_add_library(gpuEmpiricalPotentials SHARED ${GPUPOTENTIAL_SOURCES} OPTIONS -arch sm_70 -std c++11 -O3 -w -D_FORCE_INLINES -DNDEBUG --use_fast_math)    
-        #target_compile_options(gpuEmpiricalPotentials PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-std=c++11 --use_fast_math -arch=sm_70 -D_FORCE_INLINES -O3 -w -DNDEBUG>) 
 
         add_executable(gpuMDP ${MAIN_SOURCES})
         target_compile_definitions(gpuMDP PRIVATE -DUSE_CUDA)    
         target_link_libraries(gpuMDP PRIVATE cpuCore cpuEmpiricalPotentials gpuCore gpuEmpiricalPotentials ${lapackblas_libraries} ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES})
         target_compile_options(gpuMDP PRIVATE -std=c++11 -ffast-math -O3 -DNDEBUG -fno-unroll-loops)     
+    else()
+        add_executable(cpuMDP ${MAIN_SOURCES})
+        target_link_libraries(cpuMDP PRIVATE cpuCore cpuEmpiricalPotentials ${lapackblas_libraries})
+        target_compile_options(cpuMDP PRIVATE -std=c++11 -ffast-math -O3 -DNDEBUG) 
     endif()
 endif()

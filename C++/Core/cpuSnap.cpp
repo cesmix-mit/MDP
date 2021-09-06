@@ -977,7 +977,6 @@ template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *
         int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj, int nelements, int twojmax, int idxu_max, 
         int chemflag, int ijnum) 
 {
-
   for(int ij = 0; ij < ijnum; ij++)  
     for(int k = 0; k < 3; k++)
         dedr[k + 3*ij] = 0.0;

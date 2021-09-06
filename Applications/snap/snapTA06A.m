@@ -1,9 +1,18 @@
-app = initializeapp();
+cdir = pwd(); ii = strfind(cdir, "MDP");
+if isempty(ii) == 0
+    MDPpath = cdir(1:(ii+2)) + "/";
+    run(MDPpath + "Installation/setpath.m");
+else
+    % MDPpath = /path/to/MDP;
+    disp("MDP's path is not found. Please uncomment the above line and set the path to MDP.");
+end
+
+app = initializeapp(cdir,MDPpath);
+app.platform = "cpu";    % app.platform = "gpu" => MDP runs on Nvidia GPU 
 app.unitstyle = "metal"; % unit system
-app.pbc = [1 1 1];       % periodic boundary conditions
-app.platform = "cpu";
-nlattice = 8;  % note that # of atoms = 2 * nlattice^3 
 app.appname = "snapTA06A" + num2str(nlattice);
+app.pbc = [1 1 1];       % periodic boundary conditions
+nlattice = 4;            % note that # of atoms = 2 * nlattice^3 
 
 %  neighbor list
 app.neighskin = 1.0;
@@ -21,7 +30,7 @@ app.atomcharges = [0];
 
 % lattice, region, domain
 app.lattice = setlattice("bcc", 3.316);
-app.region = setregion([0 0 0], [nlattice nlattice nlattice]);
+app.region = setregion([nlattice nlattice nlattice]);
 
 % nonparametric potential descriptors
 app.descriptor = "snap";    % (snap, shp)

@@ -49,7 +49,7 @@ else
     stropu = stropu * "\tfor (int i = 0; i <ng; i++) {\n";
 
     strgpu = strgpu * tmp * "{\n";
-    strgpu = strgpu * "\tint i = threadIdx.x * blockIdx.x * blockDim.x;\n";
+    strgpu = strgpu * "\tint i = threadIdx.x + blockIdx.x * blockDim.x;\n";
     strgpu = strgpu * "\twhile (i<ng) {\n";
         
     ustr = string(u);       
@@ -96,11 +96,12 @@ else
     if (contains(ustr, "ak"))
         mystr = varsassign(mystr, "ak", length(ak), ustr, 3);
     end
+    
     mystr = symsassign(mystr, u);
 
     stropu = stropu * mystr * "\t}\n" * "}\n\n";
 
-    strgpu = strgpu * mystr * "\t\ti *= blockDim.x * gridDim.x;\n";
+    strgpu = strgpu * mystr * "\t\ti += blockDim.x * gridDim.x;\n";
     strgpu = strgpu * "\t}\n" * "}\n\n";
 
     # here
@@ -145,7 +146,8 @@ else
     st4 = replace(st4, "u, xij," => "u, du, u_xij, xij,");   
     st4 = replace(st4, "<<<" => "Gradient<<<");   
     st2 = st2 * "\n" * st4;
-    strgpu = strgpu * "\n" * st1 * "\n" * st2;    
+    #strgpu = strgpu * "\n" * st1 * "\n" * st2;    
+    strgpu = strgpu * "\n" *  "#ifdef _ENZYME\n" * st1 * "\n" * st2 * "#endif\n";    
 
     strcpu = replace(stropu, "opu" => "cpu");
     strcpu = replace(strcpu, "for (int i = 0; i <ng; i++) {" => "#pragma omp parallel for\n\tfor (int i = 0; i <ng; i++) {");    

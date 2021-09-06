@@ -18,6 +18,88 @@ CRegression::CRegression(CCalculation &CCal)
     TemplateMalloc(&CCal.sys.b, M, backend);  
 }
 
+void CRegression::ReferencePotentialDescriptors(CCalculation &CCal)
+{
+    int dim = CCal.common.dim;
+    int nc = CCal.common.trainingnum;
+    int backend = CCal.common.backend;    
+    int M = CCal.common.M;
+    int inum = CCal.common.inum;
+    int *nparam = CCal.common.nmu;    
+
+    dstype *e, *v, *x, *f, *q, *param, *ev, *bi, *bd, *bv;
+    param = CCal.app.muep;
+    x = CCal.sys.x;
+    e = CCal.sys.e;
+    f = CCal.sys.f;
+    v = CCal.sys.vatom;
+    
+    TemplateMalloc(&ev, 7, backend);  
+    TemplateMalloc(&bi, M, backend);  
+    TemplateMalloc(&bd, inum*dim*M, backend);  
+    TemplateMalloc(&bv, 6*M, backend);  
+        
+    // open files
+    string file1 = CCal.common.fileout + "_p" + NumberToString(CCal.common.mpiRank) + "_e.bin";
+    string file2 = CCal.common.fileout + "_p" + NumberToString(CCal.common.mpiRank) + "_f.bin";
+    string file3 = CCal.common.fileout + "_p" + NumberToString(CCal.common.mpiRank) + "_v.bin";
+    string file4 = CCal.common.fileout + "_p" + NumberToString(CCal.common.mpiRank) + "_bi.bin";
+    string file5 = CCal.common.fileout + "_p" + NumberToString(CCal.common.mpiRank) + "_bd.bin";
+    string file6 = CCal.common.fileout + "_p" + NumberToString(CCal.common.mpiRank) + "_bv.bin";
+                
+    ofstream out1(file1.c_str(), ios::out | ios::binary);
+    ofstream out2(file2.c_str(), ios::out | ios::binary);
+    ofstream out3(file3.c_str(), ios::out | ios::binary);
+    ofstream out4(file4.c_str(), ios::out | ios::binary);
+    ofstream out5(file5.c_str(), ios::out | ios::binary);
+    ofstream out6(file6.c_str(), ios::out | ios::binary);
+    
+    if (!out1) error("Unable to open file " + file1);
+    if (!out2) error("Unable to open file " + file2);
+    if (!out3) error("Unable to open file " + file3);
+    if (!out4) error("Unable to open file " + file4);
+    if (!out5) error("Unable to open file " + file5);
+    if (!out6) error("Unable to open file " + file6);
+            
+    for (int i=0; i<nc; i++) { // loop over each configuration     
+        int ci = CCal.common.traininglist[i]; // configuration ci
+        cout<<"Configuration # "<<ci+1<<": "<<endl;
+
+        // get atom positions for configuration ci   
+        CCal.GetPositions(x, ci); 
+
+        // get atom types for configuration ci
+        CCal.GetAtomtypes(CCal.nb.atomtype, ci);           
+
+        // form neighbor list
+        CCal.NeighborList(x);
+
+        // compute reference potential and descriptors 
+        CCal.ReferencePotentialDescriptors(ev, e, f, v, bi, bd, bv, x, param, nparam);                
+        
+        // save data into files
+        writearray(out1, ev, 1, backend);
+        writearray(out2, f, inum*dim, backend);    
+        writearray(out3, &ev[1], 6, backend);    
+        writearray(out4, bi, M, backend);    
+        writearray(out5, bd, inum*dim*M, backend);    
+        writearray(out6, bv, 6*M, backend);    
+    }    
+    
+    // Close file:
+    out1.close();    
+    out2.close();    
+    out3.close();    
+    out4.close();    
+    out5.close();    
+    out6.close();    
+    
+    TemplateFree(ev, backend);  
+    TemplateFree(bi, backend);  
+    TemplateFree(bd, backend);  
+    TemplateFree(bv, backend);      
+}
+
 void CRegression::LinearRegression(CCalculation &CCal)
 {
     int M = CCal.common.M;

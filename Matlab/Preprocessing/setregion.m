@@ -5,23 +5,19 @@
 % Contributing authors: Ngoc-Cuong Nguyen (cuongng@mit.edu, exapde@gmail.com)
 %***************************************************************************
 
-function reg = setregion(boxlo, boxhi, boxtilt)
+function reg = setregion(boxhi, boxtilt)
 
-if nargin<2
+if nargin<1
     error("Invalid input arguments");
 end
-
-if length(boxlo) ~= 3
-    error("length of boxlo must be 3");
-end    
 if length(boxhi) ~= 3
     error("length of boxhi must be 3");
 end    
 
-reg.boxlo = boxlo;
+reg.boxlo = [0.0 0.0 0.0];
 reg.boxhi = boxhi;
 
-if nargin>=3 && ~isempty(boxtilt)
+if nargin>=2 && ~isempty(boxtilt)
     if length(boxtilt) ~= 3
         error("length of boxtilt must be 3");
     end        

@@ -59,8 +59,14 @@ function writeapp(app,filename)
     nsize[49] = length(app.atom4b[:]);
     nsize[51] = length(app.traininglist[:]);
     nsize[52] = length(app.validatelist[:]);
-    nsize[53] = length(app.nvtparam[:]);
-
+    nsize[53] = length(app.nveparam[:]);
+    nsize[54] = length(app.nvtparam[:]);
+    nsize[55] = length(app.snaparam[:]); 
+    nsize[56] = length(app.snapelemradius[:]); 
+    nsize[57] = length(app.snapelemweight[:]); 
+    nsize[58] = length(app.snapcoeff[:]); 
+    nsize[59] = length(app.createvelocity[:]); 
+        
     #app.nsize = nsize;
     fileID = open(filename,"w");
     write(fileID,Float64(length(nsize[:])));
@@ -116,7 +122,13 @@ function writeapp(app,filename)
     write(fileID,Float64.(app.atom4b[:]));
     write(fileID,Float64.(app.traininglist[:]));
     write(fileID,Float64.(app.validatelist[:]));
+    write(fileID,Float64.(app.nveparam[:]));
     write(fileID,Float64.(app.nvtparam[:]));
+    write(fileID,Float64.(app.snaparam[:]));
+    write(fileID,Float64.(app.snapelemradius[:]));
+    write(fileID,Float64.(app.snapelemweight[:]));
+    write(fileID,Float64.(app.snapcoeff[:]));
+    write(fileID,Float64.(app.createvelocity[:]));    
 
     close(fileID);
 

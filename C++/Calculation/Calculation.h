@@ -69,11 +69,14 @@ public:
     // Combined empirical + ML potentials
     void PotentialDescriptors(dstype *e, dstype *x, dstype *q, dstype *param, Int *nparam);     
     void PotentialDescriptors(dstype *e, dstype *f, dstype *x, dstype *q, dstype *param, Int *nparam);     
+    void ReferencePotentialDescriptors(dstype *ev, dstype *e, dstype *f, dstype *v, 
+            dstype *bi, dstype *bd, dstype *bv, dstype *x, dstype *param, Int *nparam);
+    
     void PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *param, Int *nparam);     
     void PotentialEnergyForce(dstype *e, dstype *f, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam);     
     void PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *param, Int *nparam);     
     void PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, dstype *x, dstype *coeff, dstype *q, dstype *param, Int *nparam);     
-    
+            
     void ThermoOutput(int flag);
 };
 

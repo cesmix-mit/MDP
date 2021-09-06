@@ -3236,6 +3236,35 @@ inline void ComputeDbidrj(dstype *dblist, dstype *zlist_r, dstype *zlist_i, dsty
 #endif                          
 }
 
+inline void ComputeDbidrj(dstype *dblist, dstype *zlist_r, dstype *zlist_i, 
+        dstype *dulist_r, dstype *dulist_i, int *idxb, int *idxu_block, int *idxz_block, 
+        int *map, int *ai, int *tj, int twojmax, int idxb_max, int idxu_max, int idxz_max, 
+        int nelements, int bnorm_flag, int chemflag, int inum, int ijnum, int backend)
+{
+    if (backend == 1)
+        cpuComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
+                idxz_block, map, ai, tj, twojmax, idxb_max, idxu_max, idxz_max, 
+                nelements, bnorm_flag, chemflag, inum, ijnum);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
+                idxz_block, map, ai, tj, twojmax, idxb_max, idxu_max, idxz_max, 
+                nelements, bnorm_flag, chemflag, inum, ijnum);
+#endif                                
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
+                idxz_block, map, ai, tj, twojmax, idxb_max, idxu_max, idxz_max, 
+                nelements, bnorm_flag, chemflag, inum, ijnum);
+#endif                                        
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, 
+                idxz_block, map, ai, tj, twojmax, idxb_max, idxu_max, idxz_max, 
+                nelements, bnorm_flag, chemflag, inum, ijnum);
+#endif                          
+}
+
 inline void ComputeDuijdrj(dstype *dulist_r, dstype *dulist_i, dstype *ulist_r, dstype *ulist_i, dstype *rootpqarray, 
         dstype* rij, dstype *wjelem, dstype *radelem, dstype rmin0, dstype rfac0, dstype rcutfac, int *idxu_block, 
         int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag, int backend)
@@ -3562,6 +3591,63 @@ inline void SnapTallyVirialFull(dstype *vatom, dstype *fij, dstype *rij,
 // #endif                          
 // }
 
+inline void SnapTallyBispectrum(dstype *bi, dstype *bispectrum, int *ilist, 
+        int *type, int inum, int ncoeff, int nperdim, int ntype, int quadraticflag, int backend)
+{
+    if (backend == 1)
+        cpuSnapTallyBispectrum(bi, bispectrum, ilist, type, inum, ncoeff, nperdim, ntype, quadraticflag);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompSnapTallyBispectrum(bi, bispectrum, ilist, type, inum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                                
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipSnapTallyBispectrum(bi, bispectrum, ilist, type, inum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                                        
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuSnapTallyBispectrum(bi, bispectrum, ilist, type, inum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                             
+}
+
+inline void SnapTallyBispectrumDeriv(dstype *db, dstype *bispectrum, dstype *dbdr, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag, int backend)
+{
+    if (backend == 1)
+        cpuSnapTallyBispectrumDeriv(db, bispectrum, dbdr, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompSnapTallyBispectrumDeriv(db, bispectrum, dbdr, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                                
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipSnapTallyBispectrumDeriv(db, bispectrum, dbdr, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                                        
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuSnapTallyBispectrumDeriv(db, bispectrum, dbdr, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                             
+}
+
+inline void SnapTallyBispectrumVirial(dstype *bv, dstype *bispectrum, dstype *dbdr, dstype *rij, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag, int backend)
+{
+    if (backend == 1)
+        cpuSnapTallyBispectrumVirial(bv, bispectrum, dbdr, rij, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#ifdef USE_OMP  
+    if (backend == 4)
+        ompSnapTallyBispectrumVirial(bv, bispectrum, dbdr, rij, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                                
+#ifdef USE_HIP  
+    if (backend == 3)
+        hipSnapTallyBispectrumVirial(bv, bispectrum, dbdr, rij, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                                        
+#ifdef USE_CUDA   
+    if (backend == 2)
+        gpuSnapTallyBispectrumVirial(bv, bispectrum, dbdr, rij, aii, ai, aj, ti, inum, ijnum, ncoeff, nperdim, ntype, quadraticflag);
+#endif                             
+}
+        
 inline void NeighborPairList(int *pairnum, int *pairlist, dstype *x, dstype rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim, int backend)
 {
@@ -3570,7 +3656,7 @@ inline void NeighborPairList(int *pairnum, int *pairlist, dstype *x, dstype rcut
                             neighnum, inum, jnum, dim);
 #ifdef USE_OMP  
     if (backend == 4)
-        ompuNeighPairList(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
+        ompNeighPairList(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
                             neighnum, inum, jnum, dim);
 #endif                                
 #ifdef USE_HIP  

@@ -36,7 +36,7 @@ mu = sym('mu',[app.ncmu1b 1]);
 if isfield(pot, char(filename))        
     u = pot.Singleb(xi, qi, ti, mu, eta, kappa);    
     genpotential(filename, u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
-    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
+    genpotentialgrad(filename + "Gradient", u, xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);        
 else
     nopotential(filename, [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
     genpotentialgrad(filename + "Gradient", [], xij, xik, xil, xi, xj, xk, xl, qi, qj, qk, ql, ti, tj, tk, tl, ai, aj, ak, al, mu, eta, kappa, potform);    
@@ -71,7 +71,7 @@ rho = sym('rho',[1 1]);
 if isfield(pot, char(filename))    
     u = pot.Pairc(xij, qi, qj, ti, tj, rho, mu, eta, kappa);    
     genbo2(filename, u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
-    genbo2grad(filename + "Gradient", u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);       
+    genbo2grad(filename + "Gradient", u, xij, qi, qj, ti, tj, ai, aj, rho, mu, eta, kappa, app.natomtype);           
 else
     ifile = 0;
     gen = 0;    

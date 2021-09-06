@@ -8,7 +8,7 @@
 function [app,config] = preprocessing(app)
 
 % read configurations from data file
-if strcmpi(app.configfile,"")==0 && app.configmode>=0
+if strcmpi(app.configfile,"")==0 && app.configmode>0
     config = readconfig(app, app.configmode);     
     % number of configurations
     app.nconfigs = config.nconfigs;          

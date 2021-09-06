@@ -476,17 +476,14 @@ template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, T
         int *idxb, int *idxu_block, int *idxz_block, int *map, int *ai, int *aj, int *ti, int *tj, int twojmax, 
         int idxb_max, int idxu_max, int idxz_max, int nelements, int bnorm_flag, int chemflag, int ijnum);
 
-// template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
-//         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
-//         int *type, int *alist, int *ai, int *aj, int twojmax, int idxu_max, int ijnum, int switch_flag);
+template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i, 
+        T *dulist_r, T *dulist_i, int *idxb, int *idxu_block, int *idxz_block, 
+        int *map, int *ai, int *tj, int twojmax, int idxb_max, int idxu_max, int idxz_max, 
+        int nelements, int bnorm_flag, int chemflag, int inum, int ijnum);
 
 template <typename T> void cpuComputeDuijdrj(T *dulist_r, T *dulist_i, T *ulist_r, T *ulist_i, T *rootpqarray, 
         T* rij, T *wjelem, T *radelem, T rmin0, T rfac0, T rcutfac, int *idxu_block, 
         int *ai, int *aj, int *ti, int *tj, int twojmax, int idxu_max, int ijnum, int switch_flag);
-
-// template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
-//         int *idxu_block, int *type, int *map, int *ai, int *aj, int nelements, int twojmax, int idxu_max, 
-//        int chemflag, int ijnum); 
 
 template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i, T *dulist_r, T *dulist_i,         
         int *idxu_block, int *map, int *ai, int *aj, int *ti, int *tj, int nelements, int twojmax, int idxu_max, 
@@ -572,6 +569,16 @@ template <typename T> void cpuComputeDeidrj(T *dedr, T *ylist_r, T *ylist_i,
 
 template <typename T> void cpuSnapTallyEnergyFull2(T *eatom, T *bispectrum, T *coeffelem, int *ilist, 
         int *map, int *type, int inum, int ncoeff, int ncoeffall, int quadraticflag);
+
+template <typename T> void cpuSnapTallyBispectrum(T *bi, T *bispectrum, int *ilist, 
+        int *type, int inum, int ncoeff, int nperdim, int ntype, int quadraticflag);
+
+template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag);
+
+template <typename T> void cpuSnapTallyBispectrumVirial(T *bv, T *bispectrum, T *dbdr, T *rij, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag);
+
 
 //*************************** Lattice, Region, Domain ***********************************************//
 template <typename T> int cpuLattice(T *basis, T *primitive, T *rotaterow, T *priminv, T *rotatecol, T *origin, 

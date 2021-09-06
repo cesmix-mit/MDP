@@ -7,15 +7,41 @@
 
 function mdp(app)
 
+# create exec folder if it does not exist
+bindir = "exec";
+cd(app.sourcepath);
+if isdir(bindir) == 0
+    mkdir(bindir);    
+end
+cd(app.currentdir);
+
 # preprocess input data
 app, config = Preprocessing.preprocessing(app); 
 
 # generate code
 Gencode.gencode(app); # Generate C++ code
 
-# compile code
-cd(app.sourcepath * "C++/Main");
-Gencode.compile(app);
+# compile C++ source code
+# cd(app.sourcepath * "C++/Main");
+# Gencode.compile(app);
+cd(app.sourcepath * bindir);
+if isfile("CMakeCache.txt")    
+    rm("CMakeCache.txt", force=true);
+end
+if app.platform == "gpu"
+    if isfile("libcpuCore.a") && isfile("libgpuCore.a") && isfile("gpuMDP")
+        run(Gencode.string2cmd("cmake -D MDP_POTENTIALS=ON -D MDP_CUDA=ON ../Installation"));
+    else
+        run(Gencode.string2cmd("cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON -D MDP_CUDA=ON ../Installation"));
+    end
+elseif app.platform == "cpu"
+    if isfile("libcpuCore.a") && isfile("cpuMDP")
+        run(Gencode.string2cmd("cmake -D MDP_POTENTIALS=ON ../Installation"));
+    else
+        run(Gencode.string2cmd("cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON ../Installation"));
+    end
+end
+run(Gencode.string2cmd("cmake --build ."));
 
 # run code
 #Gencode.runcode(app);
@@ -26,7 +52,6 @@ else app.platform == "gpu"
 end
 cd(app.currentdir);
 
-#cd(app.currentdir);
 if app.training > 0
     filename = app.sourcepath * "C++/Main/coefficients.bin";
     tmp = reinterpret(Float64,read(filename));

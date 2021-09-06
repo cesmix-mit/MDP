@@ -21,6 +21,8 @@ if potnum==1
     strgpu = replace(strgpu, "int);" => "int, int);");
 end
 
+#display(foldername * "/" * opufile * ".cpp")
+
 ioopu = open(foldername * "/" * opufile * ".cpp", "w");
 write(ioopu, stropu);
 close(ioopu);

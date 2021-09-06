@@ -536,7 +536,6 @@ template void cpuComputeBi2(double*, double*, double*, double*, double*, double*
 template void cpuComputeBi2(float*, float*, float*, float*, float*, float*,
         int*, int*, int*, int*, int*, int*, int, int, int, int, int, int, int, int, int);
 
-
 template <typename T> void cpuKernelComputeBeta1(T *beta, T *coeffelem, int *ilist, int *map, int *type, 
         int inum, int ncoeff, int ncoeffall, int N2)
 {    
@@ -908,17 +907,16 @@ template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i,
                                 
             for (int k = 0; k < 3; k++)
               dbdr[ij + ijnum*k + ijnum*3*jjb] += 2.0 * sumzdu_r[k];
+            
             // Sum over Conj(dudr(j1,ma1,mb1))*z(j,j2,j1,ma1,mb1)
-
             T j1fac = (j + 1) / (j1 + 1.0);
-
             idouble = elem1*nelements+elem2;
             itriple = (elem3*nelements+elem2)*nelements+elem1;            
             //jjz = idxz_block[j][j2][j1];
             jjz = idxz_block[j1 + j2*jdim + j*jdim*jdim];
             jju = idxu_block[j1];
 
-            dbdr = &dblist[nb_max*3*itriple];
+            //dbdr = &dblist[nb_max*3*itriple];
             for (int k = 0; k < 3; k++)
               sumzdu_r[k] = 0.0;
 
@@ -965,16 +963,14 @@ template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i,
                 dbdr[ij + ijnum*k + ijnum*3*jjb] += 2.0 * sumzdu_r[k] * j1fac;
 
             // Sum over Conj(dudr(j2,ma2,mb2))*z(j,j1,j2,ma2,mb2)
-
             T j2fac = (j + 1) / (j2 + 1.0);
-
             idouble = elem2*nelements+elem1;
             itriple = (elem1*nelements+elem3)*nelements+elem2;
             //jjz = idxz_block[j][j1][j2];
             jjz = idxz_block[j2 + j1*jdim + j*jdim*jdim];        
             jju = idxu_block[j2];
             
-            dbdr = &dblist[nb_max*3*itriple];
+            //dbdr = &dblist[nb_max*3*itriple];
             for (int k = 0; k < 3; k++)
               sumzdu_r[k] = 0.0;
 
@@ -1020,7 +1016,6 @@ template <typename T> void cpuComputeDbidrj(T *dblist, T *zlist_r, T *zlist_i,
                 dbdr[ij + ijnum*k + ijnum*3*jjb] += 2.0 * sumzdu_r[k];
               else
                 dbdr[ij + ijnum*k + ijnum*3*jjb] += 2.0 * sumzdu_r[k] * j2fac;
-
           }        
     }
 }
@@ -1334,11 +1329,11 @@ template <typename T> void cpuSnapTallyBispectrum(T *bi, T *bispectrum, int *ili
 template void cpuSnapTallyBispectrum(double*, double*, int*, int*, int, int, int, int, int);
 template void cpuSnapTallyBispectrum(float*, float*, int*, int*, int, int, int, int, int);
 
-template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *ai, 
-        int *aii, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag)
-{      
+template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{   
     cpuArraySetValue(db, (T) 0.0, inum*3*nperdim*ntype);
-    
+        
     int N2 = ijnum*ncoeff;
     for (int idx=0; idx<N2; idx++) {
         int ij = idx%ijnum;
@@ -1354,12 +1349,12 @@ template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *
         T bix = dbdr[ij + ijnum*0 + nij];
         T biy = dbdr[ij + ijnum*1 + nij];
         T biz = dbdr[ij + ijnum*2 + nij];        
-        db[i + inum*0 + nii] += bix;
-        db[i + inum*1 + nii] += biy;
-        db[i + inum*2 + nii] += biz;
-        db[j + inum*0 + nii] -= bix;
-        db[j + inum*1 + nii] -= biy;
-        db[j + inum*2 + nii] -= biz;
+        db[0 + 3*i + nii] += bix; 
+        db[1 + 3*i + nii] += biy;
+        db[2 + 3*i + nii] += biz;
+        db[0 + 3*j + nii] -= bix;
+        db[1 + 3*j + nii] -= biy;
+        db[2 + 3*j + nii] -= biz;
         
         if (quadraticflag) {
             T bi = bispectrum[ii + inum*icoeff];
@@ -1368,12 +1363,12 @@ template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *
             T dbztmp = bi*biz;
             int k = ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
             nii = inum*3*(k + n);  
-            db[i + inum*0 + nii] += dbxtmp;
-            db[i + inum*1 + nii] += dbytmp;
-            db[i + inum*2 + nii] += dbztmp;
-            db[j + inum*0 + nii] -= dbxtmp;
-            db[j + inum*1 + nii] -= dbytmp;
-            db[j + inum*2 + nii] -= dbztmp;          
+            db[0 + 3*i + nii] += dbxtmp;
+            db[1 + 3*i + nii] += dbytmp;
+            db[2 + 3*i + nii] += dbztmp;
+            db[0 + 3*j + nii] -= dbxtmp;
+            db[1 + 3*j + nii] -= dbytmp;
+            db[2 + 3*j + nii] -= dbztmp;          
          
             for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
                 int nj = ijnum*3*jcoeff;
@@ -1387,12 +1382,18 @@ template <typename T> void cpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *
 
                 k += 1;
                 nii = inum*3*(k + n);  
-                db[i + inum*0 + nii] += dbxtmp;
-                db[i + inum*1 + nii] += dbytmp;
-                db[i + inum*2 + nii] += dbztmp;
-                db[j + inum*0 + nii] -= dbxtmp;
-                db[j + inum*1 + nii] -= dbytmp;
-                db[j + inum*2 + nii] -= dbztmp;                                          
+                db[0 + 3*i + nii] += dbxtmp;
+                db[1 + 3*i + nii] += dbytmp;
+                db[2 + 3*i + nii] += dbztmp;
+                db[0 + 3*j + nii] -= dbxtmp;
+                db[1 + 3*j + nii] -= dbytmp;
+                db[2 + 3*j + nii] -= dbztmp;                          
+//                 db[i + inum*0 + nii] += dbxtmp;
+//                 db[i + inum*1 + nii] += dbytmp;
+//                 db[i + inum*2 + nii] += dbztmp;
+//                 db[j + inum*0 + nii] -= dbxtmp;
+//                 db[j + inum*1 + nii] -= dbytmp;
+//                 db[j + inum*2 + nii] -= dbztmp;                                          
             }            
         }        
     }
@@ -1402,6 +1403,112 @@ template void cpuSnapTallyBispectrumDeriv(double*, double*, double*, int*, int*,
 template void cpuSnapTallyBispectrumDeriv(float*, float*, float*, int*, int*, int*, int*, 
         int, int, int, int, int, int);
 
+template <typename T> void cpuSnapTallyBispectrumVirial(T *bv, T *bispectrum, T *dbdr, T *rij, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{      
+    cpuArraySetValue(bv, (T) 0.0, 6*nperdim*ntype);
+    
+    int N2 = ijnum*ncoeff;
+    for (int idx=0; idx<N2; idx++) {
+        int ij = idx%ijnum;
+        int icoeff = (idx-ij)/ijnum;        
+        int ii = aii[ij]; // index of atom i
+        int i = ai[ij]; // index of atom i
+        int j = aj[ij]; // index of atom i
+        int itype = ti[ij]; // element type of atom i       
+        int n = nperdim*(itype-1);        
+        int nii = 6*(icoeff + n);  
+        int nij = ijnum*3*icoeff;
+        
+        T factor = 1.0;
+        T dx = -rij[0+3*ij];
+        T dy = -rij[1+3*ij];
+        T dz = -rij[2+3*ij];                    
+        T bix = dbdr[ij + ijnum*0 + nij];
+        T biy = dbdr[ij + ijnum*1 + nij];
+        T biz = dbdr[ij + ijnum*2 + nij];                
+        T v0 = factor*dx*bix;
+        T v1 = factor*dy*biy;
+        T v2 = factor*dz*biz;
+        T v3 = factor*dx*biy;
+        T v4 = factor*dx*biz;
+        T v5 = factor*dy*biz;        
+        
+        bv[0 + nii] += v0;
+        bv[1 + nii] += v1;
+        bv[2 + nii] += v2;
+        bv[3 + nii] += v3;
+        bv[4 + nii] += v4;
+        bv[5 + nii] += v5;        
+//         bv[0 + nii] += v0;
+//         bv[1 + nii] += v1;
+//         bv[2 + nii] += v2;
+//         bv[3 + nii] += v3;
+//         bv[4 + nii] += v4;
+//         bv[5 + nii] += v5;                       
+        if (quadraticflag) {
+            T bi = bispectrum[ii + inum*icoeff];
+            T dbxtmp = bi*bix;
+            T dbytmp = bi*biy;
+            T dbztmp = bi*biz;
+            int k = ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            nii = 6*(k + n);  
+            T v0 = factor*dx*dbxtmp;
+            T v1 = factor*dy*dbytmp;
+            T v2 = factor*dz*dbztmp;
+            T v3 = factor*dx*dbytmp;
+            T v4 = factor*dx*dbztmp;
+            T v5 = factor*dy*dbztmp;        
+            bv[0 + nii] += v0;
+            bv[1 + nii] += v1;
+            bv[2 + nii] += v2;
+            bv[3 + nii] += v3;
+            bv[4 + nii] += v4;
+            bv[5 + nii] += v5;        
+//             bv[0 + nii] += v0;
+//             bv[1 + nii] += v1;
+//             bv[2 + nii] += v2;
+//             bv[3 + nii] += v3;
+//             bv[4 + nii] += v4;
+//             bv[5 + nii] += v5;                                   
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                int nj = ijnum*3*jcoeff;
+                T bjx = dbdr[ij + ijnum*0 + nj];
+                T bjy = dbdr[ij + ijnum*1 + nj];
+                T bjz = dbdr[ij + ijnum*2 + nj];        
+                T bj = bispectrum[ii + inum*jcoeff];                
+                dbxtmp = bi*bjx + bix*bj;
+                dbytmp = bi*bjy + biy*bj;
+                dbztmp = bi*bjz + biz*bj;
+
+                k += 1;                
+                nii = 6*(k + n);  
+                T v0 = factor*dx*dbxtmp;
+                T v1 = factor*dy*dbytmp;
+                T v2 = factor*dz*dbztmp;
+                T v3 = factor*dx*dbytmp;
+                T v4 = factor*dx*dbztmp;
+                T v5 = factor*dy*dbztmp;        
+                bv[0 + nii] += v0;
+                bv[1 + nii] += v1;
+                bv[2 + nii] += v2;
+                bv[3 + nii] += v3;
+                bv[4 + nii] += v4;
+                bv[5 + nii] += v5;        
+//                 bv[0 + nii] += v0;
+//                 bv[1 + nii] += v1;
+//                 bv[2 + nii] += v2;
+//                 bv[3 + nii] += v3;
+//                 bv[4 + nii] += v4;
+//                 bv[5 + nii] += v5;                                                   
+            }            
+        }        
+    }
+}
+template void cpuSnapTallyBispectrumVirial(double*, double*, double*, double*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
+template void cpuSnapTallyBispectrumVirial(float*, float*, float*, float*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
 
 template <typename T> void cpuSnapTallyForceFull2(T *fatom, T *fij, int *ai, int *aj, int *alist, int ijnum)
 { 

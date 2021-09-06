@@ -5,7 +5,7 @@
 % Contributing authors: Ngoc-Cuong Nguyen (cuongng@mit.edu, exapde@gmail.com)
 %***************************************************************************
 
-function lat = setlattice(style, scale, origin, orientx, orienty, orientz, spacing, type, a1, a2, a3, basis)
+function lat = setlattice(style, scale, orientx, orienty, orientz, spacing, type, a1, a2, a3, basis)
 
 %  NONE = 0, SC = 1, BCC = 2, FCC = 3, HCP = 4, DIAMOND = 5, SQ = 6, SQ2 = 7, HEX = 8, CUSTOM = 9;
 
@@ -41,15 +41,8 @@ else
 end
 
 %set defaults 
-if nargin >=3 && ~isempty(origin)
-    if length(origin) ~= 3
-        error("length of origin must be 3");
-    end
-    lat.origin = origin;
-else
-    lat.origin = [0 0 0];
-end
-if nargin >=4 && ~isempty(orientx)
+lat.origin = [0 0 0];
+if nargin >=3 && ~isempty(orientx)
     if length(orientx) ~= 3
         error("length of orientx must be 3");
     end    
@@ -57,7 +50,7 @@ if nargin >=4 && ~isempty(orientx)
 else
     lat.orientx = [1 0 0];
 end
-if nargin >=5 && ~isempty(orienty)
+if nargin >=4 && ~isempty(orienty)
     if length(orienty) ~= 3
         error("length of orienty must be 3");
     end        
@@ -65,7 +58,7 @@ if nargin >=5 && ~isempty(orienty)
 else
     lat.orienty = [0 1 0];
 end
-if nargin >=6 && ~isempty(orientz)
+if nargin >=5 && ~isempty(orientz)
     if length(orientz) ~= 3
         error("length of orientz must be 3");
     end        
@@ -73,7 +66,7 @@ if nargin >=6 && ~isempty(orientz)
 else
     lat.orientz = [0 0 1];
 end
-if nargin >=7 && ~isempty(spacing)
+if nargin >=6 && ~isempty(spacing)
     if length(spacing) ~= 3
         error("length of spacing must be 3");
     end        
@@ -136,7 +129,7 @@ else
 end
 
 nbasis = size(lat.basis,1);
-if nargin >=8 && ~isempty(type)
+if nargin >=7 && ~isempty(type)
     if length(type) ~= nbasis
         error("length of type must be equal to # basis atoms");
     end            

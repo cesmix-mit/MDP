@@ -106,7 +106,6 @@ else
                                   "u_xij[" + num2str(d-1) + " + i*" + num2str(dim) + "]");       
         end
     end
-    
     stropu = stropu + mystr + "\t}\n" + "}\n";    
     stropu = strrep(stropu, "(T *u, T *xij", "(T *u, T *u_xij, T *xij");
     

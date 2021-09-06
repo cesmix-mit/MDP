@@ -1476,6 +1476,242 @@ template void gpuSnapTallyEnergyFull2(double*, double*, double*, int*, int*, int
 template void gpuSnapTallyEnergyFull2(float*, float*, float*, int*, int*, int*,
         int, int, int, int);
 
+template <typename T> __global__ void gpuKernelSnapTallyBispectrum(T *bi, T *bispectrum, int *ilist, 
+        int *type, int inum, int ncoeff, int nperdim, int N2, int quadraticflag)
+{          
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    while (idx < N2) {
+        int ii = idx%inum;
+        int icoeff = (idx-ii)/inum;
+        int i = ilist[ii]; // index of atom i
+        int itype = type[i]; // element type of atom i        
+        int n = nperdim*(itype-1);
+        atomicAdd(&bi[icoeff+n], bispectrum[ii + inum*icoeff]);                  
+        if (quadraticflag) {
+            int k = n+ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            T bveci = bispectrum[ii + inum*icoeff];            
+            atomicAdd(&bi[k], 0.5*bveci*bveci);                  
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                T bvecj = bispectrum[ii + inum*jcoeff];
+                atomicAdd(&bi[k++], bveci*bvecj);                  
+            }
+        }    
+        idx += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuSnapTallyBispectrum(T *bi, T *bispectrum, int *ilist, 
+        int *type, int inum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{
+    gpuArraySetValue(bi, (T) 0.0, nperdim*ntype);
+
+    int N2 = inum*ncoeff;
+    int blockDim = 256;
+    int gridDim = (N2 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;        
+    gpuKernelSnapTallyBispectrum<<<gridDim, blockDim>>>(bi, bispectrum, ilist, type, 
+                inum, ncoeff, nperdim, N2, quadraticflag);    
+}
+template void gpuSnapTallyBispectrum(double*, double*, int*, int*, int, int, int, int, int);
+template void gpuSnapTallyBispectrum(float*, float*, int*, int*, int, int, int, int, int);
+
+
+template <typename T> __global__ void gpuKernelSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int N2, int quadraticflag)
+{          
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    while (idx < N2) {
+        int ij = idx%ijnum;
+        int icoeff = (idx-ij)/ijnum;        
+        int ii = aii[ij]; // index of atom i
+        int i = ai[ij]; // index of atom i
+        int j = aj[ij]; // index of atom j
+        int itype = ti[ij]; // element type of atom i       
+        int n = nperdim*(itype-1);        
+        int nii = inum*3*(icoeff + n);  
+        int nij = ijnum*3*icoeff;
+        
+        T bix = dbdr[ij + ijnum*0 + nij];
+        T biy = dbdr[ij + ijnum*1 + nij];
+        T biz = dbdr[ij + ijnum*2 + nij];                
+        atomicAdd(&db[0 + 3*i + nii], bix);        
+        atomicAdd(&db[1 + 3*i + nii], biy);        
+        atomicAdd(&db[2 + 3*i + nii], biz);        
+        atomicAdd(&db[0 + 3*j + nii], -bix);        
+        atomicAdd(&db[1 + 3*j + nii], -biy);        
+        atomicAdd(&db[2 + 3*j + nii], -biz);        
+
+        if (quadraticflag) {
+            T bi = bispectrum[ii + inum*icoeff];
+            T dbxtmp = bi*bix;
+            T dbytmp = bi*biy;
+            T dbztmp = bi*biz;
+            int k = ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            nii = inum*3*(k + n);  
+            atomicAdd(&db[0 + 3*i + nii], dbxtmp);        
+            atomicAdd(&db[1 + 3*i + nii], dbytmp);        
+            atomicAdd(&db[2 + 3*i + nii], dbztmp);        
+            atomicAdd(&db[0 + 3*j + nii], -dbxtmp);        
+            atomicAdd(&db[1 + 3*j + nii], -dbytmp);        
+            atomicAdd(&db[2 + 3*j + nii], -dbztmp);        
+
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                int nj = ijnum*3*jcoeff;
+                T bjx = dbdr[ij + ijnum*0 + nj];
+                T bjy = dbdr[ij + ijnum*1 + nj];
+                T bjz = dbdr[ij + ijnum*2 + nj];        
+                T bj = bispectrum[ii + inum*jcoeff];                
+                dbxtmp = bi*bjx + bix*bj;
+                dbytmp = bi*bjy + biy*bj;
+                dbztmp = bi*bjz + biz*bj;
+
+                k += 1;
+                nii = inum*3*(k + n);  
+                atomicAdd(&db[0 + 3*i + nii], dbxtmp);        
+                atomicAdd(&db[1 + 3*i + nii], dbytmp);        
+                atomicAdd(&db[2 + 3*i + nii], dbztmp);        
+                atomicAdd(&db[0 + 3*j + nii], -dbxtmp);        
+                atomicAdd(&db[1 + 3*j + nii], -dbytmp);        
+                atomicAdd(&db[2 + 3*j + nii], -dbztmp);        
+            }            
+        }
+        idx += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuSnapTallyBispectrumDeriv(T *db, T *bispectrum, T *dbdr, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{
+    gpuArraySetValue(db, (T) 0.0, inum*3*nperdim*ntype);
+    
+    int N2 = ijnum*ncoeff;    
+    int blockDim = 256;
+    int gridDim = (N2 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;        
+    gpuKernelSnapTallyBispectrumDeriv<<<gridDim, blockDim>>>(db, bispectrum, dbdr, aii, ai, aj, ti,             
+                inum, ijnum, ncoeff, nperdim, N2, quadraticflag);    
+}
+template void gpuSnapTallyBispectrumDeriv(double*, double*, double*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
+template void gpuSnapTallyBispectrumDeriv(float*, float*, float*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
+
+template <typename T> __global__ void gpuKernelSnapTallyBispectrumVirial(T *bv, T *bispectrum, T *dbdr, T *rij, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int N2, int quadraticflag)
+{          
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    while (idx < N2) {
+        int ij = idx%ijnum;
+        int icoeff = (idx-ij)/ijnum;        
+        int ii = aii[ij]; // index of atom i
+        int i = ai[ij]; // index of atom i
+        int j = aj[ij]; // index of atom i
+        int itype = ti[ij]; // element type of atom i       
+        int n = nperdim*(itype-1);        
+        int nii = 6*(icoeff + n);  
+        int nij = ijnum*3*icoeff;
+        
+        T factor = 1.0;
+        T dx = -rij[0+3*ij];
+        T dy = -rij[1+3*ij];
+        T dz = -rij[2+3*ij];                    
+        T bix = dbdr[ij + ijnum*0 + nij];
+        T biy = dbdr[ij + ijnum*1 + nij];
+        T biz = dbdr[ij + ijnum*2 + nij];                
+        T v0 = factor*dx*bix;
+        T v1 = factor*dy*biy;
+        T v2 = factor*dz*biz;
+        T v3 = factor*dx*biy;
+        T v4 = factor*dx*biz;
+        T v5 = factor*dy*biz;        
+
+        atomicAdd(&bv[0 + nii] , v0);
+        atomicAdd(&bv[1 + nii] , v1);
+        atomicAdd(&bv[2 + nii] , v2);
+        atomicAdd(&bv[3 + nii] , v3);
+        atomicAdd(&bv[4 + nii] , v4);
+        atomicAdd(&bv[5 + nii] , v5);        
+//         atomicAdd(&bv[j + inum*0 + nii] , v0);
+//         atomicAdd(&bv[j + inum*1 + nii] , v1);
+//         atomicAdd(&bv[j + inum*2 + nii] , v2);
+//         atomicAdd(&bv[j + inum*3 + nii] , v3);
+//         atomicAdd(&bv[j + inum*4 + nii] , v4);
+//         atomicAdd(&bv[j + inum*5 + nii] , v5);                       
+        if (quadraticflag) {
+            T bi = bispectrum[ii + inum*icoeff];
+            T dbxtmp = bi*bix;
+            T dbytmp = bi*biy;
+            T dbztmp = bi*biz;
+            int k = ncoeff + ncoeff*(ncoeff+1)/2 - (ncoeff-icoeff)*(ncoeff-icoeff+1)/2;
+            nii = 6*(k + n);  
+            T v0 = factor*dx*dbxtmp;
+            T v1 = factor*dy*dbytmp;
+            T v2 = factor*dz*dbztmp;
+            T v3 = factor*dx*dbytmp;
+            T v4 = factor*dx*dbztmp;
+            T v5 = factor*dy*dbztmp;        
+            atomicAdd(&bv[0 + nii] , v0);
+            atomicAdd(&bv[1 + nii] , v1);
+            atomicAdd(&bv[2 + nii] , v2);
+            atomicAdd(&bv[3 + nii] , v3);
+            atomicAdd(&bv[4 + nii] , v4);
+            atomicAdd(&bv[5 + nii] , v5);        
+//             atomicAdd(&bv[j + inum*0 + nii] , v0);
+//             atomicAdd(&bv[j + inum*1 + nii] , v1);
+//             atomicAdd(&bv[j + inum*2 + nii] , v2);
+//             atomicAdd(&bv[j + inum*3 + nii] , v3);
+//             atomicAdd(&bv[j + inum*4 + nii] , v4);
+//             atomicAdd(&bv[j + inum*5 + nii] , v5);                                   
+            for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+                int nj = ijnum*3*jcoeff;
+                T bjx = dbdr[ij + ijnum*0 + nj];
+                T bjy = dbdr[ij + ijnum*1 + nj];
+                T bjz = dbdr[ij + ijnum*2 + nj];        
+                T bj = bispectrum[ii + inum*jcoeff];                
+                dbxtmp = bi*bjx + bix*bj;
+                dbytmp = bi*bjy + biy*bj;
+                dbztmp = bi*bjz + biz*bj;
+
+                k += 1;                
+                nii = 6*(k + n);  
+                T v0 = factor*dx*dbxtmp;
+                T v1 = factor*dy*dbytmp;
+                T v2 = factor*dz*dbztmp;
+                T v3 = factor*dx*dbytmp;
+                T v4 = factor*dx*dbztmp;
+                T v5 = factor*dy*dbztmp;        
+                atomicAdd(&bv[0 + nii] , v0);
+                atomicAdd(&bv[1 + nii] , v1);
+                atomicAdd(&bv[2 + nii] , v2);
+                atomicAdd(&bv[3 + nii] , v3);
+                atomicAdd(&bv[4 + nii] , v4);
+                atomicAdd(&bv[5 + nii] , v5);        
+//                 atomicAdd(&bv[j + inum*0 + nii] , v0);
+//                 atomicAdd(&bv[j + inum*1 + nii] , v1);
+//                 atomicAdd(&bv[j + inum*2 + nii] , v2);
+//                 atomicAdd(&bv[j + inum*3 + nii] , v3);
+//                 atomicAdd(&bv[j + inum*4 + nii] , v4);
+//                 atomicAdd(&bv[j + inum*5 + nii] , v5);                                                   
+            }            
+        }        
+        idx += blockDim.x * gridDim.x;
+    }
+}
+template <typename T> void gpuSnapTallyBispectrumVirial(T *bv, T *bispectrum, T *dbdr, T *rij, int *aii, 
+        int *ai, int *aj, int *ti, int inum, int ijnum, int ncoeff, int nperdim, int ntype, int quadraticflag)
+{
+    gpuArraySetValue(bv, (T) 0.0, 6*nperdim*ntype);
+    
+    int N2 = ijnum*ncoeff;
+    int blockDim = 256;
+    int gridDim = (N2 + blockDim - 1) / blockDim;
+    gridDim = (gridDim>1024)? 1024 : gridDim;        
+    gpuKernelSnapTallyBispectrumVirial<<<gridDim, blockDim>>>(bv, bispectrum, dbdr, rij, aii, ai, aj, ti,             
+                inum, ijnum, ncoeff, nperdim, N2, quadraticflag);    
+}
+template void gpuSnapTallyBispectrumVirial(double*, double*, double*, double*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
+template void gpuSnapTallyBispectrumVirial(float*, float*, float*, float*, int*, int*, int*, int*, 
+        int, int, int, int, int, int);
+
 template <typename T> __global__ void gpuKernelSnapTallyForceFull2(T *fatom, T *fij, int *ai, 
         int *aj, int ijnum)
 { 

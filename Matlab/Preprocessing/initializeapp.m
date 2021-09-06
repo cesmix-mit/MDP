@@ -5,14 +5,10 @@
 % Contributing authors: Ngoc-Cuong Nguyen (cuongng@mit.edu, exapde@gmail.com)
 %***************************************************************************
 
-function app = initializeapp()
+function app = initializeapp(cdir,sourcepath)
 
-cdir = pwd(); ii = strfind(cdir, "Applications");
-sourcepath = cdir(1:(ii-1));
-run(sourcepath + "Installation/setpath.m");
 app.currentdir = cdir; 
 app.sourcepath = sourcepath;
-
 app.codename = "MDP";
 %app.version = version;
 app.appname = "app";

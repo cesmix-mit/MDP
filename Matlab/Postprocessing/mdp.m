@@ -7,26 +7,40 @@
 
 function [app, config] = mdp(app)
 
+% create exec folder if it does not exist
+bindir = "exec";
+cd(char(app.sourcepath));
+if exist(bindir, "file") == 0
+    mkdir(char(bindir));    
+end
+cd(char(app.currentdir));
+
 % preprocess input data
 [app,config] = preprocessing(app); 
 
 % generate code
 gencode(app);                      
 
-% compile code
-% bindir = "C++/Main";
-bindir = "exec";
-cd(char(app.sourcepath + bindir));
 %compile(app);
 %buildpotlib2(app);
+
+% compile C++ source code
+cd(char(app.sourcepath + bindir));
 if exist("CMakeCache.txt", "file")
     delete(char("CMakeCache.txt"));
 end
-[~,foundnvcc] = findexec("nvcc");
-if foundnvcc==1   
-    eval("!cmake -D MDP_POTENTIALS=ON -D MDP_CUDA=ON ../Installation");
-else
-    eval("!cmake -D MDP_POTENTIALS=ON ../Installation");
+if app.platform == "gpu"
+    if exist("libcpuCore.a", "file") && exist("libgpuCore.a", "file") && exist("gpuMDP", "file")
+        eval("!cmake -D MDP_POTENTIALS=ON -D MDP_CUDA=ON ../Installation");
+    else
+        eval("!cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON -D MDP_CUDA=ON ../Installation");
+    end
+elseif app.platform == "cpu"
+    if exist("libcpuCore.a", "file") && exist("cpuMDP", "file")
+       eval("!cmake -D MDP_POTENTIALS=ON ../Installation");
+    else
+        eval("!cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON ../Installation");
+    end
 end
 eval("!cmake --build .");
 

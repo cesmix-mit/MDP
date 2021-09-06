@@ -171,9 +171,9 @@ function Tripletc(xij, xik, qi, qj, qk, ti, tj, tk, rho, mu, eta, kappa)
     fB = gamma*(1 + c^2/d^2 - c^2/(d^2 + (costhe-cos0)^2))*exp(lambda3^m*(rij - rik)^m);
     fC = gamma*(1 + c^2/d^2 - c^2/(d^2 + (costhe-cos0)^2))*exp(lambda3^m*(rij - rik)^m);
     fD = (1 + beta^n*rho[1]^n)^(-1.0/(2*n));
-    u = [fA; fB; fC; fD]; 
+    u = [fB; fA; fD]; 
 
-    u = reshape(u,(4,1));
+    u = reshape(u,(3,1));
     
     return u;
 end
