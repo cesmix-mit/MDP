@@ -2,18 +2,8 @@
 
 # Installation
 
-mkdir exec 
-
-cd exec 
-
-cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON ../Installation 
-
-cmake --build .
-
-For CUDA support, please use 
-
-cmake -D MDP_POTENTIALS=ON -D MDP_CORES=ON -D MDP_EXECUTABLES=ON -D MDP_CUDA=ON  ../Installation  
+No installation is required since MDP generates and compiles C++ source code on the fly.
 
 # Applications
 
-Run snapTA06A script in the Applications/snap folder 
+Run snapTA06A.jl script in the Applications/snap folder. The first run is slow since it takes a minute to compile MDP's core libraries and executable files. Subsequent runs will be faster.
