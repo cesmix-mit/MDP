@@ -2,7 +2,7 @@
 
 # Installation
 
-No installation is required since MDP generates and compiles C++ source code on the fly. MDP uses CMAKE to compile source code.
+No installation is required since MDP generates and compiles C++ source code on the fly. MDP uses CMake to compile source code.
 
 # Applications
 
