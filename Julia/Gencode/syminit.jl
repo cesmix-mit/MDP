@@ -35,15 +35,25 @@ qj = [SymPy.symbols("qj$i") for i=1:ncq];
 qk = [SymPy.symbols("qk$i") for i=1:ncq];
 ql = [SymPy.symbols("ql$i") for i=1:ncq];
 
-ti = SymPy.symbols("ti");
-tj = SymPy.symbols("tj");
-tk = SymPy.symbols("tk");
-tl = SymPy.symbols("tl");
+ti = [SymPy.symbols("ti$i") for i=1:1];
+tj = [SymPy.symbols("tj$i") for i=1:1];
+tk = [SymPy.symbols("tk$i") for i=1:1];
+tl = [SymPy.symbols("tl$i") for i=1:1];
 
-ai = SymPy.symbols("ai");
-aj = SymPy.symbols("aj");
-ak = SymPy.symbols("ak");
-al = SymPy.symbols("al");
+ai = [SymPy.symbols("ai$i") for i=1:1];
+aj = [SymPy.symbols("aj$i") for i=1:1];
+ak = [SymPy.symbols("ak$i") for i=1:1];
+al = [SymPy.symbols("al$i") for i=1:1];
+
+# ti = SymPy.symbols("ti");
+# tj = SymPy.symbols("tj");
+# tk = SymPy.symbols("tk");
+# tl = SymPy.symbols("tl");
+
+# ai = SymPy.symbols("ai");
+# aj = SymPy.symbols("aj");
+# ak = SymPy.symbols("ak");
+# al = SymPy.symbols("al");
 
 # mu1a = [SymPy.symbols("mu1a$i") for i=1:ncmu1a];
 # mu1b = [SymPy.symbols("mu1b$i") for i=1:ncmu1a];

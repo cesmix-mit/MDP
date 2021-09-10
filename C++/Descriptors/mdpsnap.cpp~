@@ -125,7 +125,7 @@ void InitSnap(snastruct &sna, commonstruct &common)
   int bnormflag = (int) common.snaparam[10];
   int wselfallflag = (int) common.snaparam[11];    
   dstype wself=1.0;  
-  
+    
   int ncoeff, ncoeffq;
   if (!quadraticflag)
     ncoeff = ncoeffall - 1;
@@ -171,13 +171,12 @@ void InitSnap(snastruct &sna, commonstruct &common)
   TemplateMalloc(&sna.coeffelem, nelements*ncoeffall, backend);        
   TemplateCopytoDevice(sna.coeffelem, common.snapcoeff, nelements*ncoeffall, backend);        
   
+  if (!chemflag)    
+    nelements = 1;
+  
   sna.ncoeff = ncoeff;
   sna.ncoeffall = ncoeffall;
-  //sna.nperdim = nperdim;
-//   sna.idxcg_max = sna.idx_max[0];
-//   sna.idxu_max = sna.idx_max[1];
-//   sna.idxb_max = sna.idx_max[2];
-//   sna.idxz_max = sna.idx_max[3];
+  sna.nperdim = ncoeffall-1;
   sna.nelements = nelements;    
   sna.ndoubles = nelements*nelements;   // number of multi-element pairs
   sna.ntriples = nelements*nelements*nelements;   // number of multi-element triplets      
@@ -195,7 +194,7 @@ void InitSnap(snastruct &sna, commonstruct &common)
   sna.rcutmax = rcutmax;      
 }
 
-void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sna, commonstruct &common, 
+void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, snastruct &sna, commonstruct &common, 
         sysstruct &sys, neighborstruct &nb, tempstruct &tmp)
 {    
     int inum = common.inum;
@@ -261,7 +260,7 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sna
     INIT_TIMING;
     
     START_TIMING;
-    dstype *x = &sys.x[0];
+    //dstype *x = &sys.x[0];
     NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
         neighnum, inum, neighmax, dim, backend);
     END_TIMING(50);
@@ -344,6 +343,10 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sna
           nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);
     END_TIMING(58);
     
+//     dstype *dblist;  TemplateMalloc(&dblist, ineighmax*3*(ncoeffall-1), backend);  
+//     ComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, idxz_block, map, ai, aj, ti, tj, 
+//         twojmax, idxb_max, idxu_max, idxz_max, nelements, bnormflag, chemflag, ineighmax, backend);
+    
     START_TIMING;
     SnapTallyEnergyFull(eatom, blist, coeffelem, alist, map, atomtype, 
         inum, ncoeff, ncoeffall, quadraticflag, backend);    
@@ -377,6 +380,73 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sna
     SnapTallyVirialFull(vatom, dedr, rij, ai, aj, inum, ineighmax, backend);  
     END_TIMING(64);
     
+    
+    
+    
+//     dstype *bi, *bd, *bv, *e, *f, *ri1, *bi2, *blist2;
+//     int M = ncoeffall-1;
+//     int nperdim = M;
+//     TemplateMalloc(&bi, M, backend);  
+//     TemplateMalloc(&bd, ineighmax*3*M, backend);  
+//     TemplateMalloc(&bv, 6*M, backend);  
+//     TemplateMalloc(&e, inum, backend);  
+//     TemplateMalloc(&f, inum*3, backend);  
+//     TemplateMalloc(&ri1, inum*3, backend);  
+//     TemplateMalloc(&bi2, M, backend);      
+//     TemplateMalloc(&blist2, inum*M, backend);  
+//         
+//     for (int i=0; i<M; i++) {
+//         bi[i] = 0.0;
+//         for (int j=0; j<inum; j++)
+//             bi[i] += blist[i + M*j];
+//     }    
+// 
+//     dstype epsil = 1e-3;
+//     for (int i = 0; i<dim*ineighmax; i++) {
+//         cpuArrayCopy(ri1, rij, dim*ineighmax);  
+//         ri1[i] = ri1[i] + epsil;
+//         int d = i%3;
+//         int m = (i-d)/3;
+//                 
+//         ComputeUij(ulist_r, ulist_i, rootpqarray, ri1, radelem, rmin0, rfac0, rcutfac, 
+//               idxu_block, ai, aj, ti, tj, twojmax, idxu_max, ineighmax, backend);   
+// 
+//         ZeroUarraytot(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
+//                 map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);
+// 
+//         AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, ri1, wjelem, radelem, rmin0, rcutfac, 
+//          idxu_block, alist, atomtype, pairnum, pairnumsum, map, tj, twojmax, idxu_max, nelem, 
+//               inum, switchflag, chemflag, backend);
+//         
+//         ComputeZi(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
+//               idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
+// 
+//         ComputeBi(blist2, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
+//               map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
+//               nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);
+//             
+//         for (int ia=0; ia<M; ia++) {
+//             bi2[ia] = 0.0;
+//             for (int j=0; j<inum; j++)
+//                 bi2[ia] += blist2[ia + M*j];
+//         }    
+//         
+//         printArray2D(bi, 1, M, common.backend);
+//         printArray2D(bi2, 1, M, common.backend);
+//         for (int j=0; j<M; j++) 
+//             cout<<(bi2[j]-bi[j])/epsil<<" ";
+//         cout<<endl;
+//         for (int j=0; j<M; j++) 
+//             cout<<(blist2[j+M*m]-blist[j+M*m])/epsil<<" ";
+//         cout<<endl;
+//         for (int j=0; j<M; j++) 
+//             cout<<dblist[d + 3*j + 3*M*m]<<" "; // dim*M*ijnum
+//         cout<<endl;
+//         
+//         error("here");
+//     }
+//     
+        
 // #ifdef USE_CUDA    
 // //     START_TIMING;    
 // //     int n = idxu_max*ineighmax;
@@ -541,7 +611,7 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sna
 // #endif                 
 }
 
-void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sna, commonstruct &common, 
+void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, snastruct &sna, commonstruct &common, 
         sysstruct &sys, neighborstruct &nb, tempstruct &tmp)
 {    
     int inum = common.inum;
@@ -607,10 +677,24 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sn
     INIT_TIMING;
     
     START_TIMING;
-    dstype *x = &sys.x[0];
-    NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
-        neighnum, inum, neighmax, dim, backend);
+    //dstype *x = &sys.x[0];
+//     NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
+//         neighnum, inum, neighmax, dim, backend);
+    NeighborPairList(pairnum, pairlist, x, rcutsq, alist, neighlist, 
+                            neighnum, atomtype, alist, inum, neighmax, dim, ntypes, backend);
     END_TIMING(50);
+    
+    int N=0;
+    for (int i=0; i<inum; i++)
+        N 
+    writearray2file("x.bin", x, 3, neighmax, backend);        
+    printArray2D(pairlist, neighmax, inum, backend);
+    printArray2D(pairnum, 1, inum, backend);
+    error("here");
+    
+//     printf("%g ", rcutmax);
+//     printArray2D(rcutsq, 1, 9, backend);
+//     error("here");        
     
     START_TIMING;
     Cumsum(pairnumsum, pairnum, &tmp.intmem[ne+na+1], &tmp.intmem[2*na+ne+2], na+1, backend);                                         
@@ -630,6 +714,7 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sn
     ne += ineighmax*dim; 
     dstype *ulist_r = &tmp.tmpmem[ne]; 
     dstype *zlist_r = &tmp.tmpmem[ne]; 
+    dstype *dedr = &tmp.tmpmem[ne];    
     //dstype *ylist_r = &tmp.tmpmem[ne]; 
     ne += max(max(idxu_max*ineighmax, idxz_max*ndoubles*na), idxu_max*nelements*na); 
     dstype *ulist_i = &tmp.tmpmem[ne]; 
@@ -664,6 +749,27 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sn
             idxu_block, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);      
     END_TIMING(53);
     
+//     for (int i=0; i<pairnum[0]; i++) {
+//         for (int j=0; j<3; j++)
+//             printf("%g ", rij[j+3*(i+pairnum[0])]);
+//         printf("\n");
+//     }
+//     for (int i=0; i<pairnum[0]; i++) {
+//         for (int j=0; j<12; j++)
+//             printf("%g ", ulist_r[(i+pairnum[0]) + ineighmax*j]);
+//         printf("\n");
+//     }
+    
+    //printArray2D(ulist_r, ineighmax, 12, backend);
+//     printArray2D(ulist_r, ineighmax, 10, backend);
+//     printArray2D(wjelem, 1, ntypes+1, backend);
+//     printArray2D(radelem, 1, ntypes+1, backend);
+//     printArray2D(rij, 3, pairnum[0], backend);
+//     printArray2D(ti, 1, inum, backend);
+//     printArray2D(tj, 1, inum, backend);
+//     printArray2D(atomtype, 1, inum, backend);
+//     error("here");
+        
     START_TIMING;
     ZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
             map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);    
@@ -672,21 +778,36 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sn
     START_TIMING;
 //     AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, pairnum, pairnumsum, 
 //             map, tj, idxu_max, nelem, inum, ineighmax, chemflag, backend);
-    AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, map, ai, tj, idxu_max, 
+    AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, map, aii, tj, idxu_max, 
             inum, ineighmax, chemflag, backend);    
     END_TIMING(55);
         
+     printArray2D(x, 3, inum, backend);
+     printArray2D(ulisttot_r, inum, 12, backend);
+     printArray2D(pairnum, 1, inum, backend);
+//     printf("%i %i %i %i",nelements, ndoubles, ntriples, nelem);
+//     error("here");
+    
     START_TIMING;
     ComputeZi2(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
           idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
     END_TIMING(57);
-        
+    
+//    printArray2D(ulisttot_r, inum, 12, backend);
+//     display(" ");
+//    printArray2D(zlist_r, inum, 12, backend);    
+    error("here");
+    
     START_TIMING;
     ComputeBi2(blist, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
           map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
           nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);           
     END_TIMING(58);
         
+//     dstype *dblist;  TemplateMalloc(&dblist, ineighmax*3*(ncoeffall-1), backend);      
+//     ComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, idxz_block, map, aii, tj, 
+//             twojmax, idxb_max, idxu_max, idxz_max, nelements, bnormflag, chemflag, inum, ineighmax, backend);
+    
     START_TIMING;
     SnapTallyEnergyFull2(eatom, blist, coeffelem, alist, map, atomtype, 
         inum, ncoeff, ncoeffall, quadraticflag, backend);    
@@ -717,6 +838,237 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, snastruct &sn
     START_TIMING;
     SnapTallyVirialFull(vatom, dedr, rij, ai, aj, inum, ineighmax, backend);  
     END_TIMING(64);    
+    
+
+//     dstype *bi, *bd, *bv, *e, *f, *ri1, *bi2, *blist2;
+//     int M = ncoeffall-1;
+//     int nperdim = M;
+//     TemplateMalloc(&bi, M, backend);  
+//     TemplateMalloc(&bd, inum*dim*M, backend);  
+//     TemplateMalloc(&bv, 6*M, backend);  
+//     TemplateMalloc(&e, inum, backend);  
+//     TemplateMalloc(&f, inum*3, backend);  
+//     TemplateMalloc(&ri1, inum*3, backend);  
+//     TemplateMalloc(&bi2, M, backend);      
+//     TemplateMalloc(&blist2, inum*M, backend);  
+//     
+//     SnapTallyBispectrum(bi, blist, alist, atomtype, inum, ncoeff, nperdim, ntypes, quadraticflag, backend);    
+//     SnapTallyBispectrumDeriv(bd, blist, dblist, aii, ai, aj, 
+//           ti, inum, ineighmax, ncoeff, nperdim, ntypes, quadraticflag, backend);        
+//     SnapTallyBispectrumVirial(bv, blist, dblist, rij, aii, ai, aj, 
+//           ti, inum, ineighmax, ncoeff, nperdim, ntypes, quadraticflag, backend);                
+//     ArraySetValue(e, 0.0, inum, backend);
+//     SnapTallyEnergyFull2(e, blist, coeffelem, alist, map, atomtype, inum, ncoeff, ncoeffall, quadraticflag, backend);    
+//     dstype energy = ArraySum(e, tmp.tmpmem, inum, backend);    
+//     dstype energy2;
+//     PDOT(common.cublasHandle, M*ntypes, bi, inc1, &coeffelem[1], inc1, &energy2, backend);
+//     energy2 += inum*coeffelem[0];    
+//     printf("Energy: %g  %g\n", energy, energy2);        
+//     
+//     ArraySetValue(f, 0.0, inum*3, backend);
+//     SnapTallyForceFull(f, dedr, ai, aj, alist, ineighmax, backend);
+//     for (int i=0; i<inum*3; i++) {
+//         dedr[i] = 0.0;
+//         for (int j=0; j<M*ntypes; j++)
+//             dedr[i] += bd[i + inum*3*j]*coeffelem[1+j];
+//     }    
+//     printArray2D(f, 3, inum, backend);
+//     printArray2D(dedr, 3, inum, backend);    
+//         
+//     dstype epsil = 1e-6;
+//     for (int i = 0; i<dim*ineighmax; i++) {
+//         cpuArrayCopy(ri1, rij, dim*ineighmax);  
+//         ri1[i] = ri1[i] + epsil;
+//         int d = i%3;
+//         int m = (i-d)/3;
+//                 
+//         ComputeSij(ulist_r, ulist_i, &dulist_r[0*n], &dulist_i[0*n], &dulist_r[1*n], &dulist_i[1*n],
+//                     &dulist_r[2*n], &dulist_i[2*n], rootpqarray, ri1, wjelem, radelem, rmin0, rfac0, rcutfac, 
+//                     idxu_block, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);      
+//     
+//         ZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
+//                 map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);    
+//         
+//         AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, map, ai, tj, idxu_max, 
+//                 inum, ineighmax, chemflag, backend);    
+// 
+//         ComputeZi2(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
+//               idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
+// 
+//         ComputeBi2(blist2, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
+//               map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
+//               nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);                   
+// 
+//         SnapTallyBispectrum(bi2, blist2, alist, atomtype, inum, ncoeff, nperdim, ntypes, quadraticflag, backend);    
+// 
+//         printArray2D(bi, 1, M, common.backend);
+//         printArray2D(bi2, 1, M, common.backend);
+//         for (int j=0; j<M; j++) 
+//             cout<<(bi2[j]-bi[j])/epsil<<" ";
+//         cout<<endl;
+//         for (int j=0; j<M; j++) 
+//             cout<<dblist[m + ineighmax*d + dim*ineighmax*j]<<" ";
+//         cout<<endl;
+//         
+// //         for (int j=0; j<M; j++) 
+// //             bi2[j] = fabs((bi2[j]-bi[j])/epsil - dblist[i + dim*ineighmax*j]);
+// //         cout<<"Maximum absolute error: "<<cpuArrayMax(bi2, M)<<endl;   
+//         error("here");
+//     }
+//     
+//     
+//         
+    //PGEMNV(common.cublasHandle, inum*3, M*ntypes, &one, bd, M*ntypes, &coeffelem[1], inc1, &zero, dedr, inc1, backend);    
+    //PGEMNV(CCal.common.cublasHandle, M, M, &one, A, M, b, inc1, &zero, c, inc1, backend);    
+//     ArrayAXPBY(f, f, dedr, one, minusone, inum*3, backend);    
+//     dstype norme = PNORM(common.cublasHandle, inum*3, f, backend);
+//     
+//     printf("Force error: %g\n", norme);    
+    
+//     TemplateFree(dblist, backend);  
+//     TemplateFree(bi, backend);  
+//     TemplateFree(bd, backend);  
+//     TemplateFree(bv, backend);     
+//     TemplateFree(e, backend);     
+}
+
+void ComputeSnap(dstype *bi, dstype *bd, dstype *bv, dstype *x, snastruct &sna, commonstruct &common, 
+        sysstruct &sys, neighborstruct &nb, tempstruct &tmp)
+{    
+    int inum = common.inum;
+    //int anum = common.anum;
+    int neighmax = common.neighmax;    
+    int dim = common.dim;
+    int backend = common.backend;
+    
+    int idxcg_max = sna.idxcg_max;
+    int idxu_max = sna.idxu_max;
+    int idxb_max = sna.idxb_max;
+    int idxz_max = sna.idxz_max;    
+    int twojmax = sna.twojmax;
+    int ncoeff = sna.ncoeff;
+    int ncoeffall = sna.ncoeffall;
+    int ntypes = sna.ntypes;
+    int nelements = sna.nelements;    
+    int ndoubles = sna.ndoubles;   
+    int ntriples = sna.ntriples;   
+    int nperdim = sna.nperdim;
+    int bnormflag = sna.bnormflag;
+    int chemflag = sna.chemflag;    
+    int quadraticflag = sna.quadraticflag;
+    int switchflag = sna.switchflag;    
+    int bzeroflag = sna.bzeroflag;
+    int wselfallflag = sna.wselfallflag;
+    int nelem = (chemflag) ? nelements : 1;
+    
+    int *map = sna.map;
+    int *idxz = sna.idxz;
+    int *idxz_block = sna.idxz_block;
+    int *idxb = sna.idxb;
+    int *idxb_block = sna.idxb_block;
+    int *idxu_block = sna.idxu_block;
+    int *idxcg_block = sna.idxcg_block;   
+    
+    dstype wself = sna.wself;
+    dstype rmin0 = sna.rmin0;
+    dstype rfac0 = sna.rfac0;
+    dstype rcutfac = sna.rcutfac;
+    dstype rcutmax = sna.rcutmax;        
+    dstype *bzero = sna.bzero;
+    dstype *rootpqarray = sna.rootpqarray;
+    dstype *cglist = sna.cglist;
+    dstype *rcutsq = sna.rcutsq;    
+    dstype *radelem = sna.radelem;
+    dstype *wjelem = sna.wjelem; 
+    dstype *coeffelem = sna.coeffelem;           // element bispectrum coefficients
+    //dstype *fac = sna.fac;
+    
+    int *atomtype = nb.atomtype;       // type of each atom i      
+    int *alist = nb.alist;
+    int *neighnum = nb.neighnum;  // numbers of neighbors for each atom i 
+    int *neighlist = nb.neighlist; // list of neighbors for each atom i    
+    int *mask = nb.mask;        
+  
+    int na = inum;
+    int ne = 0; 
+    int *pairnum = &tmp.intmem[ne]; // na
+    int *pairlist = &tmp.intmem[na]; // na*neighmax
+    ne = na + na*neighmax;
+    int *pairnumsum = &tmp.intmem[ne]; // na+1         
+        
+    INIT_TIMING;
+    
+    START_TIMING;
+    //dstype *x = &sys.x[0];
+    NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
+        neighnum, inum, neighmax, dim, backend);
+    END_TIMING(50);
+    
+    START_TIMING;
+    Cumsum(pairnumsum, pairnum, &tmp.intmem[ne+na+1], &tmp.intmem[2*na+ne+2], na+1, backend);                                         
+    int ineighmax = IntArrayGetValueAtIndex(pairnumsum, na, backend);        
+    END_TIMING(51);
+    
+    ne += na+1;
+    int *ai = &tmp.intmem[ne]; // ineighmax        
+    int *aj = &tmp.intmem[ne+ineighmax]; // ineighmax        
+    int *ti = &tmp.intmem[ne+2*ineighmax]; // ineighmax        
+    int *tj = &tmp.intmem[ne+3*ineighmax]; // ineighmax        
+    int *aii = &tmp.intmem[ne+4*ineighmax]; // ineighmax    
+    // 1 + 2*na + na*neighmax + 5*ineighmax
+    
+    ne = 0;
+    dstype *rij = &tmp.tmpmem[ne]; // ineighmax*dim    
+    ne += ineighmax*dim; 
+    dstype *ulist_r = &tmp.tmpmem[ne]; 
+    dstype *zlist_r = &tmp.tmpmem[ne]; 
+    ne += max(idxu_max*ineighmax, idxz_max*ndoubles*na); 
+    dstype *ulist_i = &tmp.tmpmem[ne]; 
+    dstype *zlist_i = &tmp.tmpmem[ne]; 
+    ne += max(idxu_max*ineighmax, idxz_max*ndoubles*na); 
+    dstype *dulist_r = &tmp.tmpmem[ne];
+    ne += idxu_max*dim*ineighmax;
+    dstype *dulist_i = &tmp.tmpmem[ne];
+    ne += idxu_max*dim*ineighmax;    
+    dstype *blist = &tmp.tmpmem[ne]; // idxb_max*ntriples*na          
+    ne += idxb_max*ntriples*na;    
+    dstype *dblist = &tmp.tmpmem[ne]; // idxb_max*ntriples*dim*ineighmax          
+    dstype *ulisttot_r = &tmp.tmpmem[ne];
+    ne += idxu_max*nelements*na;
+    dstype *ulisttot_i = &tmp.tmpmem[ne];
+    //ne += idxu_max*nelements*na;            
+                  
+    NeighborPairs(rij, x, aii, ai, aj, ti, tj, pairnum, 
+          pairlist, pairnumsum, alist, atomtype, alist, inum, neighmax, dim, backend);
+        
+    int n = idxu_max*ineighmax;
+    ComputeSij(ulist_r, ulist_i, &dulist_r[0*n], &dulist_i[0*n], &dulist_r[1*n], &dulist_i[1*n],
+            &dulist_r[2*n], &dulist_i[2*n], rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, 
+            idxu_block, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);      
+    
+    ZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
+            map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);    
+    
+    AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, map, ai, tj, idxu_max, 
+            inum, ineighmax, chemflag, backend);    
+        
+    ComputeZi2(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
+          idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
+        
+    ComputeBi2(blist, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
+          map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
+          nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);           
+        
+    ComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, idxz_block, map, ai, tj, 
+            twojmax, idxb_max, idxu_max, idxz_max, nelements, bnormflag, chemflag, inum, ineighmax, backend);
+    
+    SnapTallyBispectrum(bi, blist, alist, atomtype, inum, ncoeff, nperdim, ntypes, quadraticflag, backend);    
+    
+    SnapTallyBispectrumDeriv(bd, blist, dblist, aii, ai, aj, 
+          ti, inum, ineighmax, ncoeff, nperdim, ntypes, quadraticflag, backend);    
+    
+    SnapTallyBispectrumVirial(bv, blist, dblist, rij, aii, ai, aj, 
+          ti, inum, ineighmax, ncoeff, nperdim, ntypes, quadraticflag, backend);        
 }
 
 void ComputeMDPSna(dstype *snaarray, snastruct &sna, commonstruct &common, 

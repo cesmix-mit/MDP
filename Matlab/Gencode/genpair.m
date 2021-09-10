@@ -52,7 +52,7 @@ else
     strgpu = strgpu + "\tint i = threadIdx.x + blockIdx.x * blockDim.x;\n";
     strgpu = strgpu + "\twhile (i<ng) {\n";
         
-    ustr = string(u);         
+    ustr = string(u);          
     mystr = "";
     if any(contains(ustr, "mu")) 
         mystr = varsassign(mystr, "mu", length(mu), ustr, 0);
@@ -83,7 +83,7 @@ else
     end
     if any(contains(ustr, "aj"))
         mystr = varsassign(mystr, "aj", length(aj), ustr, 3);
-    end    
+    end  
     mystr = symsassign(mystr, u);
 
     stropu = stropu + mystr + "\t}\n" + "}\n";

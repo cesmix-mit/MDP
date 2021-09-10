@@ -36,15 +36,15 @@ qj = sym('qj',[ncq 1]);
 qk = sym('qk',[ncq 1]); 
 ql = sym('ql',[ncq 1]); 
 
-ti = sym('ti'); 
-tj = sym('tj'); 
-tk = sym('tk'); 
-tl = sym('tl'); 
+ti = sym('ti',[1 1]); 
+tj = sym('tj',[1 1]); 
+tk = sym('tk',[1 1]); 
+tl = sym('tl',[1 1]); 
 
-ai = sym('ai'); 
-aj = sym('aj'); 
-ak = sym('ak'); 
-al = sym('al'); 
+ai = sym('ai',[1 1]); 
+aj = sym('aj',[1 1]); 
+ak = sym('ak',[1 1]); 
+al = sym('al',[1 1]); 
 
 % mu1a = sym('mu1a',[ncmu1a 1]);
 % mu1b = sym('mu1b',[ncmu1b 1]);

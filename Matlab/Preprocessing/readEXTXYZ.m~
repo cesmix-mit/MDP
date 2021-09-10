@@ -1,0 +1,75 @@
+function [keys, values, prop, data] = readEXTXYZ(filename)
+
+dd = ['S' 'R' 'L' 'I'];
+
+fid = fopen(filename);
+% n = 1;
+nframe = 0;
+while (1) 
+    nframe = nframe + 1;
+    tline = fgetl(fid); 
+    if ischar(tline) == 0
+        break;
+    end
+    natom = str2double(tline);
+    
+    tline = fgetl(fid);  
+    [keys, values, indp] = parsecomment(tline);
+    
+    prop = reshape(values{indp},3,[]);
+    nfield = size(prop,2);
+    
+    if nframe == 1
+        fieldlength = ones(nfield,1);
+        fieldtype = fieldlength;
+        for i = 1:nfield            
+            fieldlength(i) = str2double(prop(3,i));
+            for j = 1:length(dd)
+                if lower(prop(2,i)) == lower(string(dd(j)))
+                    fieldtype(i) = j;
+                    break;
+                end
+            end
+        end
+        fieldlength = cumsum(fieldlength);
+    end
+    
+    data = cell(nfield,1);
+    for i = 1:natom
+        tline = split(fgetl(fid));          
+        for j = 1:nfield
+            if j == 1
+                k1 = 1;
+                k2 = fieldlength(1);
+            else
+                k1 = fieldlength(j-1)+1;
+                k2 = fieldlength(j);
+            end
+            if fieldtype(j) == 1 || fieldtype(j) == 3  % string        
+                for k = k1:k2                
+                    data{j}(i,k+1-k1) = string(tline{k});                
+                end
+            else
+                for k = k1:k2                
+                    data{j}(i,k+1-k1) = str2double(tline{k});                
+                end
+            end
+        end        
+    end        
+    for j = 1:nfield
+        if fieldtype(j) == 1
+            spi = unique(data{j});
+        end
+        b = zeros(natom,1);
+        if fieldtype(j) == 3
+            ind = data{j} == 'T';
+            b(ind) = 1;            
+            data{j} = b;
+        end
+    end        
+    
+end
+fclose(fid);
+
+end
+

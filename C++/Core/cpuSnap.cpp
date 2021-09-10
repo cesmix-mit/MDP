@@ -1894,7 +1894,7 @@ template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T
             T xij1 = x[j*dim+1] - x[i*dim+1]; // xj - xi               
             T xij2 = x[j*dim+2] - x[i*dim+2]; // xj - xi               
             T dij = xij0*xij0 + xij1*xij1 + xij2*xij2;                        
-            if (dij <= rcutsq[(jtype-1) + (itype-1)*ntypes]) {
+            if (dij < rcutsq[jtype + itype*(ntypes+1)] && dij>1e-20) {
                 pairlist[count + jnum*ii] = j;  // atom j     
                 count += 1;
             }

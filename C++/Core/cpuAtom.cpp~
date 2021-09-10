@@ -1,19 +1,15 @@
-template <typename T> int cpuSetAtomType(T *x, T fraction, int *atomtype,
-         int *seed, int *save, int seed0, int newtype, int dim, int nlocal)
+template <typename T> void cpuSetAtomType( T *x, int *atomtype,
+         int *seed, int *save, int seed0, int nlocal, int dim)
 {
     int count = 0;
-    for (int i = 0; i < nlocal; i++) {
+    for (i = 0; i < nlocal; i++) {
         cpuRandomResetSeed(seed,save,seed0,&x[i*dim]);                
         if (cpuRandomUniform(seed) > fraction) continue;
         atomtype[i] = newtype;
         count++;   
     }
-    return count;
+    return count
 }
-template int cpuSetAtomType(double *x, double fraction, int *atomtype, int *seed, int *save, int seed0,  
-        int newtype, int dim, int nlocal);
-template int cpuSetAtomType(float *x, float fraction, int *atomtype, int *seed, int *save, int seed0,  
-        int newtype, int dim, int nlocal);
 
 template <typename T> void cpuAtomInside(int *inside, T *x, T *h_inv, T *boxlo, T *lo_lamda,
         T *hi_lamda, int dim, int n)

@@ -517,7 +517,7 @@ template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T
         int *neighnum, int inum, int jnum, int dim);
 
 template <typename T> void gpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
-        int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes);
+        int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes);
 
 // template <typename T> void gpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
 //       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 

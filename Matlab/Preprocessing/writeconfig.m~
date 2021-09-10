@@ -57,7 +57,9 @@ fwrite(fileID,config.wf,'double',endian);
 fwrite(fileID,config.ws,'double',endian);
 fwrite(fileID,config.stress,'double',endian);
 fwrite(fileID,config.pbc,'double',endian);
-fwrite(fileID,config.move,'double',endian);
+
+nsize(16) = length(config.pbc(:)); 
+nsize(17) = length(config.move(:)); 
 
 fclose(fileID);
 

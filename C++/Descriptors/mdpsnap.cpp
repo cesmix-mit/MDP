@@ -261,8 +261,10 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sna
     
     START_TIMING;
     //dstype *x = &sys.x[0];
-    NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
-        neighnum, inum, neighmax, dim, backend);
+//     NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
+//         neighnum, inum, neighmax, dim, backend);
+    NeighborPairList(pairnum, pairlist, x, rcutsq, alist, neighlist, 
+                            neighnum, atomtype, alist, inum, neighmax, dim, ntypes, backend);    
     END_TIMING(50);
     
     START_TIMING;
@@ -678,10 +680,23 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
     
     START_TIMING;
     //dstype *x = &sys.x[0];
-    NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
-        neighnum, inum, neighmax, dim, backend);
+//     NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
+//         neighnum, inum, neighmax, dim, backend);
+    NeighborPairList(pairnum, pairlist, x, rcutsq, alist, neighlist, 
+                            neighnum, atomtype, alist, inum, neighmax, dim, ntypes, backend);
     END_TIMING(50);
+            
+//    writearray2file("x.bin", x, 3*common.anum, backend);        
+//     //writearray2file("pairlist.bin", x, 3*N, backend);        
+//     //writearray2file("pairnum.bin", pairnum, inum, backend);        
+//     printArray2D(pairlist, neighmax, inum, backend);
+//     printArray2D(pairnum, 1, inum, backend);
+//     printArray2D(neighnum, 1, inum, backend);
+//     error("here");
     
+//     printf("%g ", rcutmax);
+//     printArray2D(rcutsq, 1, 9, backend);
+//     error("here");            
     START_TIMING;
     Cumsum(pairnumsum, pairnum, &tmp.intmem[ne+na+1], &tmp.intmem[2*na+ne+2], na+1, backend);                                         
     int ineighmax = IntArrayGetValueAtIndex(pairnumsum, na, backend);        
@@ -735,6 +750,27 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
             idxu_block, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);      
     END_TIMING(53);
     
+//     for (int i=0; i<pairnum[0]; i++) {
+//         for (int j=0; j<3; j++)
+//             printf("%g ", rij[j+3*(i+pairnum[0])]);
+//         printf("\n");
+//     }
+//     for (int i=0; i<pairnum[0]; i++) {
+//         for (int j=0; j<12; j++)
+//             printf("%g ", ulist_r[(i+pairnum[0]) + ineighmax*j]);
+//         printf("\n");
+//     }
+    
+    //printArray2D(ulist_r, ineighmax, 12, backend);
+//     printArray2D(ulist_r, ineighmax, 10, backend);
+//     printArray2D(wjelem, 1, ntypes+1, backend);
+//     printArray2D(radelem, 1, ntypes+1, backend);
+//     printArray2D(rij, 3, pairnum[0], backend);
+//     printArray2D(ti, 1, inum, backend);
+//     printArray2D(tj, 1, inum, backend);
+//     printArray2D(atomtype, 1, inum, backend);
+//     error("here");
+        
     START_TIMING;
     ZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
             map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);    
@@ -747,11 +783,22 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
             inum, ineighmax, chemflag, backend);    
     END_TIMING(55);
         
+     //printArray2D(x, 3, inum, backend);
+     //printArray2D(ulisttot_r, inum, 12, backend);
+     //printArray2D(pairnum, 1, inum, backend);
+//     printf("%i %i %i %i",nelements, ndoubles, ntriples, nelem);
+//     error("here");
+    
     START_TIMING;
     ComputeZi2(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
           idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
     END_TIMING(57);
-        
+    
+//    printArray2D(ulisttot_r, inum, 12, backend);
+//     display(" ");
+    //printArray2D(zlist_r, inum, 12, backend);    
+    //error("here");
+    
     START_TIMING;
     ComputeBi2(blist, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
           map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
@@ -954,8 +1001,10 @@ void ComputeSnap(dstype *bi, dstype *bd, dstype *bv, dstype *x, snastruct &sna, 
     
     START_TIMING;
     //dstype *x = &sys.x[0];
-    NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
-        neighnum, inum, neighmax, dim, backend);
+//     NeighborPairList(pairnum, pairlist, x, rcutmax*rcutmax, alist, neighlist, 
+//         neighnum, inum, neighmax, dim, backend);
+    NeighborPairList(pairnum, pairlist, x, rcutsq, alist, neighlist, 
+                            neighnum, atomtype, alist, inum, neighmax, dim, ntypes, backend);    
     END_TIMING(50);
     
     START_TIMING;

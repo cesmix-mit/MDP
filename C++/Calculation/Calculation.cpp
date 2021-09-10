@@ -386,11 +386,15 @@ void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, d
     END_TIMING(10);
     
     START_TIMING;
-    if (common.descriptor == 1) // snap
-        ComputePairSnap2(e, f, v, x, sna, common, sys, nb, tmp);  
+    if (common.descriptor == 1) { // snap
+        if (common.backend<=1)
+            ComputePairSnap(e, f, v, x, sna, common, sys, nb, tmp);  
+        else
+            ComputePairSnap2(e, f, v, x, sna, common, sys, nb, tmp);                      
+    }
     else if (common.descriptor == 0) // spherical harmonic
         this->RadialSphericalHarmonicEnergyForceVirial(e, f, v, x, sys.c, sys.q, param, 0);                               
-    END_TIMING(11);
+    END_TIMING(11); 
 }
 
 void CCalculation::ThermoOutput(int flag)

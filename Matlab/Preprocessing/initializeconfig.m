@@ -9,11 +9,11 @@ function config = initializeconfig(app)
 
 nconfigs = app.nconfigs;            % number of configurations
 dim = app.dim;
-ncx = app.ncx;
-ncv = app.ncv;
-ncf = app.ncf;
-ncq = app.ncq;
-nce = app.nce;
+ncx = dim;
+ncv = dim;
+ncf = dim;
+ncq = 1;
+nce = 1;
 
 config.dim = dim;
 config.ncx = ncx;
@@ -24,13 +24,25 @@ config.ncf = ncf;
 config.nconfigs = nconfigs;
 config.natom = ones(1, nconfigs);   % number of atoms per each configuration
 config.natomall = sum(config.natom);% number of atoms for all configurations
+config.we = ones(1, nconfigs);      % energy weight per each configuration
+config.wf = ones(1, nconfigs);      % force weight per each configuration
+config.ws = ones(1, nconfigs);      % stress weight per each configuration
 
 % simulation box for each configuration
-config.a = zeros(dim, nconfigs); % the 1st principal vector of the simulation box
-config.b = zeros(dim, nconfigs); % the 2nd principal vector of the simulation box
-config.c = zeros(dim, nconfigs); % the 3rd principal vector of the simulation box
-config.e = ones(nce, nconfigs);  % energies for all configurations
+config.a = zeros(3, nconfigs); % the 1st principal vector of the simulation box
+config.b = zeros(3, nconfigs); % the 2nd principal vector of the simulation box
+config.c = zeros(3, nconfigs); % the 3rd principal vector of the simulation box
+config.e = ones(nce, nconfigs);  % potential energies for all configurations
+config.pbc = zeros(3, nconfigs); % periodic boundary conditions
+config.stress = zeros(3*3, nconfigs); % stresses for all configurations
+config.lattice = zeros(3*3, nconfigs); % stresses for all configurations
 
+config.Z = zeros(1, config.natomall);   % atom numbers for all configurations
+config.mass = zeros(1, config.natomall);   % atom masses for all configurations
+config.move = zeros(1, config.natomall); % atom move masks for all configurations
+config.tags = zeros(1, config.natomall); % atom tags for all configurations
+config.eatom = zeros(1, config.natomall); % atom energies for all configurations
+config.vatom = zeros(6, config.natomall); % atom virial for all configurations
 config.t = zeros(1, config.natomall);   % atom types for all configurations
 config.x = zeros(ncx, config.natomall); % atom positions for all configurations
 config.q = zeros(ncq, config.natomall); % atom charges for all configurations

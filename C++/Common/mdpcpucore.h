@@ -518,8 +518,12 @@ template <typename T> void cpuSnapTallyVirialFull(T *vatom, T *fij, T *rij, int 
 template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T rcutsq, int *ilist, int *neighlist, 
         int *neighnum, int inum, int jnum, int dim);
 
+// template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
+//         int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes)
+
 template <typename T> void cpuNeighPairList(int *pairnum, int *pairlist, T *x, T *rcutsq, int *ilist, int *neighlist, 
-        int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes);
+        int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes);
+
 // template <typename T> void cpuNeighPairs(T *xij, T *x, int *aii, int *ai, int *aj,  
 //       int *ti, int *tj, int *pairnum, int *pairlist, int *pairnumsum, int *ilist, 
 //       int *atomtype, int inum, int jnum, int dim);
@@ -597,6 +601,8 @@ template <typename T> void cpuShiftedSubbox(T *ssublo, T *ssubhi, T *boxlo, T *b
 template <typename T> void cpuBoundingSubbox(T *bsublo, T *bsubhi, T *sublo, T *subhi, 
         T *sublo_lamda, T *subhi_lamda, T *boxlo, T *h, int triclinic);
 
+template <typename T> int cpuSetAtomType(T *x, T fraction, int *atomtype,
+         int *seed, int *save, int seed0, int newtype, int dim, int nlocal);
 template <typename T> void cpuAtomInside(int *inside, T *x, T *h_inv, T *boxlo, T *lo_lamda,
         T *hi_lamda, int dim, int n);
 template <typename T> int cpuAtomAdd(T *y, int *atomtype, T *x, T *h_inv, T *boxlo, T *lo_lamda,

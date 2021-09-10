@@ -13,7 +13,7 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-project(lammps LANGUAGES CXX)
+project(mdp LANGUAGES CXX)
 
 get_filename_component(MDP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.. ABSOLUTE)
 
@@ -56,8 +56,8 @@ endif()
 
 if(MDP_EXECUTABLES)
 
-    find_package(BLAS)
-    find_package(LAPACK)
+    find_package(BLAS REQUIRED)
+    find_package(LAPACK REQUIRED)
     if(LAPACK_FOUND AND BLAS_FOUND)
        set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
     endif()
@@ -76,3 +76,4 @@ if(MDP_EXECUTABLES)
         target_compile_options(cpuMDP PRIVATE -std=c++11 -ffast-math -O3 -DNDEBUG) 
     endif()
 endif()
+

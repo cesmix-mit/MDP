@@ -20,6 +20,7 @@ app.cuda_arch = "sm_60";
 app.enzyme = "";
 app.mpirun = "mpirun";
 app.buildcorelib = 0;
+app.buildexec = 0;
 app.cpuflags = "-O2 -ldl -lm -lblas -llapack";
 app.gpuflags = "-lcudart -lcublas";
 app.cpumacros = "";
@@ -95,6 +96,7 @@ app.solparam = []; % solver parameters
 app.nveparam = []; % NVE params
 app.nvtparam = []; % NVT params
 app.createvelocity = [];
+app.setatomtypefraction = [];
 
 % machine learning potentials
 app.muml = [];   % coefficients of ML potential

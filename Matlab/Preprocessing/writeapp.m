@@ -72,6 +72,7 @@ nsize(56) = length(app.snapelemradius(:));
 nsize(57) = length(app.snapelemweight(:)); 
 nsize(58) = length(app.snapcoeff(:)); 
 nsize(59) = length(app.createvelocity(:)); 
+nsize(60) = length(app.setatomtypefraction(:)); 
 
 endian = 'native';
 app.nsize = nsize;
@@ -136,6 +137,7 @@ fwrite(fileID,app.snapelemradius(:),'double',endian);
 fwrite(fileID,app.snapelemweight(:),'double',endian);
 fwrite(fileID,app.snapcoeff(:),'double',endian);
 fwrite(fileID,app.createvelocity(:),'double',endian);
+fwrite(fileID,app.setatomtypefraction(:),'double',endian);
 
 fclose(fileID);
 

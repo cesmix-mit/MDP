@@ -3672,25 +3672,25 @@ inline void NeighborPairList(int *pairnum, int *pairlist, dstype *x, dstype rcut
 }
 
 inline void NeighborPairList(int *pairnum, int *pairlist, dstype *x, dstype *rcutsq, int *ilist, int *neighlist, 
-        int *neighnum, int *atomtype, int inum, int jnum, int dim, int ntypes, int backend)
+        int *neighnum, int *atomtype, int *alist, int inum, int jnum, int dim, int ntypes, int backend)
 {
     if (backend == 1)
         cpuNeighPairList(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
-                            neighnum, atomtype, inum, jnum, dim, ntypes);
+                            neighnum, atomtype, alist, inum, jnum, dim, ntypes);
 #ifdef USE_OMP  
     if (backend == 4)
         ompNeighPairList(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
-                            neighnum, atomtype, inum, jnum, dim, ntypes);
+                            neighnum, atomtype, alist, inum, jnum, dim, ntypes);
 #endif                                
 #ifdef USE_HIP  
     if (backend == 3)
         hipNeighPairList(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
-                            neighnum, atomtype, inum, jnum, dim, ntypes);
+                            neighnum, atomtype, alist, inum, jnum, dim, ntypes);
 #endif                                        
 #ifdef USE_CUDA   
     if (backend == 2)
         gpuNeighPairList(pairnum, pairlist, x, rcutsq, ilist, neighlist, 
-                            neighnum, atomtype, inum, jnum, dim, ntypes);
+                            neighnum, atomtype, alist, inum, jnum, dim, ntypes);
 #endif                          
 }
         

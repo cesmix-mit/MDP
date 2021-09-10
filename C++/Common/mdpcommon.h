@@ -1019,6 +1019,7 @@ struct commonstruct {
     dstype *snapelemweight=NULL; // SNAP parameters     
     dstype *snapcoeff=NULL; // SNAP parameters     
     dstype *createvelocity=NULL; // SNAP parameters     
+    dstype *setatomtypefraction=NULL;
     
     // time integration parameters
     dstype dtarray[10];
@@ -1212,6 +1213,7 @@ struct commonstruct {
         CPUFREE(snapelemweight); 
         CPUFREE(snapcoeff); 
         CPUFREE(createvelocity); 
+        CPUFREE(setatomtypefraction); 
         CPUFREE(traininglist); 
         CPUFREE(validatelist);         
         

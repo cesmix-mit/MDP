@@ -1648,6 +1648,20 @@ void cpuFullNeighPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighbor
         // virial tally
         cpuVirialPairTally(v, fij, xij, -0.5, ai, dim, common.inum, ntuples);        
                 
+//         printArray2D(x, dim, common.inum, common.backend);        
+//         printArray2D(nb.neighnum, 1, common.inum, common.backend);       
+//         printArray2D(nb.neighlist, neighmax, common.inum, common.backend);               
+//         printArray2D(pairnum, 1, common.inum, common.backend);       
+//         printArray2D(pairlist, neighmax, common.inum, common.backend);       
+//         printArray2D(xij, dim, common.inum, common.backend);       
+//         printArray2D(ti, 1, ntuples, common.backend);       
+//         printArray2D(tj, 1, ntuples, common.backend);              
+//         printArray2D(fij, dim, common.inum, common.backend);       
+//         printArray2D(f, dim, common.inum, common.backend);       
+//         printArray2D(eij, 1, common.inum, common.backend);       
+//         printArray2D(e, 1, common.inum, common.backend);       
+//         error("here");        
+        
 #ifdef HAVE_DEBUG                      
         writearray2file("xijcpu.bin", xij, ntuples*dim, common.backend); 
         writearray2file("eijcpu.bin", eij, ntuples, common.backend); 

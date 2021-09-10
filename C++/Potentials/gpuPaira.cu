@@ -5,9 +5,17 @@ template <typename T>  __global__  void kernelgpuPaira1(T *u, T *xij, T *qi, T *
 		T xij1 = xij[0 + i*3];
 		T xij2 = xij[1 + i*3];
 		T xij3 = xij[2 + i*3];
-		T x0 = sqrt(pow(xij1, 2) + pow(xij2, 2) + pow(xij3, 2));
-		T x1 = tanh(100.0*x0 - 400.0);
-		u[i] = 0.0081259386830030578*x1 + (0.5*x1 + 0.5)*((0.18277826364023042 - 0.034282917879905832*x0)*pow(x0 - 4, 3) - 0.016251877366006116) - 0.0081259386830030578 + (13946.714966258751*exp(-36.644389638721982*x0) + 39124.468185401303*exp(-10.791187546931475*x0) + 21502.880153205104*exp(-4.6140460608291409*x0) + 2161.6449001348501*exp(-2.3089698852925573*x0))/x0;
+		T t2 = xij1*xij1;
+		T t3 = xij2*xij2;
+		T t4 = xij3*xij3;
+		T t5 = t2+t3+t4;
+		T t6 = sqrt(t5);
+		T t7 = t6*1.0E2;
+		T t8 = t7-4.0E2;
+		T t9 = tanh(t8);
+		T t10 = t6-4.0;
+		T t11 = t10*t10;
+		u[i] = t9*8.125938683003058E-3-(t9*(1.0/2.0)+1.0/2.0)*(t10*t11*(t6*3.428291787990583E-2-1.827782636402304E-1)+1.625187736600612E-2)+1.0/sqrt(t5)*(exp(t6*(-2.308969885292557))*2.16164490013485E3+exp(t6*(-4.614046060829141))*2.15028801532051E4+exp(t6*(-3.664438963872198E1))*1.394671496625875E4+exp(t6*(-1.079118754693148E1))*3.91244681854013E4)-8.125938683003058E-3;
 		i += blockDim.x * gridDim.x;
 	}
 }
@@ -15,7 +23,7 @@ template <typename T>  __global__  void kernelgpuPaira1(T *u, T *xij, T *qi, T *
 template <typename T> void gpuPaira1(T *u, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
 {
 	int blockDim = 256;
-	int gridDim = (ng * blockDim - 1) / blockDim;
+	int gridDim = (ng + blockDim - 1) / blockDim;
 	gridDim = (gridDim>1024)? 1024 : gridDim;
 	kernelgpuPaira1<<<gridDim, blockDim>>>(u, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
 }
@@ -28,9 +36,17 @@ template <typename T>  __device__  void devicegpuPaira1(T *__restrict__ u, T *__
 		T xij1 = xij[0 + i*3];
 		T xij2 = xij[1 + i*3];
 		T xij3 = xij[2 + i*3];
-		T x0 = sqrt(pow(xij1, 2) + pow(xij2, 2) + pow(xij3, 2));
-		T x1 = tanh(100.0*x0 - 400.0);
-		u[i] = 0.0081259386830030578*x1 + (0.5*x1 + 0.5)*((0.18277826364023042 - 0.034282917879905832*x0)*pow(x0 - 4, 3) - 0.016251877366006116) - 0.0081259386830030578 + (13946.714966258751*exp(-36.644389638721982*x0) + 39124.468185401303*exp(-10.791187546931475*x0) + 21502.880153205104*exp(-4.6140460608291409*x0) + 2161.6449001348501*exp(-2.3089698852925573*x0))/x0;
+		T t2 = xij1*xij1;
+		T t3 = xij2*xij2;
+		T t4 = xij3*xij3;
+		T t5 = t2+t3+t4;
+		T t6 = sqrt(t5);
+		T t7 = t6*1.0E2;
+		T t8 = t7-4.0E2;
+		T t9 = tanh(t8);
+		T t10 = t6-4.0;
+		T t11 = t10*t10;
+		u[i] = t9*8.125938683003058E-3-(t9*(1.0/2.0)+1.0/2.0)*(t10*t11*(t6*3.428291787990583E-2-1.827782636402304E-1)+1.625187736600612E-2)+1.0/sqrt(t5)*(exp(t6*(-2.308969885292557))*2.16164490013485E3+exp(t6*(-4.614046060829141))*2.15028801532051E4+exp(t6*(-3.664438963872198E1))*1.394671496625875E4+exp(t6*(-1.079118754693148E1))*3.91244681854013E4)-8.125938683003058E-3;
 		i += blockDim.x * gridDim.x;
 	}
 }
@@ -56,7 +72,7 @@ template <typename T>  __global__  void kernelgpuPaira1Gradient(T *__restrict__ 
 template <typename T> void gpuPaira1Gradient(T *u, T *du, T *u_xij, T *xij, T *qi, T *qj, int *ti, int *tj, int *ai, int *aj, T *mu, T *eta, int *kappa, int dim, int ncq, int nmu, int neta, int nkappa, int ng)
 {
 	int blockDim = 256;
-	int gridDim = (ng * blockDim - 1) / blockDim;
+	int gridDim = (ng + blockDim - 1) / blockDim;
 	gridDim = (gridDim>1024)? 1024 : gridDim;
 	kernelgpuPaira1Gradient<<<gridDim, blockDim>>>(u, du, u_xij, xij, qi, qj, ti, tj, ai, aj, mu, eta, kappa, dim, ncq, nmu, neta, nkappa, ng);
 }

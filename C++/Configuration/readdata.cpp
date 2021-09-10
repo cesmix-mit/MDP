@@ -84,6 +84,7 @@ void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int 
     readarray(in, &common.snapelemweight, app.nsize[56]);    
     readarray(in, &common.snapcoeff, app.nsize[57]);    
     readarray(in, &common.createvelocity, app.nsize[58]);    
+    readarray(in, &common.setatomtypefraction, app.nsize[59]);    
     
     int n = 0;
     for (int i=13; i<=22; i++) 
@@ -586,6 +587,13 @@ void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app
     TemplateMalloc(&amass, nlocal, backend);        
     for (int i=0; i<nlocal; i++) ilist[i] = i;
         
+    if (app.nsize[59]>0) {        
+        int newtype = (int) common.setatomtypefraction[0];
+        dstype fraction = common.setatomtypefraction[1];
+        int seed0 = (int) common.setatomtypefraction[2];                
+        int count = cpuSetAtomType(config.x, fraction, config.t, common.seed, common.save, seed0, newtype, dim, nlocal);
+    }
+    
     if (app.nsize[58]>0) {
         dstype t_desired = common.createvelocity[0];
         int seed0 = (int) common.createvelocity[1];
@@ -630,7 +638,7 @@ void implReadInputFiles(appstruct &app, configstruct &config, commonstruct &comm
     common.triclinic = common.dom.triclinic;
     app.dom.allocatememory(backend);
     copydomain(app.dom, common.dom, backend);       
-    
+        
 #ifdef HAVE_MPI        
     MPI_Allreduce(&common.nlocal, &common.natoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #else    
