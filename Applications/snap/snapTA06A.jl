@@ -17,9 +17,9 @@ using Preprocessing, Gencode, Postprocessing
 app = Preprocessing.initializeapp(cdir,MDPpath);
 app.platform = "cpu";    # app.platform = "gpu" => MDP runs on Nvidia GPU 
 app.unitstyle = "metal"; # unit system
-app.appname = "snapTA06A" * string(nlattice);
 app.pbc = [1 1 1];       # periodic boundary conditions
 nlattice = 4;            # note that # of atoms = 2 * nlattice^3 
+app.appname = "snapTA06A" * string(nlattice);
 
 #  neighbor list
 app.neighskin = 1.0;
