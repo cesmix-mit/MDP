@@ -32,6 +32,7 @@ mutable struct APPStruct
     configfile::String;# APP model file name
     weightfile::String;# APP model file name
     model::String;# used to indicate APP model
+    buildexec::Int64;
     modelfile::String;# APP model file name    
     modelnumber::Int64;    
     preprocessmode::Int64; # preprocessing mode
@@ -102,6 +103,7 @@ mutable struct APPStruct
     nveparam::Array{Float64,2}; # NVE parameters
     nvtparam::Array{Float64,2}; # NVT parameters
     createvelocity::Array{Float64,2}; # NVT parameters
+    setatomtypefraction::Array{Float64,2};
 
     snaprcutfac::Float64;  
     snaprfac0::Float64;  
@@ -249,7 +251,8 @@ function initializeapp(cdir,sourcepath,version="version0")
     app.ensemblemode = ""; 
     app.potentialfile = "";
     app.configfile = "";
-    app.weightfile = "";    
+    app.weightfile = "";   
+    app.buildexec = 0;
     app.configmode = 0;    
     app.weightmode = 0;
     app.preprocessmode = 1;
@@ -316,6 +319,7 @@ function initializeapp(cdir,sourcepath,version="version0")
     app.nveparam = reshape([], 0, 2); # NVE parameters
     app.nvtparam = reshape([], 0, 2); # NVT parameters
     app.createvelocity = reshape([], 0, 2); # NVT parameters
+    app.setatomtypefraction = reshape([], 0, 2);
 
     # machine learning potentials
     app.muml = reshape([], 0, 2);   # coefficients of ML potential

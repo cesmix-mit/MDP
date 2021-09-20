@@ -66,6 +66,7 @@ function writeapp(app,filename)
     nsize[57] = length(app.snapelemweight[:]); 
     nsize[58] = length(app.snapcoeff[:]); 
     nsize[59] = length(app.createvelocity[:]); 
+    nsize[60] = length(app.setatomtypefraction[:]); 
         
     #app.nsize = nsize;
     fileID = open(filename,"w");
@@ -129,6 +130,7 @@ function writeapp(app,filename)
     write(fileID,Float64.(app.snapelemweight[:]));
     write(fileID,Float64.(app.snapcoeff[:]));
     write(fileID,Float64.(app.createvelocity[:]));    
+    write(fileID,Float64.(app.setatomtypefraction[:]));    
 
     close(fileID);
 
