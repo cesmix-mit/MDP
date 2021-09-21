@@ -318,7 +318,7 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sna
     ZeroUarraytot(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
             map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);
     END_TIMING(54);
-    
+        
     START_TIMING;
     AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, rij, wjelem, radelem, rmin0, rcutfac, 
      idxu_block, alist, atomtype, pairnum, pairnumsum, map, tj, twojmax, idxu_max, nelem, 
@@ -327,23 +327,36 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sna
 //      idxu_block, alist, atomtype, pairnum, pairnumsum, map, tj, twojmax, idxu_max, nelem, 
 //           inum,  ineighmax, switchflag, chemflag, backend);
     END_TIMING(55);
+        
+//     writearray2file("x1.bin", x, 3*common.anum, backend);        
+//     writearray2file("rij1.bin", rij, 3*ineighmax, backend);        
+//     writearray2file("ulistr1.bin", ulist_r, idxu_max*ineighmax, backend);        
+//     writearray2file("ulisttotr1.bin", ulisttot_r, idxu_max*nelem*inum, backend);  
     
+    //printArray2D(ulisttot_r, idxu_max, inum, backend);
+        
     START_TIMING;
     ComputeDuijdrj(dulist_r, dulist_i, ulist_r, ulist_i, rootpqarray, 
       rij, wjelem, radelem, rmin0, rfac0, rcutfac, idxu_block, 
       ai, aj, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);     
     END_TIMING(56);
     
+//    writearray2file("dulistr1.bin", dulist_r, 3*idxu_max*ineighmax, backend);        
+    
     START_TIMING;
     ComputeZi(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
           idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
     END_TIMING(57);
+    
+//    writearray2file("zlistr1.bin", zlist_r, idxz_max*ndoubles*inum, backend);     
     
     START_TIMING;
     ComputeBi(blist, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
           map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
           nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);
     END_TIMING(58);
+    
+//    writearray2file("blist1.bin", blist, idxb_max*ntriples*inum, backend);     
     
 //     dstype *dblist;  TemplateMalloc(&dblist, ineighmax*3*(ncoeffall-1), backend);  
 //     ComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, idxz_block, map, ai, aj, ti, tj, 
@@ -358,10 +371,15 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sna
 //     printArray2D(blist, ncoeff, inum, backend);
 //     printArray2D(eatom, 1, inum, backend);
     
+//     writearray2file("eatom1.bin", eatom, inum, backend);    
+//     writearray2file("coeffelem1.bin", coeffelem, ntypes*ncoeffall, backend);    
+    
     START_TIMING;
     ComputeBeta2(beta, blist, coeffelem, alist, map, atomtype, 
         inum, ncoeff, ncoeffall, quadraticflag, backend);
     END_TIMING(60);
+    
+//    writearray2file("beta1.bin", beta, ncoeff*inum, backend);    
     
     START_TIMING;
     ComputeYi(ylist_r, ylist_i, ulisttot_r, ulisttot_i, cglist, beta, idxz, idxb_block, 
@@ -369,10 +387,14 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sna
           nelem, bnormflag, ncoeff, inum, backend);
     END_TIMING(61);
     
+//    writearray2file("ylistr1.bin", ylist_r, idxu_max*inum*nelem, backend);    
+    
     START_TIMING;
     ComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, map, 
           ai, aj, ti, tj, nelem, twojmax, idxu_max, chemflag, ineighmax, backend);        
     END_TIMING(62);
+    
+//    writearray2file("dedr1.bin", dedr, 3*ineighmax, backend);    
     
     START_TIMING;
     SnapTallyForceFull(fatom, dedr, ai, aj, alist, ineighmax, backend);
@@ -381,9 +403,9 @@ void ComputePairSnap(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sna
     START_TIMING;
     SnapTallyVirialFull(vatom, dedr, rij, ai, aj, inum, ineighmax, backend);  
     END_TIMING(64);
-    
-    
-    
+        
+//     printf("%i %i %i %i %i %i %i %i\n", common.anum, inum, ineighmax, idxu_max, idxb_max, idxz_max, bnormflag, ncoeff);
+//     error("here");
     
 //     dstype *bi, *bd, *bv, *e, *f, *ri1, *bi2, *blist2;
 //     int M = ncoeffall-1;
@@ -750,6 +772,11 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
             idxu_block, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);      
     END_TIMING(53);
     
+//     writearray2file("x2.bin", x, 3*common.anum, backend);        
+//     writearray2file("rij2.bin", rij, 3*ineighmax, backend);        
+//     writearray2file("ulistr2.bin", ulist_r, idxu_max*ineighmax, backend);  
+    //printArray2D(ulist_r, ineighmax, 10, backend);  
+    
 //     for (int i=0; i<pairnum[0]; i++) {
 //         for (int j=0; j<3; j++)
 //             printf("%g ", rij[j+3*(i+pairnum[0])]);
@@ -783,16 +810,21 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
             inum, ineighmax, chemflag, backend);    
     END_TIMING(55);
         
+//     writearray2file("ulisttotr2.bin", ulisttot_r, inum*idxu_max*nelem, backend);  
+//     writearray2file("dulistr2.bin", dulist_r, 3*idxu_max*ineighmax, backend);        
+    
      //printArray2D(x, 3, inum, backend);
      //printArray2D(ulisttot_r, inum, 12, backend);
      //printArray2D(pairnum, 1, inum, backend);
 //     printf("%i %i %i %i",nelements, ndoubles, ntriples, nelem);
-//     error("here");
+//     
     
     START_TIMING;
     ComputeZi2(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
           idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
     END_TIMING(57);
+    
+//    writearray2file("zlistr2.bin", zlist_r, idxz_max*inum*ndoubles, backend);    
     
 //    printArray2D(ulisttot_r, inum, 12, backend);
 //     display(" ");
@@ -805,6 +837,7 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
           nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);           
     END_TIMING(58);
         
+//    writearray2file("blist2.bin", blist, idxb_max*inum*ntriples, backend);       
 //     dstype *dblist;  TemplateMalloc(&dblist, ineighmax*3*(ncoeffall-1), backend);      
 //     ComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, idxz_block, map, aii, tj, 
 //             twojmax, idxb_max, idxu_max, idxz_max, nelements, bnormflag, chemflag, inum, ineighmax, backend);
@@ -814,10 +847,15 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
         inum, ncoeff, ncoeffall, quadraticflag, backend);    
     END_TIMING(59);
     
+//     writearray2file("eatom2.bin", eatom, inum, backend);    
+//     writearray2file("coeffelem2.bin", coeffelem, ntypes*ncoeffall, backend);    
+    
     START_TIMING;    
     ComputeBeta(beta, blist, coeffelem, alist, map, atomtype, 
         inum, ncoeff, ncoeffall, quadraticflag, backend);
     END_TIMING(60);
+    
+//    writearray2file("beta2.bin", beta, ncoeff*inum, backend);    
     
     START_TIMING;    
 //     ComputeYi(ylist_r, ylist_i, ulisttot_r, ulisttot_i, cglist, beta, idxz, idxb_block, 
@@ -827,10 +865,14 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
           twojmax, idxb_max, idxu_max, idxz_max, nelem, bnormflag, inum, backend);            
     END_TIMING(61);
         
+//    writearray2file("ylistr2.bin", ylist_r, idxu_max*inum*nelem, backend);    
+    
     START_TIMING;
     ComputeDeidrj(dedr, ylist_r, ylist_i, dulist_r, dulist_i, idxu_block, map, 
           ai, tj, twojmax, idxu_max, chemflag, inum, ineighmax, backend);            
     END_TIMING(62);
+    
+//    writearray2file("dedr2.bin", dedr, 3*ineighmax, backend);   
     
     START_TIMING;
     SnapTallyForceFull(fatom, dedr, ai, aj, alist, ineighmax, backend);
@@ -840,7 +882,10 @@ void ComputePairSnap2(dstype *eatom, dstype *fatom, dstype *vatom, dstype *x, sn
     SnapTallyVirialFull(vatom, dedr, rij, ai, aj, inum, ineighmax, backend);  
     END_TIMING(64);    
     
-
+//     printf("%i %i %i %i %i %i %i %i %i %i %i\n", common.anum, inum, ineighmax, idxu_max, idxb_max, 
+//             idxz_max, ncoeff, ncoeffall, chemflag, bnormflag,  nelem);
+//     error("here");
+    
 //     dstype *bi, *bd, *bv, *e, *f, *ri1, *bi2, *blist2;
 //     int M = ncoeffall-1;
 //     int nperdim = M;

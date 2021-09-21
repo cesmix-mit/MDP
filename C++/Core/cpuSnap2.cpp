@@ -419,8 +419,8 @@ template <typename T> void cpuComputeZi2(T *zlist_r, T *zlist_i, T *Stotr, T *St
         zlist_i[idx] = qi;          
 
         if (bnorm_flag) {
-            zlist_r[idx] /= ((T) (j+1));
-            zlist_r[idx] /= ((T) (j+1));
+            zlist_r[idx] /= (j+1);
+            zlist_i[idx] /= (j+1);
         }        
     }
 };
@@ -659,33 +659,25 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *Stotr, T *Sto
             int jju = idxz[jjz*10+9];
             for(int elem3 = 0; elem3 < nelements; elem3++) {
               int itriple;  
-              int ib = ii + inum*idxb_max*((elem1 * nelements + elem2) * nelements + elem3);
               T betaj;
-              // pick out right beta value
               if (j >= j1) {
-                //const int jjb = idxb_block[j1][j2][j];
                 const int jjb = idxb_block[j + j2*jdim + j1*jdim*jdim];
-                //itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max + jjb + ncoeff*ii;
-                itriple = ib + inum*jjb;
+                itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max*inum + jjb*inum + ii;
                 if (j1 == j) {
                   if (j2 == j) betaj = 3*beta[itriple];
                   else betaj = 2*beta[itriple];
-                } else betaj = beta[itriple];
+                } else betaj = beta[itriple];          
               } else if (j >= j2) {
-                //const int jjb = idxb_block[j][j2][j1];
                 const int jjb = idxb_block[j1 + j2*jdim + j*jdim*jdim];
-                //itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
-                itriple = ib + inum*jjb;        
+                itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
                 if (j2 == j) betaj = 2*beta[itriple];
                 else betaj = beta[itriple];
               } else {
-                //const int jjb = idxb_block[j2][j][j1];
                 const int jjb = idxb_block[j1 + j*jdim + j2*jdim*jdim];
-                //itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
-                itriple = ib + inum*jjb;
+                itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
                 betaj = beta[itriple];
               }
-
+              
               if (!bnorm_flag && j1 > j)
                 betaj *= (j1 + 1) / (j + 1.0);
            
@@ -706,7 +698,7 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *zlist_r, T *z
 {        
     cpuArraySetValue(ylist_r, (T) 0.0, idxu_max*nelements*inum);
     cpuArraySetValue(ylist_i, (T) 0.0, idxu_max*nelements*inum);
-    
+            
     int jdim = twojmax + 1;    
     int N1 = inum;    
     int N2 = N1*idxz_max;
@@ -722,42 +714,34 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *zlist_r, T *z
         const int j1 = idxz[jjz*10+0];
         const int j2 = idxz[jjz*10+1];
         const int j = idxz[jjz*10+2];
+        const int jju = idxz[jjz*10+9];
         
         T ztmp_r = zlist_r[idx];
-        T ztmp_i = zlist_i[idx];          
-        int jju = idxz[jjz*10+9];
+        T ztmp_i = zlist_i[idx];                  
         for(int elem3 = 0; elem3 < nelements; elem3++) {
           int itriple;  
-          int ib = ii + inum*idxb_max*((elem1 * nelements + elem2) * nelements + elem3);
           T betaj;
-          // pick out right beta value
           if (j >= j1) {
-            //const int jjb = idxb_block[j1][j2][j];
             const int jjb = idxb_block[j + j2*jdim + j1*jdim*jdim];
-            //itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max + jjb + ncoeff*ii;
-            itriple = ib + inum*jjb;
+            itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max*inum + jjb*inum + ii;
             if (j1 == j) {
               if (j2 == j) betaj = 3*beta[itriple];
               else betaj = 2*beta[itriple];
-            } else betaj = beta[itriple];
+            } else betaj = beta[itriple];          
           } else if (j >= j2) {
-            //const int jjb = idxb_block[j][j2][j1];
             const int jjb = idxb_block[j1 + j2*jdim + j*jdim*jdim];
-            //itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
-            itriple = ib + inum*jjb;        
+            itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
             if (j2 == j) betaj = 2*beta[itriple];
             else betaj = beta[itriple];
           } else {
-            //const int jjb = idxb_block[j2][j][j1];
             const int jjb = idxb_block[j1 + j*jdim + j2*jdim*jdim];
-            //itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
-            itriple = ib + inum*jjb;
+            itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
             betaj = beta[itriple];
           }
-
+          
           if (!bnorm_flag && j1 > j)
             betaj *= (j1 + 1) / (j + 1.0);
-
+                   
           ylist_r[ii + inum*jju + inum*idxu_max*elem3] += betaj * ztmp_r;
           ylist_i[ii + inum*jju + inum*idxu_max*elem3] += betaj * ztmp_i;        
        }        

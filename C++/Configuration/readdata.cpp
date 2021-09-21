@@ -582,7 +582,8 @@ void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app
     common.inummax = nlocal;
     common.tdof = (nlocal-1)*dim;    
     common.tfactor = common.mvv2e / (common.tdof * common.boltz);    
-            
+    common.tarray[5] = common.tdof;
+        
     TemplateMalloc(&config.v, dim*nlocal, backend);        
     TemplateMalloc(&amass, nlocal, backend);        
     for (int i=0; i<nlocal; i++) ilist[i] = i;

@@ -307,7 +307,7 @@ template <typename T> void gpuSetVelocityFinalIntegrate(T *x, T *v, T *f, T *mas
         T dtf, int *type, int *ilist, int *iparam, int dim, int inum);
 
 template <typename T> void gpuInitialIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,
-        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T vlimitsq, int *type, int *ilist,
+        T *eta_mass, T *eta, T *eta_dot, T *eta_dotdot, T *ke, T *tmp, T vlimitsq, int *type, int *ilist,
         int eta_mass_flag, int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum);
 
 template <typename T> void gpuFinalIntegrate(T *x, T *v, T *f, T *mass, T *dtarray, T *tarray,

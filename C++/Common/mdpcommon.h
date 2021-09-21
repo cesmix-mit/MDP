@@ -1031,7 +1031,7 @@ struct commonstruct {
     dstype nvtenergy;
     dstype vlimitsq;
     int eta_mass_flag=1;
-    int biasflag;
+    int biasflag=0;
     int mtchain=1;
     int nc_tchain=1;
     int ensemblemode=0;

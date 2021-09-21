@@ -515,7 +515,7 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *ulisttot_r, T
 {
   int jdim = twojmax + 1;  
   int jju;
-  T betaj;
+  //T betaj;
   int itriple;
 
 //   for (int ii=0; ii<inum; ii++)       
@@ -606,6 +606,7 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *ulisttot_r, T
         //jju = idxz[jjz].jju;
         jju = idxz[jjz*10+9];
         for(int elem3 = 0; elem3 < nelements; elem3++) {
+          T betaj = 1.0;  
         // pick out right beta value
           if (j >= j1) {
             //const int jjb = idxb_block[j1][j2][j];
@@ -614,14 +615,14 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *ulisttot_r, T
             if (j1 == j) {
               if (j2 == j) betaj = 3*beta[itriple];
               else betaj = 2*beta[itriple];
-            } else betaj = beta[itriple];
+            } else betaj = beta[itriple];          
           } else if (j >= j2) {
             //const int jjb = idxb_block[j][j2][j1];
               const int jjb = idxb_block[j1 + j2*jdim + j*jdim*jdim];
             itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
             if (j2 == j) betaj = 2*beta[itriple];
             else betaj = beta[itriple];
-          } else {
+          }  else {
             //const int jjb = idxb_block[j2][j][j1];
             const int jjb = idxb_block[j1 + j*jdim + j2*jdim*jdim];
             itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
@@ -630,7 +631,8 @@ template <typename T> void cpuComputeYi(T *ylist_r, T *ylist_i, T *ulisttot_r, T
 
           if (!bnorm_flag && j1 > j)
             betaj *= (j1 + 1) / (j + 1.0);
-
+          
+          //betaj = 1.0;
           ylist_r[elem3 * idxu_max + jju + idxu_max*nelements*ii] += betaj * ztmp_r;
           ylist_i[elem3 * idxu_max + jju + idxu_max*nelements*ii] += betaj * ztmp_i;
         }

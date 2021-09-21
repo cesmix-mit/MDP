@@ -518,7 +518,7 @@ template <typename T> void cpuNoseHooverThermostat(T *v, T *dtarray, T *tarray, 
   //T t_stop = tarray[1];     
   //T t_freq = tarray[2];
   //T t_target = tarray[3]; 
-  //T t_current = tarray[4];   
+  T t_current = tarray[4];   
   //T tdof = tarray[5];
   //T boltz = tarray[6];
   //T drag = tarray[7];
@@ -549,6 +549,8 @@ template <typename T> void cpuNoseHooverThermostat(T *v, T *dtarray, T *tarray, 
     eta_dotdot[0] = (kecurrent - ke_target)/eta_mass[0];
   else eta_dotdot[0] = 0.0;
 
+  //printf("%i %i %i %i %g %g %g %g %g \n", biasflag, eta_mass_flag, mtchain, nc_tchain, tdof, boltz, t_freq, t_target, t_current);
+  
   T ncfac = 1.0/nc_tchain;
   for (int iloop = 0; iloop < nc_tchain; iloop++) {
 
@@ -612,6 +614,13 @@ template <typename T> void cpuNVTInitialIntegrate(T *x, T *v, T *f, T *mass, T *
   T delta = (ntimestep - beginstep)/(endstep - beginstep);  
   tarray[3] = t_start + delta * (t_stop - t_start); // t_target
     
+  T tdof = tarray[5];
+  T boltz = tarray[6];
+  T mvv2e = tarray[8];    
+  T tfactor = mvv2e / (tdof * boltz);    
+  T t_current = cpuComputeTempScalar(v, mass, tfactor, type, ilist, dim, inum);
+  tarray[4] = t_current; 
+  
   cpuNoseHooverThermostat(v, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, 
            ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, dim, inum);
 
@@ -633,7 +642,7 @@ template <typename T> void cpuNVTFinalIntegrate(T *x, T *v, T *f, T *mass, T *dt
   T tfactor = mvv2e / (tdof * boltz);    
   T t_current = cpuComputeTempScalar(v, mass, tfactor, type, ilist, dim, inum);
   tarray[4] = t_current; 
-  
+      
   cpuNoseHooverThermostat(v, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, 
           ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, dim, inum);
 }

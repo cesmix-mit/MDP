@@ -337,6 +337,8 @@ template <typename T> void gpuNoseHooverThermostat(T *v, T *dtarray, T *tarray, 
     eta_dotdot[0] = (kecurrent - ke_target)/eta_mass[0];
   else eta_dotdot[0] = 0.0;
 
+  printf("%i %i %i %i %g %g %g %g %g \n", biasflag, eta_mass_flag, mtchain, nc_tchain, tdof, boltz, t_freq, t_target, t_current);
+
   T ncfac = 1.0/nc_tchain;
   for (int iloop = 0; iloop < nc_tchain; iloop++) {
 
@@ -404,9 +406,14 @@ template <typename T> void gpuNVTInitialIntegrate(T *x, T *v, T *f, T *mass, T *
   T boltz = tarray[6];
   T mvv2e = tarray[8];    
   T tfactor = mvv2e / (tdof * boltz);    
-  T t_current = gpuComputeTempScalar(ke, v, tmp, mass, tfactor, type, ilist, dim, inum);
-  tarray[4] = t_current;   
-        
+  //T t_current = gpuComputeTempScalar(ke, v, tmp, mass, tfactor, type, ilist, dim, inum);
+  //tarray[4] = t_current;   
+
+  // gpuComputeKEAtom(ke, mass, v, (T) 2.0, type, ilist, dim, inum);
+  T t_current = gpuArraySum(ke, &ke[2*inum], inum);    
+  //tarray[4] = t_current;   
+
+  tarray[4] = 300;          
   gpuNoseHooverThermostat(v, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, 
            ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, dim, inum);
 

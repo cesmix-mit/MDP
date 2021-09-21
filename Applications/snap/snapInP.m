@@ -8,7 +8,7 @@ else
 end
 
 app = initializeapp(cdir,MDPpath);
-%app.buildexec = 1;
+app.buildexec = 1;
 app.platform = "cpu";    % app.platform = "gpu" => MDP runs on Nvidia GPU 
 app.unitstyle = "metal"; % unit system
 app.pbc = [1 1 1];       % periodic boundary conditions
@@ -64,6 +64,8 @@ app.mu2a = [zblcutinner zblcutouter zblz1 zblz2];    % parameters for ZBL potent
 app.rcut2a = [zblcutouter];  % cut-off radius 
 
 % time integration and outputs 
+%app.ensemblemode = "nvt";
+%app.nvtparam = [300 300 0.05];
 app.ensemblemode = "nve";
 app.time = 0.0;             % initial time
 app.dt = 0.5e-3;            % time step size

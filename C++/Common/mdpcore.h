@@ -2250,7 +2250,7 @@ inline void SetVelocityFinalIntegrate(dstype *x, dstype *v, dstype *f, dstype *m
 
 inline void InitialIntegrate(dstype *x, dstype *v, dstype *f, dstype *mass, dstype *dtarray, 
         dstype *tarray, dstype *eta_mass, dstype *eta, dstype *eta_dot, dstype *eta_dotdot, 
-        dstype vlimitsq, int *type, int *ilist, int eta_mass_flag, 
+        dstype *ke, dstype *tmp, dstype vlimitsq, int *type, int *ilist, int eta_mass_flag, 
         int biasflag, int mtchain, int nc_tchain, int mode, int dim, int inum, int backend)
 {
 	if (backend == 1)
@@ -2261,11 +2261,13 @@ inline void InitialIntegrate(dstype *x, dstype *v, dstype *f, dstype *mass, dsty
 #endif
 #ifdef USE_HIP
 	if (backend == 3)
-		hipInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		hipInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp,
+                vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 #ifdef USE_CUDA
 	if (backend == 2)
-		gpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
+		gpuInitialIntegrate(x, v, f, mass, dtarray, tarray, eta_mass, eta, eta_dot, eta_dotdot, ke, tmp, 
+                vlimitsq, type, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, mode, dim, inum);
 #endif
 }
 

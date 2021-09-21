@@ -21,8 +21,7 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
   // store atom positions at the beginning of the time loop  
   dstype *xstart = CCal.tmp.tmpmem;
   
-  this->IntegrationSetup(CCal);
-  
+  this->IntegrationSetup(CCal);  
   
   auto starttime = std::chrono::high_resolution_clock::now();   
   
@@ -39,7 +38,18 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     // copy atoms I to xstart  
     ArrayCopy(xstart, CCal.sys.x, dim*inum, backend);
     
-    // initial integration of the velocity vertlet method: update velocity and position    
+//     if (backend<=1) {
+//         writearray2file("x1a.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v1a.bin", CCal.sys.v, dim*inum, backend);    
+//         writearray2file("f1a.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+//     else {
+//         writearray2file("x2a.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v2a.bin", CCal.sys.v, dim*inum, backend);    
+//         writearray2file("f2a.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+    
+    // initial integration of the velocity vertlet method: update velocity and position        
     START_TIMING;
     this->InitialIntegration(CCal);
     END_TIMING_CCAL(0);    
@@ -64,21 +74,59 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     this->NeighborListRebuild(CCal, xstart, istep);
     END_TIMING_CCAL(4);    
     
+//     if (backend<=1) {
+//         writearray2file("x1b.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v1b.bin", CCal.sys.v, dim*inum, backend);    
+//     }
+//     else {
+//         writearray2file("x2b.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v2b.bin", CCal.sys.v, dim*inum, backend);    
+//     }
+    
     // calculate atomic forces
     START_TIMING;
     CCal.PotentialEnergyForceVirial(CCal.sys.e, CCal.sys.f, CCal.sys.vatom, CCal.sys.x, CCal.app.muep, CCal.common.nmu);                         
     END_TIMING_CCAL(5);    
+    
+//     if (backend<=1) {
+//         writearray2file("f1.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+//     else {
+//         writearray2file("f2.bin", CCal.sys.f, dim*inum, backend);    
+//     }
     
     // // impose force constraints if any
     START_TIMING;
     this->PostForceComputation(CCal);
     END_TIMING_CCAL(6);    
         
+//     if (backend<=1) {
+//         writearray2file("x1c.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v1c.bin", CCal.sys.v, dim*inum, backend);    
+//         writearray2file("f1c.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+//     else {
+//         writearray2file("x2c.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v2c.bin", CCal.sys.v, dim*inum, backend);    
+//         writearray2file("f2c.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+    
     // final integration of the velocity vertlet method: update velocity after computing force    
     START_TIMING;
     this->FinalIntegration(CCal);    
     END_TIMING_CCAL(7);    
                 
+//     if (backend<=1) {
+//         writearray2file("x1d.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v1d.bin", CCal.sys.v, dim*inum, backend);    
+//         writearray2file("f1d.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+//     else {
+//         writearray2file("x2d.bin", CCal.sys.x, dim*inum, backend);    
+//         writearray2file("v2d.bin", CCal.sys.v, dim*inum, backend);    
+//         writearray2file("f2d.bin", CCal.sys.f, dim*inum, backend);    
+//     }
+    
     // fix velocity and rescale velocity if necessary to control the temperature
     START_TIMING;
     this->PostFinalIntegration(CCal);        
@@ -87,7 +135,7 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
     // compute output, print on screen, and save it into binary files
     START_TIMING;
     this->TimestepCompletion(CCal);                   
-    END_TIMING_CCAL(9);        
+    END_TIMING_CCAL(9);            
   }    
   
   CUDA_SYNC;
@@ -148,9 +196,14 @@ void CIntegration::InitialIntegration(CCalculation &CCal)
     int inum = CCal.common.inum;
     int *ilist = CCal.nb.alist;    
     
+//     printf("%i \n", ensemblemode);
+//     printArray2D(dtarray, 1, 6, backend);
+//     printArray2D(tarray, 1, 9, backend);
+    
     InitialIntegrate(x, v, f, mass, dtarray, tarray, CCal.common.eta_mass, CCal.common.eta, 
-           CCal.common.eta_dot, CCal.common.eta_dotdot, vlimitsq, atomtype, ilist, eta_mass_flag, 
-            biasflag, mtchain, nc_tchain, ensemblemode, dim, inum, backend);           
+           CCal.common.eta_dot, CCal.common.eta_dotdot, &CCal.tmp.tmpmem[dim*inum], &CCal.tmp.tmpmem[dim*inum+inum], 
+            vlimitsq, atomtype, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, ensemblemode, 
+            dim, inum, backend);        
 }
 
 void CIntegration::PostInitialIntegration(CCalculation &CCal)
@@ -426,9 +479,13 @@ void CIntegration::FinalIntegration(CCalculation &CCal)
     int inum = CCal.common.inum;
     int *ilist = CCal.nb.alist;    
 
+//     printArray2D(v, dim, inum, backend);
+//     printArray2D(x, dim, inum, backend);    
+//     printArray2D(f, dim, inum, backend);    
+    
     FinalIntegrate(x, v, f, mass, dtarray, tarray, CCal.common.eta_mass, CCal.common.eta, 
-            CCal.common.eta_dot, CCal.common.eta_dotdot, CCal.tmp.tmpmem, &CCal.tmp.tmpmem[inum], 
-            vlimitsq, atomtype, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, ensemblemode, dim, inum, backend);           
+            CCal.common.eta_dot, CCal.common.eta_dotdot, &CCal.tmp.tmpmem[dim*inum], &CCal.tmp.tmpmem[dim*inum+inum], 
+            vlimitsq, atomtype, ilist, eta_mass_flag, biasflag, mtchain, nc_tchain, ensemblemode, dim, inum, backend);               
 }
 
 void CIntegration::PostFinalIntegration(CCalculation &CCal)

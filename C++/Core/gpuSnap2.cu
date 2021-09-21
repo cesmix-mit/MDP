@@ -461,7 +461,7 @@ template <typename T> __global__ void gpuKernelComputeZi2(T *zlist_r, T *zlist_i
 
         if (bnorm_flag) {
             zlist_r[idx] /= ((T) (j+1.0));
-            zlist_r[idx] /= ((T) (j+1.0));
+            zlist_i[idx] /= ((T) (j+1.0));
         }
         idx += blockDim.x * gridDim.x;
     }
@@ -732,30 +732,22 @@ template <typename T> __global__ void gpuKernelComputeYi(T *ylist_r, T *ylist_i,
             int jju = idxz[jjz*10+9];
             for(int elem3 = 0; elem3 < nelements; elem3++) {
               int itriple;  
-              int ib = ii + inum*idxb_max*((elem1 * nelements + elem2) * nelements + elem3);
               T betaj;
-              // pick out right beta value
               if (j >= j1) {
-                //const int jjb = idxb_block[j1][j2][j];
                 const int jjb = idxb_block[j + j2*jdim + j1*jdim*jdim];
-                //itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max + jjb + ncoeff*ii;
-                itriple = ib + inum*jjb;
+                itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max*inum + jjb*inum + ii;
                 if (j1 == j) {
                   if (j2 == j) betaj = 3*beta[itriple];
                   else betaj = 2*beta[itriple];
-                } else betaj = beta[itriple];
+                } else betaj = beta[itriple];          
               } else if (j >= j2) {
-                //const int jjb = idxb_block[j][j2][j1];
                 const int jjb = idxb_block[j1 + j2*jdim + j*jdim*jdim];
-                //itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
-                itriple = ib + inum*jjb;        
+                itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
                 if (j2 == j) betaj = 2*beta[itriple];
                 else betaj = beta[itriple];
               } else {
-                //const int jjb = idxb_block[j2][j][j1];
                 const int jjb = idxb_block[j1 + j*jdim + j2*jdim*jdim];
-                //itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
-                itriple = ib + inum*jjb;
+                itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
                 betaj = beta[itriple];
               }
 
@@ -813,30 +805,22 @@ template <typename T> __global__ void gpuKernelComputeYi(T *ylist_r, T *ylist_i,
         int jju = idxz[jjz*10+9];
         for(int elem3 = 0; elem3 < nelements; elem3++) {
           int itriple;  
-          int ib = ii + inum*idxb_max*((elem1 * nelements + elem2) * nelements + elem3);
           T betaj;
-          // pick out right beta value
           if (j >= j1) {
-            //const int jjb = idxb_block[j1][j2][j];
             const int jjb = idxb_block[j + j2*jdim + j1*jdim*jdim];
-            //itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max + jjb + ncoeff*ii;
-            itriple = ib + inum*jjb;
+            itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max*inum + jjb*inum + ii;
             if (j1 == j) {
               if (j2 == j) betaj = 3*beta[itriple];
               else betaj = 2*beta[itriple];
-            } else betaj = beta[itriple];
+            } else betaj = beta[itriple];          
           } else if (j >= j2) {
-            //const int jjb = idxb_block[j][j2][j1];
             const int jjb = idxb_block[j1 + j2*jdim + j*jdim*jdim];
-            //itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
-            itriple = ib + inum*jjb;        
+            itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
             if (j2 == j) betaj = 2*beta[itriple];
             else betaj = beta[itriple];
           } else {
-            //const int jjb = idxb_block[j2][j][j1];
             const int jjb = idxb_block[j1 + j*jdim + j2*jdim*jdim];
-            //itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
-            itriple = ib + inum*jjb;
+            itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max*inum + jjb*inum + ii;
             betaj = beta[itriple];
           }
 
