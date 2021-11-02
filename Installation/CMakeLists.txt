@@ -17,10 +17,10 @@ project(mdp LANGUAGES CXX)
 
 get_filename_component(MDP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.. ABSOLUTE)
 
-set(MDP_SOURCE_DIR     ${MDP_DIR}/C++)
-set(MDP_MAIN_DIR       ${MDP_DIR}/C++/Main)
-set(MDP_CORE_DIR       ${MDP_DIR}/C++/Core)
-set(MDP_POTENTIALS_DIR ${MDP_DIR}/C++/Potentials)
+set(MDP_SOURCE_DIR     ${MDP_DIR}/src/C++)
+set(MDP_MAIN_DIR       ${MDP_DIR}/src/C++/Main)
+set(MDP_CORE_DIR       ${MDP_DIR}/src/C++/Core)
+set(MDP_POTENTIALS_DIR ${MDP_DIR}/src/C++/Potentials)
 
 file(GLOB MAIN_SOURCES ${MDP_MAIN_DIR}/main.cpp)
 file(GLOB CPUCORE_SOURCES ${MDP_CORE_DIR}/cpuCore.cpp)

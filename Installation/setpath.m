@@ -6,11 +6,10 @@
 %***************************************************************************
 
 % Add MDP to Matlab search path
-addpath(char(MDPpath + "Matlab/Gencode"));
-addpath(char(MDPpath + "Matlab/Preprocessing"));
-addpath(char(MDPpath + "Matlab/Postprocessing"));
-addpath(char(MDPpath + "C++/Main"));
-addpath(char(MDPpath + "Installation"));
+addpath(char(MDPpath + "src/Matlab/Gencode"));
+addpath(char(MDPpath + "src/Matlab/Preprocessing"));
+addpath(char(MDPpath + "src/Matlab/Postprocessing"));
+addpath(char(MDPpath + "src/Matlab/Fitting"));
 
 % Set Matlab's PATH enviroment variable so that Exasim can call external packages    
 setenv('PATH', '/usr/local/bin:/usr/bin:/opt/local/bin:/bin:/usr/sbin:/sbin');
