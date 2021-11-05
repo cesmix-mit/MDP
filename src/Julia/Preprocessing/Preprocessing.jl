@@ -9,14 +9,18 @@ __precompile__()
 
 module Preprocessing
 
-using Revise
+using Revise, JSON
 
-export initializeapp, initializeconfig, initializemdp, preprocessing, readconfig, setlattice, setregion, setdomain
+export initializeapp, initializeconfig, initializemdp, preprocessing, readconfig, readEXTXYZ, readJSON, readJSONfromFolder
+export setlattice, setregion, setdomain
 
 include("initializeapp.jl");
 include("initializeconfig.jl");
 include("initializemdp.jl");
 include("readconfig.jl");
+include("readEXTXYZ.jl");
+include("readJSON.jl");
+include("readJSONfromFolder.jl");
 include("readweight.jl");
 include("writeapp.jl");
 include("writeconfig.jl");

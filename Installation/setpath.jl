@@ -1,4 +1,5 @@
 # Add MDP to Julia search path
+push!(LOAD_PATH, MDPpath * "src/Julia");
 push!(LOAD_PATH, MDPpath * "src/Julia/Gencode");
 push!(LOAD_PATH, MDPpath * "src/Julia/Preprocessing");
 push!(LOAD_PATH, MDPpath * "src/Julia/Postprocessing");

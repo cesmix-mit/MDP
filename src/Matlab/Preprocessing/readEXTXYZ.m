@@ -61,38 +61,75 @@ while (1)
             
     % handle properties
     prop = reshape(values{indp},3,[]);
-    nfield = size(prop,2);    
+    nfield = size(prop,2);        
     if nframe == 1
         fieldtype = prop(2,:);
         fieldlength = ones(nfield,1);        
+        fmt = "";
         for i = 1:nfield            
             fieldlength(i) = str2double(prop(3,i));
-        end
+            if lower(fieldtype(i)) == "s" || lower(fieldtype(i)) == "l"  % string        
+                fmt = fmt + "%s";
+            else                
+                if fieldlength(i) == 3
+                    fmt = fmt + "%f %f %f";
+                elseif fieldlength(i) == 2
+                    fmt = fmt + "%f %f";
+                elseif fieldlength(i) == 1
+                    fmt = fmt + "%f";                    
+                end
+            end
+            if i < nfield
+                fmt = fmt + " ";
+            end
+        end                
         fieldlength = cumsum(fieldlength);
-    end
+    end        
+        
+    tm = textscan(fid, fmt, natom);       
+    fgetl(fid);
     
     frame = cell(nfield,1);
-    for i = 1:natom
-        tline = split(fgetl(fid));          
-        for j = 1:nfield
-            if j == 1
-                k1 = 1;
-                k2 = fieldlength(1);
-            else
-                k1 = fieldlength(j-1)+1;
-                k2 = fieldlength(j);
-            end
-            if lower(fieldtype(j)) == "s" || lower(fieldtype(j)) == "l"  % string        
-                for k = k1:k2                
-                    frame{j}(i,k+1-k1) = string(tline{k});                
-                end
-            else
-                for k = k1:k2                
-                    frame{j}(i,k+1-k1) = str2double(tline{k});                
-                end
-            end
+    for j = 1:nfield        
+        if j == 1
+            k1 = 1;
+            k2 = fieldlength(1);
+        else
+            k1 = fieldlength(j-1)+1;
+            k2 = fieldlength(j);
+        end
+        if lower(fieldtype(j)) == "s" || lower(fieldtype(j)) == "l"  % string     
+           frame{j} = string(tm{k1}); 
+        else
+           frame{j} = tm{k1}; 
+           for k = (k1+1):k2
+               frame{j} = [frame{j} tm{k}];
+           end
         end        
-    end                
+    end
+    
+%     frame = cell(nfield,1);
+%     for i = 1:natom
+%         tline = split(fgetl(fid));          
+%         for j = 1:nfield
+%             if j == 1
+%                 k1 = 1;
+%                 k2 = fieldlength(1);
+%             else
+%                 k1 = fieldlength(j-1)+1;
+%                 k2 = fieldlength(j);
+%             end
+%             if lower(fieldtype(j)) == "s" || lower(fieldtype(j)) == "l"  % string        
+%                 for k = k1:k2                
+%                     frame{j}(i,k+1-k1) = string(tline{k});                
+%                 end
+%             else
+%                 for k = k1:k2                
+%                     frame{j}(i,k+1-k1) = str2double(tline{k});                
+%                 end
+%             end
+%         end        
+%     end                   
     
     for j = 1:nfield
         b = ones(natom,1);
@@ -135,14 +172,10 @@ while (1)
         elseif mystr == "charge"
             config.q((natomall+1):(natomall+natom)) = frame{j};
             config.ncq = 1;
-%         elseif mystr == "energies"
-%             config.eatom((natomall+1):(natomall+natom)) = frame{j};    
-%         elseif mystr == "virial"
-%             config.vatom(:,(natomall+1):(natomall+natom)) = frame{j};        
         elseif mystr == "mass"
             config.mass((natomall+1):(natomall+natom)) = frame{j};
             config.ncm = 1;
-        elseif mystr == "Z"
+        elseif mystr == "z"
             config.Z((natomall+1):(natomall+natom)) = frame{j};
             config.ncz = 1;
         end
