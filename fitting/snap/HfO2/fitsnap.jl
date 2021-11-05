@@ -1,4 +1,4 @@
-ii = findlast("MDP", pwd()); MDPpath = cdir[1:ii[end]] * "/";    
+cdir = pwd(); ii = findlast("MDP", cdir); MDPpath = cdir[1:ii[end]] * "/";    
 include(MDPpath * "Installation/setpath.jl");
 
 using MDP
