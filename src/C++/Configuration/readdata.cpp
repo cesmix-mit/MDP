@@ -622,10 +622,16 @@ void implSetConfigStruct(configstruct &config, appstruct &app, commonstruct &com
         int momentum_flag = (int) common.createvelocity[5];         
         int rotation_flag = (int) common.createvelocity[6];     
 
+//         cout<<app.atommass[1]<<"  "<<common.second[0]<<" . "<<common.seed[0]<<" . "<<common.save[0]<<endl;
+//         printArray2D(common.createvelocity, 1, 7, backend);
+        
         int natom=nlocal;
         cpuVelocityCreate(config.x, config.v, app.atommass, common.second, common.seed, common.save, ilist, 
                 config.t, seed0, sum_flag, dist_flag, loop_flag, dim, mpiRank, nlocal, natom);
 
+//         printArray2D(config.x, dim, natom, backend);
+//         printArray2D(config.v, dim, natom, backend);
+        
         common.masstotal = cpuComputeMass(amass, app.atommass, config.t, ilist, nlocal);                                
         cpuComputeVCM(common.vcm, config.v, app.atommass, common.masstotal, ilist, config.t, dim, nlocal);                
         cpuVelocityZeroMomentum(config.v, common.vcm, dim, nlocal);
@@ -697,9 +703,15 @@ void implSetConfigStruct(configstruct &config, domainstruct &dom, appstruct &app
         int momentum_flag = (int) common.createvelocity[5];         
         int rotation_flag = (int) common.createvelocity[6];     
 
+//         cout<<app.atommass[1]<<"  "<<common.second[0]<<" . "<<common.seed[0]<<" . "<<common.save[0]<<endl;
+//         printArray2D(common.createvelocity, 1, 7, backend);
+        
         int natom=nlocal;
         cpuVelocityCreate(config.x, config.v, app.atommass, common.second, common.seed, common.save, ilist, 
                 config.t, seed0, sum_flag, dist_flag, loop_flag, dim, mpiRank, nlocal, natom);
+        
+//         printArray2D(config.x, dim, natom, backend);
+//         printArray2D(config.v, dim, natom, backend);
         
         common.masstotal = cpuComputeMass(amass, app.atommass, config.t, ilist, nlocal);                                
         cpuComputeVCM(common.vcm, config.v, app.atommass, common.masstotal, ilist, config.t, dim, nlocal);                

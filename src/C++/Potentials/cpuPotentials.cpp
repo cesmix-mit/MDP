@@ -1657,17 +1657,23 @@ void cpuFullNeighPairEnergyForceVirial(dstype *e, dstype *f, dstype *v, neighbor
 //         printArray2D(ti, 1, ntuples, common.backend);       
 //         printArray2D(tj, 1, ntuples, common.backend);              
 //         printArray2D(fij, dim, common.inum, common.backend);       
-//         printArray2D(f, dim, common.inum, common.backend);       
-//         printArray2D(eij, 1, common.inum, common.backend);       
-//         printArray2D(e, 1, common.inum, common.backend);       
-//         error("here");        
-        
+//         printArray2D(f, dim, common.inum, common.backend);               
+//          printArray2D(eij, 1, 20, common.backend);       
+//          printArray2D(e, 1, common.inum, common.backend);       
+//          error("here");        
+                
 #ifdef HAVE_DEBUG                      
+        writearray2file("alist.bin", nb.alist, common.anum, common.backend); 
+        writearray2file("pairnum.bin", pairnum, na, common.backend); 
+        writearray2file("pairlist.bin", pairlist, na*neighmax, common.backend); 
+        writearray2file("neighnum.bin", nb.neighnum, na, common.backend); 
+        writearray2file("neighlist.bin", nb.neighlist, na*neighmax, common.backend); 
         writearray2file("xijcpu.bin", xij, ntuples*dim, common.backend); 
         writearray2file("eijcpu.bin", eij, ntuples, common.backend); 
         writearray2file("fijcpu.bin", fij, ntuples*dim, common.backend); 
         writearray2file("ecpu.bin", e, common.inum, common.backend); 
         writearray2file("fcpu.bin", f, common.inum*dim, common.backend); 
+        //error("here");        
 #endif                                                        
     }        
 }

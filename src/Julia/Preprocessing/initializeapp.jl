@@ -29,7 +29,7 @@ mutable struct APPStruct
     globaloutputs::String; 
     peratomoutputs::String; 
     potentialfile::String;# APP model file name
-    configfile::String;# APP model file name
+    configfile::String;# APP model file name    
     weightfile::String;# APP model file name
     model::String;# used to indicate APP model
     buildexec::Int64;
@@ -44,6 +44,11 @@ mutable struct APPStruct
     unitstylenum::Int64; 
     ensemblemodenum::Int64; 
         
+    datapath::String;
+    datafile::String;
+    dataformat::String;
+    datamode::Int64;
+
     traininglist::Array{Int64,2}; # a list of configurations for training the potential
     validatelist::Array{Int64,2}; # a list of configurations for validating the potential
 
@@ -87,6 +92,7 @@ mutable struct APPStruct
 
     # atom types
     natomtype::Int64;  # number of atom types
+    atomspecies::Array{String,1};
     atommasses::Array{Float64,2};
     atomcharges::Array{Float64,2};
     atomnumbers::Array{Int64,2};
@@ -257,6 +263,11 @@ function initializeapp(cdir,sourcepath,version="version0")
     app.weightmode = 0;
     app.preprocessmode = 1;
     app.mpiprocs = 1;        
+
+    app.datapath = "";
+    app.datafile = "";
+    app.dataformat = "";
+    app.datamode = 1;
 
     app.traininglist = reshape([], 0, 2);
     app.validatelist = reshape([], 0, 2);

@@ -13,6 +13,207 @@
 #include "setunits.cpp"
 #include "readdata.cpp"
 
+// template <typename T> void cpuSmallMatrixInverse(T *invA, T *A, int dim)
+// {                 
+//     if (dim==2) {
+//         T detA = A[0]*A[3] - A[1]*A[2];
+//         invA[0] = A[3]/detA;
+//         invA[1] = -A[1]/detA;
+//         invA[2] = -A[2]/detA;
+//         invA[3] = A[0]/detA;
+//     }
+//     else if (dim==3)
+//     {
+//         T a11 = A[0];
+//         T a21 = A[1];
+//         T a31 = A[2];
+//         T a12 = A[3];
+//         T a22 = A[4];
+//         T a32 = A[5];
+//         T a13 = A[6];
+//         T a23 = A[7];
+//         T a33 = A[8];        
+//         T detA = (a11*a22*a33 - a11*a23*a32 - a12*a21*a33 + a12*a23*a31 + a13*a21*a32 - a13*a22*a31);
+// 
+//         invA[0] = (a22*a33 - a23*a32)/detA;
+//         invA[1] = (a23*a31 - a21*a33)/detA;
+//         invA[2] = (a21*a32 - a22*a31)/detA;
+//         invA[3] = (a13*a32 - a12*a33)/detA;
+//         invA[4] = (a11*a33 - a13*a31)/detA;
+//         invA[5] = (a12*a31 - a11*a32)/detA;
+//         invA[6] = (a12*a23 - a13*a22)/detA;
+//         invA[7] = (a13*a21 - a11*a23)/detA;
+//         invA[8] = (a11*a22 - a12*a21)/detA;        
+//     }    
+// }
+// template void cpuSmallMatrixInverse(double*, double*, int);
+// template void cpuSmallMatrixInverse(float*, float*, int);
+// 
+// template <typename T> void cpuSmallMatrixInverse(T *invA, T *A1, T *A2, T *A3)
+// {                 
+//     T a11 = A1[0];
+//     T a21 = A1[1];
+//     T a31 = A1[2];
+//     T a12 = A2[0];
+//     T a22 = A2[1];
+//     T a32 = A2[2];
+//     T a13 = A3[0];
+//     T a23 = A3[1];
+//     T a33 = A3[2];        
+//     T detA = (a11*a22*a33 - a11*a23*a32 - a12*a21*a33 + a12*a23*a31 + a13*a21*a32 - a13*a22*a31);
+// 
+//     invA[0] = (a22*a33 - a23*a32)/detA;
+//     invA[1] = (a23*a31 - a21*a33)/detA;
+//     invA[2] = (a21*a32 - a22*a31)/detA;
+//     invA[3] = (a13*a32 - a12*a33)/detA;
+//     invA[4] = (a11*a33 - a13*a31)/detA;
+//     invA[5] = (a12*a31 - a11*a32)/detA;
+//     invA[6] = (a12*a23 - a13*a22)/detA;
+//     invA[7] = (a13*a21 - a11*a23)/detA;
+//     invA[8] = (a11*a22 - a12*a21)/detA;            
+// }
+// template void cpuSmallMatrixInverse(double*, double*, double*, double*);
+// template void cpuSmallMatrixInverse(float*, float*, float*, float*);
+// 
+// template <typename T> void BoundingBox3D(T *vc, T *wc, T *v, T *w, T *a, T *b, T *c, T *r, int *pbc)
+// {
+//     T a1 = a[0]; 
+//     T a2 = a[1];
+//     T a3 = a[2];
+//     T b1 = b[0]; 
+//     T b2 = b[1];
+//     T b3 = b[2];
+//     T c1 = c[0]; 
+//     T c2 = c[1];
+//     T c3 = c[2];
+//     
+//     T norma = sqrt(cpuArraySquareSum(a, 3));
+//     T normb = sqrt(cpuArraySquareSum(b, 3));
+//     T normc = sqrt(cpuArraySquareSum(c, 3));
+//     
+//     // 8 vertices of the parallelogram defined by a, b, c
+//     v[0] = 0.0;
+//     v[1] = 0.0;
+//     v[2] = 0.0;
+//     v[3] = a1;
+//     v[4] = a2;
+//     v[5] = a3;    
+//     v[6] = a1 + b1;
+//     v[7] = a2 + b2;
+//     v[8] = a3 + b3;    
+//     v[9] = b1;
+//     v[10] = b2;
+//     v[11] = b3;
+//     v[12] = c1;
+//     v[13] = c2;
+//     v[14] = c3;
+//     v[15] = a1 + c1;
+//     v[16] = a2 + c2;
+//     v[17] = a3 + c3;    
+//     v[18] = a1 + b1 + c1;
+//     v[19] = a2 + b2 + c2;
+//     v[20] = a3 + b3 + c3;    
+//     v[21] = b1 + c1;
+//     v[22] = b2 + c2;
+//     v[23] = b3 + c3;
+//     
+//     // the 1st plane defined by a and b
+//     T p1[3] = {a2*b3-a3*b2, a3*b1-a1*b3, a1*b2-a2*b1};
+//     T normp1 = sqrt(cpuArraySquareSum(p1, 3));    
+//     // Since the distance between (0,0,0) and the 1st plane p1(1)*x + p1(2)*y + p1(3)*z = d1
+//     // is equal to r, we have
+//     T d1 = -r[2]*normp1;
+//     printf("%g %g %g %g\n", d1, p1[2], r[2], normp1);
+//     //[d1 p1(3) r(3) normp1]
+//             
+//     // the 2nd plane defined by b and c
+//     T p2[3] = {b2*c3-b3*c2, b3*c1-b1*c3, b1*c2-b2*c1};
+//     T normp2 = sqrt(cpuArraySquareSum(p2, 3));
+//     T d2 = -r[0]*normp2;
+//     
+//     // the 3rd plane defined by c and a
+//     T p3[3] = {c2*a3-c3*a2, c3*a1-c1*a3, c1*a2-c2*a1};
+//     T normp3 = sqrt(cpuArraySquareSum(p3, 3));
+//     T d3 = -r[1]*normp3;
+//         
+//     printf("%g %g %g\n", d1, d2, d3);
+//     
+//     // intersection of the above three planes
+//     //w1 = [p1; p2; p3]\[d1; d2; d3];
+//     T A[9] = {p1[0], p2[0], p3[0], p1[1], p2[1], p3[1], p1[2], p2[2], p3[2]};
+//     T invA[9];    
+//     cpuSmallMatrixInverse(invA, A, 3);        
+//     w[0] = invA[0]*d1 + invA[3]*d2 + invA[6]*d3;
+//     w[1] = invA[1]*d1 + invA[4]*d2 + invA[7]*d3;
+//     w[2] = invA[2]*d1 + invA[5]*d2 + invA[8]*d3;
+//     
+//     printf("%g %g %g\n", A[0], A[3], A[6]);
+//     printf("%g %g %g\n", A[1], A[4], A[7]);
+//     printf("%g %g %g\n", A[2], A[5], A[8]);
+//     
+//     printf("%g %g %g\n", invA[0], invA[3], invA[6]);
+//     printf("%g %g %g\n", invA[1], invA[4], invA[7]);
+//     printf("%g %g %g\n", invA[2], invA[5], invA[8]);
+//     printf("%g %g %g\n", w[0], w[1], w[2]);
+//     
+//     // find e = (e1,e2,e3) such that e1*a + e2*b + e3*c = w1
+//     //e = [a(:) b(:) c(:)]\w1;    
+//     cpuSmallMatrixInverse(invA, a, b, c);
+//     T e1 = invA[0]*w[0] + invA[3]*w[1] + invA[6]*w[2];
+//     T e2 = invA[1]*w[0] + invA[4]*w[1] + invA[7]*w[2];
+//     T e3 = invA[2]*w[0] + invA[5]*w[1] + invA[8]*w[2];
+//     
+//     T onet = (T) 1.0;
+//     T sa[3], sb[3], sc[3];
+//     // distance between w1 and the point e2*b + e3*c    
+//     cpuArrayAdd3Vectors(sa, w, b, c, onet, -e2, -e3, 3);
+//     
+//     // distance between w1 and the point e1*a + e3*c
+//     cpuArrayAdd3Vectors(sb, w, a, c, onet, -e1, -e3, 3);
+// 
+//     // distance between w1 and the point e1*a + e2*b
+//     cpuArrayAdd3Vectors(sc, w, a, b, onet, -e1, -e2, 3);
+//     
+//     // length of the bounding parallelepiped along the 1st axis
+//     T la = norma + (2.0*pbc[0])*sqrt(cpuArraySquareSum(sa, 3));
+//     // length of the bounding parallelepiped along the 2nd axis
+//     T lb = normb + (2.0*pbc[1])*sqrt(cpuArraySquareSum(sb, 3));
+//     // length of the bounding parallelepiped along the 3rd axis
+//     T lc = normc + (2.0*pbc[2])*sqrt(cpuArraySquareSum(sc, 3));
+//     
+//     // the 1st vertex of the bounding parallelepiped   
+//     cpuArrayAdd3Vectors(&w[0], a, b, c, pbc[0]*e1, pbc[1]*e2, pbc[2]*e3, 3);    
+//     printf("%g %g %g\n", w[0], w[1], w[2]);
+// //     w[0] = pbc[0]*e[0]*a1 + pbc[1]*e[1]*b1 + pbc[c]*e[2]*c1;
+// //     w[1] = pbc[0]*e[0]*a2 + pbc[1]*e[1]*b2 + pbc[c]*e[2]*c2;
+// //     w[2] = pbc[0]*e[0]*a3 + pbc[1]*e[1]*b3 + pbc[c]*e[2]*c3;    
+//     // the 2nd vertex of the bounding parallelepiped: w2 = w1 + la*a/norma;
+//     cpuArrayAXPBY(&w[3], &w[0], a, onet, la/norma, 3);
+//     // the 4th vertex of the bounding parallelepiped: w4 = w1 + lb*b/normb;
+//     cpuArrayAXPBY(&w[9], &w[0], b, onet, lb/normb, 3);
+//     // the 3rd vertex of the bounding parallelepiped: w3 = w2 + w4 - w1;
+//     cpuArrayAdd3Vectors(&w[6], &w[0], &w[3], &w[9], -onet, onet, onet, 3);    
+//     // the 5th vertex of the bounding parallelepiped: w5 = w1 + lc*c/normc;
+//     cpuArrayAXPBY(&w[12], &w[0], c, onet, lc/normc, 3);
+//     // the 6th vertex of the bounding parallelepiped: w6 = w5 + la*a/norma;
+//     cpuArrayAXPBY(&w[15], &w[12], a, onet, la/norma, 3);
+//     // the 8th vertex of the bounding parallelepiped: w8 = w5 + lb*b/normb;
+//     cpuArrayAXPBY(&w[21], &w[12], b, onet, lb/normb, 3);
+//     // the 3rd vertex of the bounding parallelepiped: w7 = w6 + w8 - w5;
+//     cpuArrayAdd3Vectors(&w[18], &w[12], &w[15], &w[21], -onet, onet, onet, 3);    
+//     
+//     for (int i=0; i<8; i++) {
+//         vc[3*i+0] = invA[0]*v[3*i+0] + invA[3]*v[3*i+1] + invA[6]*v[3*i+2];
+//         vc[3*i+1] = invA[1]*v[3*i+0] + invA[4]*v[3*i+1] + invA[7]*v[3*i+2];
+//         vc[3*i+2] = invA[2]*v[3*i+0] + invA[5]*v[3*i+1] + invA[8]*v[3*i+2];
+//         wc[3*i+0] = invA[0]*w[3*i+0] + invA[3]*w[3*i+1] + invA[6]*w[3*i+2];
+//         wc[3*i+1] = invA[1]*w[3*i+0] + invA[4]*w[3*i+1] + invA[7]*w[3*i+2];
+//         wc[3*i+2] = invA[2]*w[3*i+0] + invA[5]*w[3*i+1] + invA[8]*w[3*i+2];        
+//     }    
+// }
+// template void BoundingBox3D(double*, double*, double*, double*, double*, double*, double*, double*, int*);
+// template void BoundingBox3D(float*, float*, float*, float*, float*, float*, float*, float*, int*);
+
 // void implReadAppStruct(appstruct &app, commonstruct &common, string filein, Int mpiprocs, Int mpirank, Int backend)
 // {
 //     string filename = filein + "app.bin";                    
@@ -619,11 +820,20 @@ void implSetNeighborStruct(neighborstruct &nb, commonstruct &common, configstruc
     }
     else if (dim==3){
         cpuBoundingBox3D(refvertices, rbvertices, boxvertices, bbvertices, 
-                a, b, c, common.boxoffset, common.pbc);
+                a, b, c, common.boxoffset, common.pbc);        
+//         BoundingBox3D(refvertices, rbvertices, boxvertices, bbvertices, 
+//                 a, b, c, common.boxoffset, common.pbc);
         
         common.pnum = cpuPeriodicImages3D(pimages, a, b, c, common.pbc);                
     }    
-                
+    
+//     printArray2D(refvertices, 3, 8, common.backend);  
+//     printArray2D(rbvertices, 3, 8, common.backend);  
+//     printArray2D(boxvertices, 3, 8, common.backend);  
+//     printArray2D(bbvertices, 3, 8, common.backend);  
+//     printArray2D(pimages, 3, common.pnum, common.backend);  
+//     error("here");
+    
     dstype *smin = &rbvertices[0];
     dstype *smax = (dim == 2) ? &rbvertices[dim*2] :  &rbvertices[dim*6];        
     common.cnum = 1;

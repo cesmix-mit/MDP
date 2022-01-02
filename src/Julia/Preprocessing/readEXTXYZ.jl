@@ -115,6 +115,10 @@ while (m<n)
     s = reshape(s, (Int64(length(s)/natom), natom))
     m = m + natom    
     
+    # display(keys)
+    # display(values)
+    # display(indp)
+    # display(values[indp])
     # handle properties
     prop = reshape(values[indp],(3, Int64(length(values[indp])/3)));
     nfield = size(prop,2);            
@@ -133,7 +137,7 @@ while (m<n)
         end
         if lowercase(fieldtype[j]) == "s" || lowercase(fieldtype[j]) == "l"               
             frame[j] = s[k1,:]; 
-            b = ones(natom,1);
+            b = ones(Int64,1,natom);
             if lowercase(fieldtype[j]) == "l"                              
                 ind = findall(frame[j][:] .== "F");
                 b[ind] .= 0;            
@@ -226,6 +230,8 @@ while (m<n)
         end
     end
 end
+
+config.nconfigs = length(config.natom)
 
 return config;
 

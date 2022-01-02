@@ -54,7 +54,7 @@ void CCalculation::SetConfiguration(Int ci)
     }
     else if (common.descriptor == 1) {// snap
         InitSnap(sna, common);     
-        common.Ncoeff = sna.ncoeff;
+        common.Ncoeff = sna.ntypes*sna.ncoeff;
     }
     else 
         common.Ncoeff = 0;
@@ -411,6 +411,15 @@ void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, d
     START_TIMING;
     this->EmpiricalPotentialEnergyForceVirial(e, f, v, x, sys.q, param, nparam);              
     END_TIMING(10);
+    
+    int dim = common.dim;
+    int inum = common.inum;    
+    int backend = common.backend;
+    dstype *tmpmem = tmp.tmpmem;       
+    ArraySumEveryColumn(tmpmem, e, 1, inum, backend);  
+    ArraySumEveryColumn(&tmpmem[1], sys.vatom, 6, inum, backend);    
+    printArray2D(tmpmem, 1, 7, backend);
+    error("here")
     
     START_TIMING;
     if (common.descriptor == 1) { // snap

@@ -176,6 +176,9 @@ void InitSnap(snastruct &sna, commonstruct &common)
     }
   }
 
+  //cout<<ncoeff<<" "<<ncoeffall<<endl;
+  //error("here");
+          
   // Calculate maximum cutoff for all elements
   dstype rcutmax = 0.0;
   for (int ielem = 0; ielem < nelements; ielem++)
@@ -867,32 +870,41 @@ void ComputeSnap(dstype *bi, dstype *bd, dstype *bv, dstype *x, snastruct &sna, 
     NeighborPairs(rij, x, aii, ai, aj, ti, tj, pairnum, 
           pairlist, pairnumsum, alist, atomtype, alist, inum, neighmax, dim, backend);
         
+    // cpuSnap2
     int n = idxu_max*ineighmax;
     ComputeSij(ulist_r, ulist_i, &dulist_r[0*n], &dulist_i[0*n], &dulist_r[1*n], &dulist_i[1*n],
             &dulist_r[2*n], &dulist_i[2*n], rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, 
             idxu_block, ti, tj, twojmax, idxu_max, ineighmax, switchflag, backend);      
     
+    // cpuSnap2
     ZeroUarraytot2(ulisttot_r, ulisttot_i, wself, idxu_block, atomtype,
             map, ai, wselfallflag, chemflag, idxu_max, nelem, twojmax, inum, backend);    
     
+    // cpuSnap2
     AddUarraytot(ulisttot_r, ulisttot_i, ulist_r, ulist_i, map, ai, tj, idxu_max, 
             inum, ineighmax, chemflag, backend);    
         
+    // cpuSnap2
     ComputeZi2(zlist_r, zlist_i, ulisttot_r, ulisttot_i, cglist, idxz, idxu_block, 
           idxcg_block, twojmax, idxu_max, idxz_max, nelem, bnormflag, inum, backend);
         
+    // cpuSnap2
     ComputeBi2(blist, zlist_r, zlist_i, ulisttot_r, ulisttot_i, bzero, alist, atomtype, 
           map, idxb, idxu_block, idxz_block, twojmax, idxb_max, idxu_max, idxz_max, 
           nelem, bzeroflag,  wselfallflag, chemflag, inum, backend);           
         
+    // cpuSnap2
     ComputeDbidrj(dblist, zlist_r, zlist_i, dulist_r, dulist_i, idxb, idxu_block, idxz_block, map, ai, tj, 
             twojmax, idxb_max, idxu_max, idxz_max, nelements, bnormflag, chemflag, inum, ineighmax, backend);
     
+    // cpuSnap2
     SnapTallyBispectrum(bi, blist, alist, atomtype, inum, ncoeff, nperdim, ntypes, quadraticflag, backend);    
     
+    // cpuSnap2
     SnapTallyBispectrumDeriv(bd, blist, dblist, aii, ai, aj, 
           ti, inum, ineighmax, ncoeff, nperdim, ntypes, quadraticflag, backend);    
     
+    // cpuSnap2
     SnapTallyBispectrumVirial(bv, blist, dblist, rij, aii, ai, aj, 
           ti, inum, ineighmax, ncoeff, nperdim, ntypes, quadraticflag, backend);        
 }

@@ -9,19 +9,25 @@ __precompile__()
 
 module Preprocessing
 
-using Revise, JSON
+using Revise, JSON, LinearAlgebra
 
-export initializeapp, initializeconfig, initializemdp, preprocessing, readconfig, readEXTXYZ, readJSON, readJSONfromFolder
-export setlattice, setregion, setdomain
+export initializeapp, initializeconfig, setconfig, initializemdp, preprocessing
+export adddata, readconfig, readconfigfile, readMDP, readEXTXYZ, readJSON, readJSONfromFolder
+export setlattice, setregion, setdomain 
 
+include("rotatelattice.jl");
+include("transformcoords.jl");
 include("initializeapp.jl");
 include("initializeconfig.jl");
 include("initializemdp.jl");
 include("readconfig.jl");
+include("readconfigfile.jl");
+include("readMDP.jl");
 include("readEXTXYZ.jl");
 include("readJSON.jl");
 include("readJSONfromFolder.jl");
 include("readweight.jl");
+include("datastruct.jl");
 include("writeapp.jl");
 include("writeconfig.jl");
 include("checkconfig.jl");
@@ -37,7 +43,10 @@ include("writedomain.jl");
 
 function preprocessing(app)
 
-if app.configmode>0
+if app.datafile != "" & app.dataformat != ""
+    config = readconfigfile(app);
+    app.nconfigs = config.nconfigs;    
+elseif app.configmode>0
     # read configurations from data file
     config = readconfig(app, app.configmode);     
 
@@ -187,7 +196,8 @@ else
     app.runMD = 0;  
 end
 
-app.natomtype = length(app.atommasses);
+app.natomtype = maximum([length(app.atommasses), length(app.atomspecies)]);
+#app.natomtype = length(app.atommasses);
 if length(app.atomnumbers)>0
     app.atomnumbers = [0 app.atomnumbers];
 else

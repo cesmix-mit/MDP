@@ -5,8 +5,14 @@
 #  Contributing authors: Ngoc-Cuong Nguyen (cuongng@mit.edu, exapde@gmail.com)
 #****************************************************************************
 
-function readLAMMPS(tmp)
+function readLAMMPS(filename,datamode)
     
+if datamode==0 # binary    
+    tmp = reinterpret(Float64,read(filename));
+else # text    
+    tmp = Main.DelimitedFiles.readdlm(filename);
+end    
+
 config = CONFIGStruct();        
 
 config.dim = 3;

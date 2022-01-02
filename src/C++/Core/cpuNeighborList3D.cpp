@@ -68,8 +68,8 @@ template <typename T> void cpuBoundingBox3D(T *vc, T *wc, T *v, T *w, T *a, T *b
     T d3 = -r[1]*normp3;
         
     // intersection of the above three planes
-    //w1 = [p1; p2; p3]\[d1; d2; d3];
-    T A[9] = {p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]};
+    //w1 = [p1; p2; p3]\[d1; d2; d3];    
+    T A[9] = {p1[0], p2[0], p3[0], p1[1], p2[1], p3[1], p1[2], p2[2], p3[2]};
     T invA[9];    
     cpuSmallMatrixInverse(invA, A, 3);        
     w[0] = invA[0]*d1 + invA[3]*d2 + invA[6]*d3;

@@ -117,7 +117,7 @@ template <typename T> void cpuRotate(T *x, T *point, T *runit, T angle)
 template <typename T> void cpuForwardTransform(T *x, T *dx, T *point, T *runit, T theta, int rotateflag, int moveflag)
 {
   //(T &x, T &y, T &z, T *point, T *runit, T angle)
-  if (rotateflag) rotate(x,point,runit,theta);
+  if (rotateflag) cpuRotate(x,point,runit,theta);
   if (moveflag) {
     x[0] += dx[0];
     x[1] += dx[1];
@@ -139,7 +139,6 @@ template <typename T> void cpuInverseTransform(T *x, T *dx, T *point, T *runit, 
   }
   if (rotateflag) cpuRotate(x,point,runit,-theta);
 }
-
 
 /* ----------------------------------------------------------------------
    parse optional parameters at end of region input line

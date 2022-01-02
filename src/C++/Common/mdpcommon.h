@@ -304,7 +304,7 @@ void printArray3D(Int* a, Int m, Int n, Int p, Int backend)
 
 void print2darray(dstype* a, Int m, Int n)
 {
-    //cout.precision(4);
+    cout.precision(17);
     for (Int i=0; i<m; i++) {
         for (Int j=0; j<n; j++)
             cout << scientific << a[j*m+i] << "   ";

@@ -157,6 +157,9 @@ void CIntegration::VelocityVerlet(CCalculation &CCal)
 
 void CIntegration::IntegrationSetup(CCalculation &CCal)
 {
+    writearray2file("x1.bin", CCal.sys.x, CCal.common.dim*CCal.common.inum, CCal.common.backend);    
+    writearray2file("v1.bin", CCal.sys.v, CCal.common.dim*CCal.common.inum, CCal.common.backend);    
+    
     ArraySetValue(CCal.common.timing, 0.0, 100, 1);
     CCal.NeighborList(CCal.sys.x);
     //CCal.nb.printout(CCal.common.inum, CCal.common.gnum, CCal.common.neighmax, CCal.common.backend);    
