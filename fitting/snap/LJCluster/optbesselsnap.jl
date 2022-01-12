@@ -34,6 +34,7 @@ testdata[1] = Preprocessing.adddata(datapath, dataformat, fileextension, percent
 
 # data set to validate the fitted bessel potential after training and testing
 percentage = 20.0;
+randomize = false;
 validdata = Array{Any}(undef, 1)       
 validdata[1] = Preprocessing.adddata(datapath, dataformat, fileextension, percentage, 
                         randomize, atomspecies, weightinner, translation)
@@ -60,7 +61,7 @@ N = [6, 10]
 etaspace = [etarange N]
 
 # number of Bessel descriptors
-kappa = [5];      
+kappa = [6];      
 
 # initialize a list of descriptors
 descriptors = Array{Any}(undef, 2)
@@ -110,7 +111,7 @@ end
 print("objective value:   $fmin              $fout  \n");
                     
 # validate the potential 
-emae, fmae, smae = Optimization.validate(validdata, descriptors, coeff, eta, kappa, pbc, a, b, c)
+emae, fmae, smae = validate(validdata, descriptors, coeff, eta, kappa, pbc, a, b, c)
 print("     Mean absolute errors on the validation data set  \n");
 print("Energy MAE:  $emae  \n");
 print("Force  MAE:  $fmae \n");

@@ -264,13 +264,14 @@ function initsna(param, elemradius, elemweight, snapcoeff=nothing)
 
     sna.radelem[2:end] = elemradius
     sna.wjelem[2:end] = elemweight    
-    sna.map[2:end] = Int32.(Array(1:ntypes))
+    sna.map[2:end] = Int32.(Array(1:ntypes) .- 1)
 
     if snapcoeff === nothing       
         sna.coeffelem = zeros(Float64, sna.ncoeffall) 
     elseif length(snapcoeff) == sna.ntypes*sna.ncoeffall
         sna.coeffelem = snapcoeff
     else
+        display([length(snapcoeff) sna.ntypes*sna.ncoeffall])
         error("number of snap coefficients is incompatible with the snap paramaters")
     end
 
@@ -381,6 +382,7 @@ function snappotential(x, t, a, b, c, pbc, sna)
     alist = alist .- Int32(1)
     ai = ai .- Int32(1)
     aj = aj .- Int32(1)
+    N = Int32(N)
 
     ulisttot_r = zeros(N*idxu_max*nelem)
     ulisttot_i = zeros(N*idxu_max*nelem)
@@ -401,25 +403,129 @@ function snappotential(x, t, a, b, c, pbc, sna)
         Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint), 
         eatom, ulisttot_r, ulisttot_i, cglist, bzero, coeffelem, ilist, map, atomtype, 
         idxb, idxcg_block, idxu_block, twojmax, idxb_max, idxu_max, nelem, 
-        ncoeffall, bnormflag, bzeroflag, wselfallflag, quadraticflag, N)    
-    
+        ncoeffall, bnormflag, bzeroflag, wselfallflag, chemflag, N)    
+        
     ylist_r = zeros(N*idxu_max*nelem)
     ylist_i = zeros(N*idxu_max*nelem)
     ccall(Libdl.dlsym(snaplib, :cpuSnapComputeYi), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble},
         Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, 
-        Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint), 
+        Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint), 
         ylist_r, ylist_i, ulisttot_r, ulisttot_i, cglist, coeffelem, map, atomtype, idxz, idxb_block, 
-        idxu_block, idxcg_block, twojmax, idxb_max, idxu_max, idxz_max, nelem, ncoeffall, bnormflag, N)    
+        idxu_block, idxcg_block, twojmax, idxb_max, idxu_max, idxz_max, nelem, ncoeffall, bnormflag, chemflag, N)    
 
-    fatom = zeros(3*N)       
-    vatom = zeros(6*N)            
+    fatom = zeros(3,N)       
+    vatom = zeros(6,N)            
     ccall(Libdl.dlsym(snaplib, :cpuSnapComputeFi), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble},
         Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Cdouble, Cdouble, Cdouble, 
         Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, 
         Cint, Cint, Cint, Cint), 
         fatom, vatom, ylist_r, ylist_i, rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, 
         map, ai, ai, aj, ti, tj, twojmax, idxu_max, N, N, ijnum, switchflag, chemflag)    
+    
+    return eatom, fatom, vatom 
+end
 
+function snappotential(x, t, alist, neighlist, neighnum, sna)
+
+    dim = size(x,1);
+    N = length(t)
+    
+    #idxcg_max = sna.idxcg_max;
+    idxu_max = sna.idxu_max;
+    idxb_max = sna.idxb_max;
+    idxz_max = sna.idxz_max;    
+    twojmax = sna.twojmax;
+    #ncoeff = sna.ncoeff;
+    ncoeffall = sna.ncoeffall;
+    ntypes = sna.ntypes;
+    nelem = sna.nelements;    
+    # ndoubles = sna.ndoubles;   
+    # ntriples = sna.ntriples;   
+    # nperdim = sna.nperdim;
+    bnormflag = sna.bnormflag;
+    chemflag = sna.chemflag;    
+    quadraticflag = sna.quadraticflag;
+    switchflag = sna.switchflag;    
+    bzeroflag = sna.bzeroflag;
+    wselfallflag = sna.wselfallflag;        
+
+    map = sna.map;
+    idxz = sna.idxz;
+    #idxz_block = sna.idxz_block;
+    idxb = sna.idxb;
+    idxb_block = sna.idxb_block;
+    idxu_block = sna.idxu_block;
+    idxcg_block = sna.idxcg_block;   
+    
+    rcutmax = sna.rcutmax
+    wself = sna.wself;
+    rmin0 = sna.rmin0;
+    rfac0 = sna.rfac0;
+    rcutfac = sna.rcutfac;
+    rcutmax = sna.rcutmax;        
+    bzero = sna.bzero;
+    rootpqarray = sna.rootpqarray;
+    cglist = sna.cglist;
+    rcutsq = sna.rcutsq;    
+    radelem = sna.radelem;
+    wjelem = sna.wjelem; 
+    coeffelem = sna.coeffelem;           
+    
+    #y, alist, neighlist, neighnum = fullneighborlist(x, a, b, c, pbc, rcutmax);
+    ilist = Int32.(Array(1:N));   
+    atomtype = Int32.(t[:])
+    alist = Int32.(alist)
+    neighlist = Int32.(neighlist)
+    neighnum = Int32.(neighnum)
+
+    pairlist, pairnum = neighpairlist(x, ilist, alist, atomtype, neighlist, neighnum, rcutsq, ntypes)    
+    rij, ai, aj, ti, tj = neighpairs(x, pairlist, pairnum, atomtype, ilist, alist);                
+    ijnum = pairnum[end]
+    
+    # offset 1 for C++ code
+    ilist = ilist .- Int32(1)
+    alist = alist .- Int32(1)
+    ai = ai .- Int32(1)
+    aj = aj .- Int32(1)
+
+    ulisttot_r = zeros(N*idxu_max*nelem)
+    ulisttot_i = zeros(N*idxu_max*nelem)
+    ccall(Libdl.dlsym(snaplib, :cpuSnapComputeUi), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble},
+        Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Cdouble, Cdouble, Cdouble, Ptr{Cint}, Ptr{Cint}, 
+        Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint), 
+        ulisttot_r, ulisttot_i, rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, 
+        map, ai, ti, tj, twojmax, idxu_max, N, ijnum, switchflag, chemflag)    
+
+    ccall(Libdl.dlsym(snaplib, :cpuAddWself2Ui), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Cdouble, 
+        Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint), 
+        ulisttot_r, ulisttot_i, wself, idxu_block, atomtype, map, wselfallflag, chemflag, 
+        idxu_max, nelem, twojmax, N)    
+
+    eatom = zeros(N)
+    ccall(Libdl.dlsym(snaplib, :cpuSnapComputeEi), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble},
+        Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, 
+        Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint), 
+        eatom, ulisttot_r, ulisttot_i, cglist, bzero, coeffelem, ilist, map, atomtype, 
+        idxb, idxcg_block, idxu_block, twojmax, idxb_max, idxu_max, nelem, 
+        ncoeffall, bnormflag, bzeroflag, wselfallflag, chemflag, N)    
+    
+    ylist_r = zeros(N*idxu_max*nelem)
+    ylist_i = zeros(N*idxu_max*nelem)
+    ccall(Libdl.dlsym(snaplib, :cpuSnapComputeYi), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble},
+        Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, 
+        Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint, Cint), 
+        ylist_r, ylist_i, ulisttot_r, ulisttot_i, cglist, coeffelem, map, atomtype, idxz, idxb_block, 
+        idxu_block, idxcg_block, twojmax, idxb_max, idxu_max, idxz_max, nelem, ncoeffall, bnormflag, chemflag, N)    
+
+    fatom = zeros(3,N)       
+    vatom = zeros(6,N)            
+    ccall(Libdl.dlsym(snaplib, :cpuSnapComputeFi), Cvoid, (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble},
+        Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Cdouble, Cdouble, Cdouble, 
+        Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Cint, Cint, Cint, 
+        Cint, Cint, Cint, Cint), 
+        fatom, vatom, ylist_r, ylist_i, rootpqarray, rij, wjelem, radelem, rmin0, rfac0, rcutfac, 
+        map, ai, ai, aj, ti, tj, twojmax, idxu_max, N, N, ijnum, switchflag, chemflag)    
+        
     return eatom, fatom, vatom 
 end
 

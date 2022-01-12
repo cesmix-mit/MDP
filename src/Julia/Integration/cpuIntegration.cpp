@@ -103,6 +103,38 @@ void cross3(const double *v1, const double *v2, double *ans)
   ans[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
+void cpuArraySumEveryColumn(double *b, double *a, int m, int n)
+{
+    // m: number of columns
+    for (int j=0; j<m; j++) {
+        int k = n*j;
+        b[j] = a[0 + k];
+        for (int i=1; i<n; i++)
+            b[j] += a[i + k];    
+    }
+}
+
+void cpuArrayPlusAtColumnIndex(double *A, double *B, int *colind, int m, int n)
+{  
+    for (int ii=0; ii<n; ii++) { // loop over each column
+        int i = colind[ii];   
+        for (int j=0; j<m; j++) // loop over each row
+            A[ii*m+j] += B[i*m+j]; 
+    }
+}
+
+   //cpuArrayDistSquareSum
+void cpuArrayDistSquareSum(double*y, double*x1, double*x2, int m, int n)
+{    
+    //#pragma omp parallel 
+    for (int j=0; j<n; j++)
+    {        
+        y[j] = 0;        
+        for (int i=0; i<m; i++)
+            y[j] += (x2[i + m*j]-x1[i + m*j])*(x2[i + m*j]-x1[i + m*j]);
+    }        
+}
+
 //#include "cpuCoordinateTransformations.cpp"
 #include "cpuRandom.cpp"
 #include "cpuDomain.cpp"

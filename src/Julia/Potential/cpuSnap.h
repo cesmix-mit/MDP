@@ -31,7 +31,7 @@ void cpuAddWself2Ui(double *Utotr, double *Utoti, double wself, int *idxu_block,
 void cpuSnapComputeEi(double *eatom, double *Utotr, double *Utoti, double *cglist, double *bzero, 
         double *coeffelem, int *ilist, int *map, int *type, int *idxb, int *idxcg_block, int *idxu_block, 
         int twojmax, int idxb_max, int idxu_max, int nelements, int ncoeffall, int bnorm_flag, 
-        int bzero_flag, int wselfall_flag, int inum);
+        int bzero_flag, int wselfall_flag, int chemflag, int inum);
 
 void cpuSnapComputeBi(double *blist, double *Utotr, double *Utoti, double *cglist, double *bzero, 
         int *idxb, int *idxcg_block, int *idxu_block, int *idxz_block, int twojmax, int idxb_max, int idxu_max, 
@@ -39,7 +39,7 @@ void cpuSnapComputeBi(double *blist, double *Utotr, double *Utoti, double *cglis
 
 void cpuSnapComputeYi(double *ylist_r, double *ylist_i, double *Utotr, double *Utoti, double *cglist, double* beta, 
         int *map, int *type, int *idxz, int *idxb_block, int *idxu_block, int *idxcg_block, int twojmax, 
-        int idxb_max, int idxu_max, int idxz_max, int nelements, int ncoeffall, int bnorm_flag, int inum);
+        int idxb_max, int idxu_max, int idxz_max, int nelements, int ncoeffall, int bnorm_flag, int chemflag, int inum);
 
 void cpuSnapComputeFi(double *fatom, double *vatom, double *ylist_r, double *ylist_i, double *rootpqarray, double *rij, 
         double *wjelem, double *radelem,  double rmin0, double rfac0, double rcutfac, int *map, int *aii, int *ai, int *aj, 

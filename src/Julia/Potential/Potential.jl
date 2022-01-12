@@ -22,6 +22,41 @@ function latticevolume(a::Vector{Float64}, b::Vector{Float64}, c::Vector{Float64
     return vol
 end
 
+# function getpotentials(potentials)
+
+#     for i = length(potentials):-1:1    
+#         if potentials[i] === nothing
+#             deleteat!(potentials, i)            
+#         end
+#     end   
+
+#     n = length(potentials) 
+#     empotentials = Array{Any}(nothing, n)
+#     mlpotentials = nothing;
+
+#     n = 0
+#     for i = 1:length(potentials)    
+#         if typeof(potentials[i]) == Potential.PotentialStruct
+#             n = n + 1
+#             empotentials[n] = potentials[i]                         
+#         else
+#             mlpotentials = potentials[i]                         
+#         end
+#     end
+
+#     if n>0
+#         if length(potentials) > n
+#             for i = length(potentials):-1:(n+1)    
+#                 deleteat!(empotentials, i)            
+#             end   
+#         end     
+#     else
+#         empotentials = []
+#     end
+
+#     return empotentials, mlpotentials
+# end
+
 include("accumarray.jl");
 include("atomlist.jl");
 include("boundingbox.jl");
@@ -47,6 +82,7 @@ include("snastruct.jl");
 include("snapcpp.jl");
 include("lammpspotential.jl");
 include("lammpssnapdescriptors.jl");
+include("emlpotential.jl");
 include("emldescriptors.jl");
 
 end

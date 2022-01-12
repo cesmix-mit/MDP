@@ -30,17 +30,29 @@ function  neightriplets(x, q, tripletlist, tripletnum, atomtype, ilist, alist)
         
         ind = (count+1):(count+n);
         count = count + n;
-        
-        ai[ind] = i;
+                
+        ai[ind] .= i;
         aj[ind] = j;
         ak[ind] = k;    
-        ti[ind] = atomtype[i];
+        ti[ind] .= atomtype[i];
         tj[ind] = atomtype[j];
         tk[ind] = atomtype[k];
-        xij[:,ind] = x[:,gj] - x[:,i];
-        xik[:,ind] = x[:,gk] - x[:,i];    
+        xij[:,ind] = x[:,gj] .- x[:,i];
+        xik[:,ind] = x[:,gk] .- x[:,i];    
+
+        # display(i)
+        # display(j)
+        # display(k)
+        # display(ind)
+        # display(xij[:,ind])
+        # display(xik[:,ind])
+        # rij = sqrt.(xij[1,ind].*xij[1,ind] + xij[2,ind].*xij[2,ind] + xij[3,ind].*xij[3,ind])
+        # display(maximum(rij))
+        # rij = sqrt.(xik[1,ind].*xik[1,ind] + xik[2,ind].*xik[2,ind] + xik[3,ind].*xik[3,ind])
+        # display(maximum(rij))
+        # error("here")
         if ncq>0
-            qi[ind] = q[i];
+            qi[ind] .= q[i];
             qj[ind] = q[j];
             qk[ind] = q[k];
         end

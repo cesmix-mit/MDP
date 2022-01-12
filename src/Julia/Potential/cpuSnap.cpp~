@@ -544,7 +544,7 @@ void cpuAddWself2Ui(double *Utotr, double *Utoti, double wself, int *idxu_block,
 void cpuSnapComputeEi(double *eatom, double *Utotr, double *Utoti, double *cglist, double *bzero, 
         double *coeffelem, int *ilist, int *map, int *type, int *idxb, int *idxcg_block, int *idxu_block, 
         int twojmax, int idxb_max, int idxu_max, int nelements, int ncoeffall, int bnorm_flag, 
-        int bzero_flag, int wselfall_flag, int chemflag, int inum)
+        int bzero_flag, int wselfall_flag, int inum)
 {    
     int nelemsq = nelements*nelements;    
     int nu_max = idxu_max*inum;
@@ -552,7 +552,7 @@ void cpuSnapComputeEi(double *eatom, double *Utotr, double *Utoti, double *cglis
     int jdim = twojmax+1;
     int N2 = inum*idxb_max;
     int N3 = N2*nelements*nelemsq;    
-    //printf("%i %i %i %i %i\n", nelements, twojmax, idxb_max, inum, N3);                        
+    printf("%i %i %i\n", nelements, );                        
     for (int idx=0; idx < N3; idx++) {
         int l = idx%N2;        
         int ii = l%inum;
@@ -570,7 +570,7 @@ void cpuSnapComputeEi(double *eatom, double *Utotr, double *Utoti, double *cglis
         const double *cgblock = cglist + idxcg_block[j + j2*jdim + j1*jdim*jdim];
 
         int itype = type[ii]; // element type of atom i
-        int ielem = (chemflag) ? map[itype]: 0; //ielem = map[itype];  // index of that element type        
+        int ielem = map[itype];  // index of that element type        
         int icoeff = jjb + idxb_max*(jelem);
         int itriple = 1+icoeff+ielem*ncoeffall;
         
@@ -711,10 +711,9 @@ void cpuSnapComputeEi(double *eatom, double *Utotr, double *Utoti, double *cglis
         
         if (icoeff==0)
             eatom[ilist[ii]] += coeffelem[ielem*ncoeffall];
-        
         eatom[ilist[ii]] += coeffelem[itriple]*sumzu;           
 
-        //printf("%i %i %i %i %i %i %f %f\n", ii, jjb, ielem, ilist[ii], itype, icoeff, sumzu, eatom[ilist[ii]]);                        
+        printf("%i %i %i %i %i %i %f %f\n", ii, jjb, ielem, ilist[ii], itype, icoeff, sumzu, eatom[ilist[ii]]);                        
     }
 }
 
@@ -890,7 +889,7 @@ void cpuSnapComputeBi(double *blist, double *Utotr, double *Utoti, double *cglis
 
 void cpuSnapComputeYi(double *ylist_r, double *ylist_i, double *Utotr, double *Utoti, double *cglist, double* beta, 
         int *map, int *type, int *idxz, int *idxb_block, int *idxu_block, int *idxcg_block, int twojmax, 
-        int idxb_max, int idxu_max, int idxz_max, int nelements, int ncoeffall, int bnorm_flag, int chemflag, int inum)
+        int idxb_max, int idxu_max, int idxz_max, int nelements, int ncoeffall, int bnorm_flag, int inum)
 {    
     
     int N1 = idxu_max*nelements*inum;
@@ -921,7 +920,7 @@ void cpuSnapComputeYi(double *ylist_r, double *ylist_i, double *Utotr, double *U
       const double *cgblock = cglist + idxcg_block[j + j2*jdim + j1*jdim*jdim];
       
       int itype = type[ii]; // element type of atom i
-      int ielem = (chemflag) ? map[itype]: 0; //ielem = map[itype];  // index of that element type                        
+      int ielem = map[itype];  // index of that element type                        
 
       for(int elem1 = 0; elem1 < nelements; elem1++)
         for (int elem2 = 0; elem2 < nelements; elem2++) {        
@@ -1381,31 +1380,25 @@ void cpuSnapComputeFi(double *fatom, double *vatom, double *ylist_r, double *yli
     fatom[1+3*mb] -= dedy;
     fatom[2+3*mb] -= dedz;    
     
-    rootpq = -1.0;
+    rootpq = -0.5;
     dbrdx = rootpq*x*dedx;
     dbidx = rootpq*y*dedy;
     dbrdy = rootpq*z*dedz;
     dbidy = rootpq*x*dedy;
     dbrdz = rootpq*x*dedz;
     dbidz = rootpq*y*dedz;        
-    vatom[0+6*ma] += dbrdx;
-    vatom[1+6*ma] += dbidx;
-    vatom[2+6*ma] += dbrdy;
-    vatom[3+6*ma] += dbidy;
-    vatom[4+6*ma] += dbrdz;
-    vatom[5+6*ma] += dbidz;        
-//     vatom[0*anum+ma] += dbrdx;
-//     vatom[1*anum+ma] += dbidx;
-//     vatom[2*anum+ma] += dbrdy;
-//     vatom[3*anum+ma] += dbidy;
-//     vatom[4*anum+ma] += dbrdz;
-//     vatom[5*anum+ma] += dbidz;        
-//     vatom[0*anum+mb] += dbrdx;
-//     vatom[1*anum+mb] += dbidx;
-//     vatom[2*anum+mb] += dbrdy;
-//     vatom[3*anum+mb] += dbidy;
-//     vatom[4*anum+mb] += dbrdz;
-//     vatom[5*anum+mb] += dbidz;            
+    vatom[0*anum+ma] += dbrdx;
+    vatom[1*anum+ma] += dbidx;
+    vatom[2*anum+ma] += dbrdy;
+    vatom[3*anum+ma] += dbidy;
+    vatom[4*anum+ma] += dbrdz;
+    vatom[5*anum+ma] += dbidz;        
+    vatom[0*anum+mb] += dbrdx;
+    vatom[1*anum+mb] += dbidx;
+    vatom[2*anum+mb] += dbrdy;
+    vatom[3*anum+mb] += dbidy;
+    vatom[4*anum+mb] += dbrdz;
+    vatom[5*anum+mb] += dbidz;            
   }   
 };
 

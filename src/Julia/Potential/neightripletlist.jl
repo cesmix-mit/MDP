@@ -1,12 +1,12 @@
 function makejk(n)
     
-m = (n-1)*n/2;
+m = Int64((n-1)*n/2);
 indj = zeros(Int64,m);
 indk = zeros(Int64,m);
 k1 = 1;
 for i = 1:(n-1)
     ind = k1:(k1+(n-i)-1);
-    indj[ind] = i;
+    indj[ind] .= i;
     indk[ind] = (i+1):n;
     k1 = k1 + (n-i);
 end
@@ -17,8 +17,8 @@ end
 
 function neightripletlist(pairlist, pairnumsum, ilist)
 
-pairnum = pairnumsum[2:end]-pairnumsum[1:end-1];
-tripletnum  = (pairnum-1).*pairnum/2;
+pairnum = Int64.(pairnumsum[2:end]-pairnumsum[1:end-1]);
+tripletnum  = Int64.((pairnum.-1).*pairnum/2);
 
 inum = length(ilist);
 tripletlistj = [];
@@ -29,6 +29,7 @@ for ii = 1:inum
     n2 = pairnumsum[ii+1];        
     g = pairlist[(n1+1):n2]; # a list of neighbors around atom i
     
+    n = pairnum[ii]
     indj, indk = makejk(n);        
     tripletlistj = [tripletlistj; g[indj]];      
     tripletlistk = [tripletlistk; g[indk]];       

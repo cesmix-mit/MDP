@@ -60,7 +60,7 @@ N = [6, 10]
 etaspace = [etarange N]
 
 # number of descriptors
-kappa = [5];      
+kappa = [6];      
 
 # define a list of empirical and ML descriptors
 descriptors = Array{Any}(undef, 1)

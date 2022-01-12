@@ -57,8 +57,12 @@ extern "C" {
 //           double **face, double *corners, double **tri, double *x, double *clo, double *chi, double cutoff, 
 //           int *iwall, int *open_faces);
 
+void cpuArraySumEveryColumn(double *b, double *a, int m, int n);
+void cpuArrayPlusAtColumnIndex(double *A, double *B, int *colind, int m, int n);
+void cpuArrayDistSquareSum(double*y, double*x1, double*x2, int m, int n);
+
 int cpuLattice(double *basis, double *primitive, double *rotaterow, double *priminv, double *rotatecol, double *origin, 
-        double *spacing, double *a1, double *a2, double *a3, double &scale, int *orientx, int *orienty, int *orientz, 
+        double *spacing, double *a1, double *a2, double *a3, double scale, int *orientx, int *orienty, int *orientz, 
         int style, int unit_style, int spaceflag, int dimension);
 void cpuLatticeBoundingBox(double *lmin, double *lmax, double *bsublo, double *bsubhi, double *primitive, 
         double *rotaterow, double *priminv, double *rotatecol, double *origin, double *spacing, double scale);

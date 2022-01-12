@@ -43,7 +43,8 @@ mutable struct APPStruct
     peratomfreq::Int64;
     unitstylenum::Int64; 
     ensemblemodenum::Int64; 
-        
+    outputflag::Int64 
+
     datapath::String;
     datafile::String;
     dataformat::String;
@@ -226,10 +227,19 @@ mutable struct APPStruct
     nceta::Int64; # number of compoments of eta
     nckappa::Int64; # number of compoments of kappa
             
-    lattice;
-    domain;
-    region;
-
+    lattice
+    domain
+    region
+    setforce
+    lineforce
+    planeforce
+    wallharmonic
+    walllj126
+    wallmorse
+    wallreflect
+    setvelocity
+    velocityrescaling
+    
     APPStruct() = new();
 end
 
@@ -268,7 +278,8 @@ function initializeapp(cdir,sourcepath,version="version0")
     app.datafile = "";
     app.dataformat = "";
     app.datamode = 1;
-
+    app.outputflag = 0
+    
     app.traininglist = reshape([], 0, 2);
     app.validatelist = reshape([], 0, 2);
     
@@ -449,6 +460,15 @@ function initializeapp(cdir,sourcepath,version="version0")
     app.lattice = [];
     app.region = [];
     app.domain = [];
+    app.setforce = nothing
+    app.lineforce = nothing
+    app.planeforce = nothing
+    app.wallharmonic = nothing
+    app.walllj126 = nothing
+    app.wallmorse = nothing
+    app.wallreflect = nothing
+    app.setvelocity = nothing
+    app.velocityrescaling = nothing
     
     return app;
 

@@ -53,7 +53,19 @@ function empiricaldescriptors(x, q, t, a, b, c, pbc, rcutmax, eta, kappa, emdesc
         end
         if (style == "pair")
             xij, ai, aj, ti, tj, qi, qj = neighpairs(y, q, pairlist, pairnum, t, ilist, alist);            
-            eij, fij = potentialfunc(xij, qi, qj, ti, tj, mu, eta, kappa);        
+            eij, fij = potentialfunc(xij, qi, qj, ti, tj, mu, eta, kappa);     
+            # tm0 = 1.0*fij   
+            # dim, na = size(xij)
+            # for i1 = 1:dim
+            #     for j1 = 1:na
+            #         tm1 = 1.0*xij
+            #         tm1[i1,j1] = tm1[i1,j1] - 1e-6
+            #         tm2, ~ = potentialfunc(tm1, qi, qj, ti, tj, mu, eta, kappa);     
+            #         tm0[i1,j1,:] = (eij[j1,:] - tm2[j1,:])/1e-6
+            #     end
+            # end
+            # display(abs.(fij-tm0))
+            # error("here")
             for m = 1:size(eij,2)
                 ea, fa = tallypair(eij[:,m], fij[:,:,m], ai, aj);            
                 d = [d; sum(ea)];
@@ -85,10 +97,29 @@ function empiricaldescriptors(x, q, t, a, b, c, pbc, rcutmax, eta, kappa, emdesc
         end
         if (style == "triplet")
             tripletlist, tripletnum = neightripletlist(pairlist, pairnum, ilist);
-            xij, xik, ai, aj, ak, ti, tj, tk, qi, qj, qk = neightriplets(y, q, tripletlist, tripletnum, atomtype, ilist, alist);
-            eij, fij, fik = potentialfunc(xij, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);                    
+            xij, xik, ai, aj, ak, ti, tj, tk, qi, qj, qk = neightriplets(y, q, tripletlist, tripletnum, t, ilist, alist);
+            eij, fij, fik = potentialfunc(xij, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);                                
+            # tmj = 1.0*fik  
+            # tmk = 1.0*fik   
+            # dim, na = size(xij)
+            # na = 10;
+            # for i1 = 1:dim
+            #     for j1 = 1:na
+            #         tm1 = 1.0*xij
+            #         tm1[i1,j1] = tm1[i1,j1] - 1e-6
+            #         tm2, ~ = potentialfunc(tm1, xik, qi, qj, qk, ti, tj, tk, mu, eta, kappa);                                
+            #         tmj[i1,j1,:] = (eij[j1,:] - tm2[j1,:])/1e-6
+            #         tm1 = 1.0*xik
+            #         tm1[i1,j1] = tm1[i1,j1] - 1e-6
+            #         tm2, ~ = potentialfunc(xij, tm1, qi, qj, qk, ti, tj, tk, mu, eta, kappa);                                
+            #         tmk[i1,j1,:] = (eij[j1,:] - tm2[j1,:])/1e-6
+            #     end
+            # end
+            # display(abs.(fij[:,1:na,:]-tmj[:,1:na,:]))
+            # display(abs.(fik[:,1:na,:]-tmk[:,1:na,:]))
+            # error("here")
             for m = 1:size(eij,2)
-                ea, fa = tallytriplet(eij[:,m], fij[:,:,m], fik[:,:,m], ai, aj, ak);                             
+                ea, fa = tallytriplet(eij[:,m], fij[:,:,m], fik[:,:,m], ai, aj, ak);                                             
                 d = [d; sum(ea)];
                 if length(dd)==0
                     dd = fa;
@@ -101,7 +132,7 @@ function empiricaldescriptors(x, q, t, a, b, c, pbc, rcutmax, eta, kappa, emdesc
                 else
                     dv = [dv sum(va, dims=2)]
                 end                
-            end
+            end            
         end
         
         # quadlet potentials
@@ -120,7 +151,7 @@ function empiricaldescriptors(x, q, t, a, b, c, pbc, rcutmax, eta, kappa, emdesc
         if (style == "quadlet")
             quadletlist, quadletnum = neighquadletlist(pairlist, pairnumsum, ilist);        
             xij, xik, xil, ai, aj, ak, al, ti, tj, tk, tl, qi, qj, qk, ql = 
-                        neighquadlets(x, q, quadletlist, quadletnum, atomtype, ilist, alist);
+                        neighquadlets(x, q, quadletlist, quadletnum, t, ilist, alist);
             eij, fij, fik, fil = potentialfunc(xij, xik, xil, qi, qj, qk, ql, ti, tj, tk, tl, mu, eta, kappa);            
             for m = 1:size(eij,2)
                 ea, fa = tallyquadlet(eij[:,m], fij[:,:,m], fik[:,:,m], fil[:,:,m], ai, aj, ak, al);                            

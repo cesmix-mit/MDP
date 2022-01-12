@@ -43,29 +43,7 @@ mutable struct Region
     omega::Vector{Float64}#[3];             # angular velocity    
     xcenter::Vector{Float64}#[3];    # translated/rotated center of cylinder/sphere (only used if varshape)
     prev::Vector{Float64}#[5];       # stores displacement (X3), angle and if
-    
-    function printout()    
-        display("boxlo: "); display(boxlo);
-        display("boxhi: "); display(boxhi);
-        display("boxtilt: "); display(boxtilt);
-        display("clo: "); display(clo);
-        display("chi: "); display(chi);
-        display("extent_lo: "); display(extent_lo);
-        display("extent_hi: "); display(extent_hi);
-        display("a: "); display(a);
-        display("b: "); display(b);
-        display("c: "); display(c);
-        display("scale: "); display(scale);
-        display("h: "); display(h);
-        display("h_inv: "); display(h_inv);
-        display("dx: "); display(dx);
-        display("v: "); display(v);
-        display("rpoint: "); display(rpoint);
-        display("omega: "); display(omega);
-        display("xcenter: "); display(xcenter);
-        display("prev: "); display(prev);
-    end    
-   
+       
     Region() = new()
 end
 
@@ -86,3 +64,24 @@ function initregion(boxhi, boxtilt=[0.0; 0.0; 0.0])
     return reg    
 end
     
+function printout(reg::Region)    
+    display("boxlo: "); display(reg.boxlo);
+    display("boxhi: "); display(reg.boxhi);
+    display("boxtilt: "); display(reg.boxtilt);
+    display("clo: "); display(reg.clo);
+    display("chi: "); display(reg.chi);
+    display("extent_lo: "); display(reg.extent_lo);
+    display("extent_hi: "); display(reg.extent_hi);
+    display("a: "); display(reg.a);
+    display("b: "); display(reg.b);
+    display("c: "); display(reg.c);
+    display("scale: "); display(reg.scale);
+    display("h: "); display(reg.h);
+    display("h_inv: "); display(reg.h_inv);
+    display("dx: "); display(reg.dx);
+    display("v: "); display(reg.v);
+    display("rpoint: "); display(reg.rpoint);
+    display("omega: "); display(reg.omega);
+    display("xcenter: "); display(reg.xcenter);
+    display("prev: "); display(reg.prev);
+end    

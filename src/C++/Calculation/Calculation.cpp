@@ -418,8 +418,8 @@ void CCalculation::PotentialEnergyForceVirial(dstype *e, dstype *f, dstype *v, d
     dstype *tmpmem = tmp.tmpmem;       
     ArraySumEveryColumn(tmpmem, e, 1, inum, backend);  
     ArraySumEveryColumn(&tmpmem[1], sys.vatom, 6, inum, backend);    
-    printArray2D(tmpmem, 1, 7, backend);
-    error("here")
+    //printArray2D(tmpmem, 1, 7, backend);
+    //error("here")
     
     START_TIMING;
     if (common.descriptor == 1) { // snap

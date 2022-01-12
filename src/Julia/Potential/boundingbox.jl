@@ -5,7 +5,6 @@
 #  Contributing authors: Ngoc-Cuong Nguyen [cuongng@mit.edu, exapde@gmail.com]
 #****************************************************************************
 
-
 function boundingbox2D(pbc::Array{Int64,1}, a::Array{Float64,1}, b::Array{Float64,1}, r::Array{Float64,1})
     # a = [a1, a2] and b = [b1,b2] are two vectors defining a parallelogram 
     # r is the distance from the original parallelogram to the bounding parallelogram 

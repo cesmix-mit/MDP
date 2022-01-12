@@ -13,13 +13,14 @@ using Revise, JSON, LinearAlgebra
 
 export initializeapp, initializeconfig, setconfig, initializemdp, preprocessing
 export adddata, readconfig, readconfigfile, readMDP, readEXTXYZ, readJSON, readJSONfromFolder
-export setlattice, setregion, setdomain 
+export setlattice, setregion, setdomain, savebin 
 
 include("rotatelattice.jl");
 include("transformcoords.jl");
 include("initializeapp.jl");
 include("initializeconfig.jl");
 include("initializemdp.jl");
+include("setunits.jl");
 include("readconfig.jl");
 include("readconfigfile.jl");
 include("readMDP.jl");

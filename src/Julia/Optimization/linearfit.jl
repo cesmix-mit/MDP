@@ -482,6 +482,7 @@ function linearfit2(data, descriptors, potential, optim, pbc=nothing, a=nothing,
         end                        
 
         if (optim.method == "lsq")
+            #display(Le)
             cei, cfi, cefi, cefsi = lsqsolve(Le, Lf, Ls, he, hf, hs)
         else
             cei, cfi, cefi, cefsi = linearsolve(Ae, Af, As, be, bf, bs)
@@ -540,20 +541,3 @@ function linearfit2(data, descriptors, potential, optim, pbc=nothing, a=nothing,
     return coeff, ce, cf, cef, cefs, emae, fmae, smae, De, Df, Ds, de, df, ds
 end
 
-
-# function calmae(emae, szbe)
-#     n,p,m = size(emae)
-#     em = -ones(p,m)       
-#     if (sum(szbe) > 0) & (sum(emae[:]) > 0)
-#         for k = 1:p
-#             for j = 1:m
-#                 em[k,j] = 0.0
-#                 for i = 1:n            
-#                     em[k,j] = em[k,j] + emae[i,k,j]*szbe[i]
-#                 end
-#                 em[k,j] =  em[k,j]/sum(szbe)
-#             end
-#         end
-#     end
-#     return em
-# end

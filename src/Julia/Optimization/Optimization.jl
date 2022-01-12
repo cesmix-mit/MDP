@@ -12,7 +12,7 @@ module Optimization
 using Revise
 
 export setoptim, printerrors, linearfit, linearfit2, optimize, optimize2, validate, validate2
-export mpolyeval, mpolyinterp, gradientdescent
+export mpolyeval, mpolyinterp, gradientdescent, num2string, replacestring
 
 function deletenothing(a)
     if a !== nothing

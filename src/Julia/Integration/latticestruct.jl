@@ -28,59 +28,29 @@ mutable struct Lattice
     klo::Int32
     khi::Int32     # lattice bounds for sub-box on this proc
     natom::Int32                              # # of atoms in the sub-box on this proc
-    
-    function latticebounds()    
-        ilo = Int32(sublo[0]) - 1;
-        jlo = Int32(sublo[1]) - 1;
-        klo = Int32(sublo[2]) - 1;
-        ihi = Int32(subhi[0]) + 1;
-        jhi = Int32(subhi[1]) + 1;
-        khi = Int32(subhi[2]) + 1;
-    
-        if (sublo[0] < 0.0) 
-            ilo = ilo - 1
-        end
-        if (sublo[1] < 0.0) 
-            jlo = jlo - 1
-        end        
-        if (sublo[2] < 0.0) 
-            klo = klo - 1
-        end
-          
-        natom = 0;
-        for k = klo:khi
-            for j = jlo:jhi
-                for i = ilo:ihi
-                    for m = 0:(nbasis-1) 
-                        natom = natom + 1            
-                    end
-                end
-            end
-        end
-    end    
-
-    function printout()        
-        display("style, spaceflag, nbasis, natom, ilo, ihi, jlo, jhi, klo, khi, scale")
-        display([style, spaceflag, nbasis, natom, ilo, ihi, jlo, jhi, klo, khi, scale])        
-        display("origin: "); display(origin);
-        display("spacing: "); display(spacing);
-        display("orientx: "); display(orientx);
-        display("orienty: "); display(orienty);
-        display("orientz: "); display(orientz);
-        display("a1: "); display(a1);
-        display("a2: "); display(a2);
-        display("a3: "); display(a3);
-        display("sublo: "); display(sublo);
-        display("subhi: "); display(subhi);                
-        display("type: "); display(atomtype);
-        display("basis: "); display(atombasis);
-        display("primitive: "); display(primitive);
-        display("primitinv: "); display(primitinv);
-        display("rotaterow: "); display(rotaterow);
-        display("rotatecol: "); display(rotatecol);
-    end
 
     Lattice() = new();
+end
+
+function printout(lat::Lattice)        
+    display("style, spaceflag, nbasis, natom, ilo, ihi, jlo, jhi, klo, khi, scale")
+    display([lat.style, lat.spaceflag, lat.nbasis, lat.natom, lat.ilo, lat.ihi, lat.jlo, lat.jhi, lat.klo, lat.khi, lat.scale])        
+    display("origin: "); display(lat.origin);
+    display("spacing: "); display(lat.spacing);
+    display("orientx: "); display(lat.orientx);
+    display("orienty: "); display(lat.orienty);
+    display("orientz: "); display(lat.orientz);
+    display("a1: "); display(lat.a1);
+    display("a2: "); display(lat.a2);
+    display("a3: "); display(lat.a3);
+    display("sublo: "); display(lat.sublo);
+    display("subhi: "); display(lat.subhi);                
+    display("type: "); display(lat.atomtype);
+    display("basis: "); display(lat.atombasis);
+    display("primitive: "); display(lat.primitive);
+    display("primitinv: "); display(lat.primitinv);
+    display("rotaterow: "); display(lat.rotaterow);
+    display("rotatecol: "); display(lat.rotatecol);
 end
 
 function initlattice(stylein, scale, orientx=[1; 0; 0], orienty=[0; 1; 0], orientz=[0; 0; 1], 
@@ -160,16 +130,49 @@ function initlattice(stylein, scale, orientx=[1; 0; 0], orienty=[0; 1; 0], orien
     end
 
     nbasis = size(lat.basis)[1];
+    lat.basis = transpose(lat.basis)
 
     if type===nothing
-        lat.type = Int64.(ones(1,nbasis));
+        lat.atomtype = Int32.(ones(nbasis));
     else
-        lat.type = type;
+        lat.atomtype = atomtype;
     end
 
     return lat
-
 end
+
+function latticebounds(lat::Lattice)    
+    lat.ilo = Int32(lat.sublo[1]) - 1;
+    lat.jlo = Int32(lat.sublo[2]) - 1;
+    lat.klo = Int32(lat.sublo[3]) - 1;
+    lat.ihi = Int32(lat.subhi[1]) + 1;
+    lat.jhi = Int32(lat.subhi[2]) + 1;
+    lat.khi = Int32(lat.subhi[3]) + 1;
+
+    if (lat.sublo[1] < 0.0) 
+        lat.ilo = lat.ilo - 1
+    end
+    if (lat.sublo[2] < 0.0) 
+        lat.jlo = lat.jlo - 1
+    end        
+    if (lat.sublo[3] < 0.0) 
+        lat.klo = lat.klo - 1
+    end
+      
+    lat.natom = 0;
+    for k = lat.klo:lat.khi
+        for j = lat.jlo:lat.jhi
+            for i = lat.ilo:lat.ihi
+                for m = 0:(lat.nbasis-1) 
+                    lat.natom = lat.natom + 1            
+                end
+            end
+        end
+    end
+end    
+
+#SetupLattice(lat::Lattice, unitstyle::Int32, dim::Int32)
+
 
 
 

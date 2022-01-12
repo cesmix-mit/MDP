@@ -39,7 +39,7 @@ function setcutoff(emdescriptors, mldescriptors, eta)
             if i==1
                 emdescriptors[i].rcut = eta[1] # long-range empirical potentials
             else
-                emdescriptors[i].rcut = eta[2] # short-range empirical potentials
+                emdescriptors[i].rcut = eta[1] # short-range empirical potentials
             end
         end
         if mldescriptors !== nothing
@@ -47,7 +47,7 @@ function setcutoff(emdescriptors, mldescriptors, eta)
                 if length(emdescriptors) == 0    
                     mldescriptors.rcutfac = eta[1]
                 else
-                    mldescriptors.rcutfac = eta[2]                
+                    mldescriptors.rcutfac = eta[1]                
                 end
             end
         end
@@ -156,9 +156,9 @@ function validate(data, descriptors, coeff, eta, kappa, pbc=nothing, a=nothing, 
     emdescriptors, mldescriptors = getdescriptors(descriptors)
 
     # set cut-off radius 
-    if eta !== nothing
-        emdescriptors, mldescriptors = setcutoff(emdescriptors, mldescriptors, eta)
-    end
+    # if eta !== nothing
+    #     emdescriptors, mldescriptors = setcutoff(emdescriptors, mldescriptors, eta)
+    # end
 
     normalizeenergy = 0
     n = length(data)
